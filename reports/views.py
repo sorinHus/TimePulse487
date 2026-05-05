@@ -484,3 +484,176 @@ class AdminDashboardView(APIView):
             'recent_pending_leaves': recent_leaves_data,
             'departments': dept_data,
         })    
+    
+class ManagerDashboardView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role not in ['admin', 'manager']:
+            return Response({'detail': 'Permission denied.'}, status=403)
+
+        from datetime import date
+        today = timezone.localdate()
+
+        # Echipa managerului
+        team = User.objects.filter(
+            is_active=True,
+            manager=request.user
+        )
+        total_team = team.count()
+
+        # Prezenti azi
+        present_today = Attendance.objects.filter(
+            date=today,
+            status='present',
+            user__in=team
+        ).count()
+
+        # In concediu azi
+        on_leave_today = LeaveRequest.objects.filter(
+            status='approved',
+            start_date__lte=today,
+            end_date__gte=today,
+            user__in=team
+        ).count()
+
+        # Cereri pending din echipa
+        pending_leaves = LeaveRequest.objects.filter(
+            status='pending',
+            user__in=team
+        ).count()
+
+        # Cereri pending recente
+        recent_leaves = LeaveRequest.objects.filter(
+            status='pending',
+            user__in=team
+        ).select_related('user', 'leave_type').order_by('-created_at')[:5]
+
+        recent_leaves_data = []
+        for leave in recent_leaves:
+            recent_leaves_data.append({
+                'id': leave.id,
+                'user': leave.user.get_full_name() or leave.user.username,
+                'leave_type': leave.leave_type.name,
+                'start_date': leave.start_date,
+                'end_date': leave.end_date,
+                'total_days': leave.total_days,
+                'created_at': leave.created_at,
+            })
+
+        # Status echipa azi
+        team_status = []
+        for member in team:
+            attendance = Attendance.objects.filter(
+                user=member, date=today
+            ).first()
+            on_leave = LeaveRequest.objects.filter(
+                user=member,
+                status='approved',
+                start_date__lte=today,
+                end_date__gte=today,
+            ).first()
+
+            if on_leave:
+                status_val = 'leave'
+                detail = on_leave.leave_type.name
+            elif attendance and attendance.check_in:
+                status_val = 'present'
+                detail = str(attendance.check_in)[:5]
+            else:
+                status_val = 'absent'
+                detail = '-'
+
+            team_status.append({
+                'user_id': member.id,
+                'full_name': member.get_full_name() or member.username,
+                'status': status_val,
+                'detail': detail,
+            })
+
+        return Response({
+            'stats': {
+                'total_team': total_team,
+                'present_today': present_today,
+                'on_leave_today': on_leave_today,
+                'absent_today': max(0, total_team - present_today - on_leave_today),
+                'pending_leaves': pending_leaves,
+            },
+            'team_status': team_status,
+            'recent_pending_leaves': recent_leaves_data,
+        })
+
+
+class EmployeeDashboardView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from datetime import date
+        today = timezone.localdate()
+        current_year = today.year
+        current_month = today.month
+        user = request.user
+
+        # Pontaj azi
+        today_attendance = Attendance.objects.filter(
+            user=user, date=today
+        ).first()
+
+        attendance_data = None
+        if today_attendance:
+            attendance_data = {
+                'check_in': str(today_attendance.check_in)[:5] if today_attendance.check_in else None,
+                'check_out': str(today_attendance.check_out)[:5] if today_attendance.check_out else None,
+                'work_hours': str(today_attendance.work_hours) if today_attendance.work_hours else None,
+                'status': today_attendance.status,
+            }
+
+        # Sold concedii
+        from leaves.models import LeaveBalance
+        balances = LeaveBalance.objects.filter(
+            user=user, year=current_year
+        ).select_related('leave_type')
+
+        balance_data = []
+        for b in balances:
+            balance_data.append({
+                'leave_type': b.leave_type.name,
+                'color': b.leave_type.color,
+                'total_days': b.total_days,
+                'used_days': float(b.used_days),
+                'remaining_days': float(b.remaining_days),
+            })
+
+        # Cereri recente
+        recent_requests = LeaveRequest.objects.filter(
+            user=user
+        ).select_related('leave_type').order_by('-created_at')[:5]
+
+        requests_data = []
+        for req in recent_requests:
+            requests_data.append({
+                'id': req.id,
+                'leave_type': req.leave_type.name,
+                'color': req.leave_type.color,
+                'start_date': req.start_date,
+                'end_date': req.end_date,
+                'total_days': req.total_days,
+                'status': req.status,
+            })
+
+        # Prezenta luna curenta
+        present_this_month = Attendance.objects.filter(
+            user=user,
+            date__year=current_year,
+            date__month=current_month,
+            status='present'
+        ).count()
+
+        return Response({
+            'today_attendance': attendance_data,
+            'stats': {
+                'present_this_month': present_this_month,
+            },
+            'leave_balances': balance_data,
+            'recent_requests': requests_data,
+        })    
