@@ -1,0 +1,379 @@
+/* DashboardManager.module.css */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.4px;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 0;
+}
+
+.managerName {
+  color: #64748b;
+}
+
+.headerBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 12px;
+  padding: 0.6rem 1.1rem;
+  flex-shrink: 0;
+}
+
+.teamCount {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #60a5fa;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.teamLabel {
+  font-size: 0.68rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ── Stats ── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.statCard {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  animation: fadeUp 0.35s ease both;
+}
+
+.statCard.accentGreen { border-left: 3px solid #22c55e; }
+.statCard.accentAmber { border-left: 3px solid #f59e0b; }
+.statCard.accentRed   { border-left: 3px solid #ef4444; }
+
+.statLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #475569;
+}
+
+.statValue {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.statSub {
+  font-size: 0.75rem;
+  color: #334155;
+}
+
+/* ── Tabs ── */
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: #94a3b8;
+}
+
+.tab.tabActive {
+  color: #60a5fa;
+  border-bottom-color: #2563eb;
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.tabBadgeRed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+/* ── Panel ── */
+
+.panel {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Table ── */
+
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableHead {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #334155 !important;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr;
+  padding: 0.7rem 1.25rem;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableRow:not(.tableHead):hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* leaves tab has 6 columns */
+.table:has(.actions) .tableRow {
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.5fr 1fr;
+}
+
+.employeeName {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.statusCell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotGreen  { background: #22c55e; }
+.dotRed    { background: #ef4444; }
+.dotAmber  { background: #f59e0b; }
+.dotOrange { background: #f97316; }
+.dotGray   { background: #475569; }
+
+.statusText {
+  text-transform: capitalize;
+  font-size: 0.82rem;
+}
+
+.leaveType {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+}
+
+.actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.btnApprove,
+.btnReject {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.btnApprove {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+.btnApprove:hover { background: rgba(34, 197, 94, 0.22); }
+
+.btnReject {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+.btnReject:hover { background: rgba(239, 68, 68, 0.22); }
+
+/* ── Team grid ── */
+
+.teamGrid {
+  display: flex;
+  flex-direction: column;
+}
+
+.memberCard {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.12s;
+}
+
+.memberCard:last-child {
+  border-bottom: none;
+}
+
+.memberCard:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.memberAvatar {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+}
+
+.memberInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.memberName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberPosition {
+  font-size: 0.75rem;
+  color: #475569;
+  text-transform: capitalize;
+}
+
+.memberStatus {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.memberActive {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+}
+
+.memberInactive {
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+}
+
+/* ── Empty ── */
+
+.empty {
+  padding: 2.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #334155;
+}

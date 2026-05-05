@@ -2,9 +2,13 @@ import api from './axios'
 
 export const login = async (username, password) => {
   const res = await api.post('/auth/login/', { username, password })
+  console.log('LOGIN RESPONSE:', res.data)
   localStorage.setItem('access_token', res.data.access)
   localStorage.setItem('refresh_token', res.data.refresh)
-  return res.data
+  const meRes = await api.get('/auth/me/', {
+    headers: { Authorization: `Bearer ${res.data.access}` }
+  })
+  return meRes.data
 }
 
 export const logout = async () => {

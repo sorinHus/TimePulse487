@@ -109,26 +109,25 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+
       {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoMark}>T</div>
         {!collapsed && <span className={styles.logoText}>TimePulse</span>}
+        <button
+          className={styles.toggleBtn}
+          onClick={onToggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+            {collapsed ? (
+              <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            ) : (
+              <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+          </svg>
+        </button>
       </div>
-
-      {/* Toggle button */}
-      <button
-        className={styles.toggleBtn}
-        onClick={onToggle}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-          {collapsed ? (
-            <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          ) : (
-            <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          )}
-        </svg>
-      </button>
 
       {/* Nav */}
       <nav className={styles.nav}>
@@ -176,6 +175,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           {!collapsed && <span>Sign out</span>}
         </button>
       </div>
+
     </aside>
   );
 }
