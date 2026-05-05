@@ -378,3 +378,109 @@ class LeaveExportView(APIView):
         response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="leaves_{target_user.username}_{year}.pdf"'
         return response
+    
+class AdminDashboardView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            return Response({'detail': 'Permission denied.'}, status=403)
+
+        from datetime import date
+        today = timezone.localdate()
+        current_month = today.month
+        current_year = today.year
+
+        # Total angajati
+        total_employees = User.objects.filter(
+            is_active=True, is_superuser=False
+        ).count()
+
+        # Prezenti azi
+        present_today = Attendance.objects.filter(
+            date=today, status='present'
+        ).count()
+
+        # In concediu azi
+        on_leave_today = LeaveRequest.objects.filter(
+            status='approved',
+            start_date__lte=today,
+            end_date__gte=today,
+        ).count()
+
+        # Cereri concediu pending
+        pending_leaves = LeaveRequest.objects.filter(
+            status='pending'
+        ).count()
+
+        # Absenti azi
+        absent_today = total_employees - present_today - on_leave_today
+
+        # Prezenta luna curenta (%)
+        working_days = 0
+        total_present = 0
+        from datetime import timedelta
+        d = date(current_year, current_month, 1)
+        while d <= today:
+            if d.weekday() < 5:
+                working_days += 1
+            d += timedelta(days=1)
+
+        if working_days > 0:
+            total_present = Attendance.objects.filter(
+                date__year=current_year,
+                date__month=current_month,
+                status='present'
+            ).count()
+            attendance_rate = round((total_present / (working_days * total_employees)) * 100, 1) if total_employees > 0 else 0
+        else:
+            attendance_rate = 0
+
+        # Cereri recente
+        recent_leaves = LeaveRequest.objects.filter(
+            status='pending'
+        ).select_related('user', 'leave_type').order_by('-created_at')[:5]
+
+        recent_leaves_data = []
+        for leave in recent_leaves:
+            recent_leaves_data.append({
+                'id': leave.id,
+                'user': leave.user.get_full_name() or leave.user.username,
+                'leave_type': leave.leave_type.name,
+                'start_date': leave.start_date,
+                'end_date': leave.end_date,
+                'total_days': leave.total_days,
+                'created_at': leave.created_at,
+            })
+
+        # Departamente cu prezenta
+        from accounts.models import Department
+        departments = Department.objects.all()
+        dept_data = []
+        for dept in departments:
+            dept_employees = User.objects.filter(
+                department=dept, is_active=True, is_superuser=False
+            ).count()
+            dept_present = Attendance.objects.filter(
+                date=today,
+                user__department=dept,
+                status='present'
+            ).count()
+            dept_data.append({
+                'name': dept.name,
+                'total': dept_employees,
+                'present': dept_present,
+            })
+
+        return Response({
+            'stats': {
+                'total_employees': total_employees,
+                'present_today': present_today,
+                'on_leave_today': on_leave_today,
+                'absent_today': absent_today if absent_today > 0 else 0,
+                'pending_leaves': pending_leaves,
+                'attendance_rate': attendance_rate,
+            },
+            'recent_pending_leaves': recent_leaves_data,
+            'departments': dept_data,
+        })    
