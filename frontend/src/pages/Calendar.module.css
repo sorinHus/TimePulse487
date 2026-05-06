@@ -1,0 +1,345 @@
+/* Calendar.module.css */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.4px;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 0;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendCount {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* ── Month nav ── */
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: #64748b;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.navBtn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.monthLabel {
+  font-family: 'Georgia', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  min-width: 180px;
+  text-align: center;
+}
+
+/* ── Calendar ── */
+
+.calendarWrap {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.dayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dayHeader {
+  padding: 0.6rem 0;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #334155;
+}
+
+.dayHeader.weekend {
+  color: #1e2d42;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cell {
+  min-height: 70px;
+  padding: 0.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: default;
+  transition: background 0.12s;
+  position: relative;
+}
+
+.cell:nth-child(7n) {
+  border-right: none;
+}
+
+.cellEmpty {
+  background: rgba(0, 0, 0, 0.15);
+  cursor: default;
+}
+
+.cellWeekend {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.cellToday {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.cellHasData {
+  cursor: pointer;
+}
+
+.cellHasData:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cellSelected {
+  background: rgba(37, 99, 235, 0.12) !important;
+  outline: 1px solid rgba(37, 99, 235, 0.3);
+  outline-offset: -1px;
+}
+
+.cellDay {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1;
+}
+
+.cellToday .cellDay {
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+.cellDots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotMore {
+  font-size: 0.6rem;
+  color: #475569;
+  font-weight: 600;
+  line-height: 1;
+  align-self: center;
+}
+
+.loadingMsg {
+  padding: 3rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+/* ── Detail panel ── */
+
+.detailPanel {
+  background: #161f2e;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  animation: fadeUp 0.2s ease both;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detailTitle {
+  font-family: 'Georgia', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.detailClose {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.detailClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.detailList {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.12s;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailRow:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.detailAvatar {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detailName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.detailMeta {
+  font-size: 0.75rem;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.detailStatus {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.detailEmpty {
+  padding: 1.5rem 1.25rem;
+  font-size: 0.875rem;
+  color: #334155;
+  margin: 0;
+}
