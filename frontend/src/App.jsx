@@ -6,6 +6,7 @@ import Layout from './components/Layout'
 import DashboardManager from './pages/DashboardManager'
 import DashboardAdmin from './pages/DashboardAdmin'
 import { useAuth } from './context/AuthContext'
+import Attendance from './pages/Attendance'
 
 function DashboardRoute() {
   const { user } = useAuth()
@@ -22,7 +23,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<DashboardRoute />} />
-            <Route path="/attendance" element={<div style={{color:'#f1f5f9'}}>Attendance — coming soon</div>} />
+            <Route path="/attendance" element={<Attendance />} />
             <Route path="/leaves" element={<div style={{color:'#f1f5f9'}}>Leaves — coming soon</div>} />
             <Route path="/calendar" element={<div style={{color:'#f1f5f9'}}>Calendar — coming soon</div>} />
             <Route path="/reports" element={<div style={{color:'#f1f5f9'}}>Reports — coming soon</div>} />
