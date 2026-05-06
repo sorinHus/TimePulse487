@@ -1,4 +1,6 @@
 .env
+db.sqlite3
+*.xlsx
 *.pyc
 __pycache__/
 venv/
