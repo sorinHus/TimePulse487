@@ -4,13 +4,13 @@ import Login from './pages/Login'
 import DashboardEmployee from './pages/DashboardEmployee'
 import Layout from './components/Layout'
 import DashboardManager from './pages/DashboardManager'
-
+import DashboardAdmin from './pages/DashboardAdmin'
 import { useAuth } from './context/AuthContext'
 
 function DashboardRoute() {
   const { user } = useAuth()
   if (user?.role === 'manager') return <DashboardManager />
-  if (user?.role === 'admin') return <div style={{color:'#f1f5f9'}}>Admin Dashboard — coming soon</div>
+  if (user?.role === 'admin') return <DashboardAdmin />
   return <DashboardEmployee />
 }
 

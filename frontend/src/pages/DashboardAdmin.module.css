@@ -1,0 +1,370 @@
+/* DashboardAdmin.module.css */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.headerEyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #2563eb;
+  margin: 0 0 0.3rem;
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 4px;
+}
+
+.dateText {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+/* ── KPI grid ── */
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.kpiCard {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1rem 1.2rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  animation: fadeUp 0.35s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.15rem;
+}
+
+.kpiLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #475569;
+}
+
+.kpiBar {
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.kpiValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.kpiSub {
+  font-size: 0.72rem;
+  color: #334155;
+  margin-top: 2px;
+}
+
+/* ── Departments ── */
+
+.deptSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  margin: 0;
+}
+
+.deptGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.deptCard {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.deptTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.deptName {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deptCount {
+  font-size: 0.72rem;
+  color: #475569;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.deptBar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.deptBarFill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+  min-width: 4px;
+}
+
+/* ── Tabs ── */
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.tab:hover { color: #94a3b8; }
+
+.tab.tabActive {
+  color: #60a5fa;
+  border-bottom-color: #2563eb;
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 20px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ── Panel ── */
+
+.panel {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Tables ── */
+
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr 1fr;
+  padding: 0.7rem 1.25rem;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tableRow:last-child { border-bottom: none; }
+.tableRow:not(.tableHead):not(.tableHeadLeave):not(.tableHeadEmp):hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tableHead,
+.tableHeadLeave,
+.tableHeadEmp {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #334155 !important;
+}
+
+.tableRowLeave {
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr 1fr !important;
+}
+
+.tableRowEmp {
+  grid-template-columns: 2.5fr 1fr 1.5fr 1.5fr 0.8fr !important;
+}
+
+.tableHeadLeave {
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr 1fr !important;
+}
+
+.tableHeadEmp {
+  grid-template-columns: 2.5fr 1fr 1.5fr 1.5fr 0.8fr !important;
+}
+
+.empCell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.empAvatar {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empName {
+  color: #e2e8f0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+/* ── Badges ── */
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badgeGreen { background: rgba(34, 197, 94, 0.12);  color: #4ade80; }
+.badgeRed   { background: rgba(239, 68, 68, 0.12);  color: #fca5a5; }
+.badgeAmber { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+.badgeGray  { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+.leaveChip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+}
+
+.roleBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.role_admin    { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+.role_manager  { background: rgba(14, 165, 233, 0.12); color: #38bdf8; }
+.role_employee { background: rgba(100, 116, 139, 0.1); color: #94a3b8; }
+
+/* ── Empty ── */
+
+.empty {
+  padding: 2.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #334155;
+}
