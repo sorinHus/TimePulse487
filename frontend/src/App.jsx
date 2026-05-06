@@ -10,6 +10,7 @@ import Attendance from './pages/Attendance'
 import Leaves from './pages/Leaves'
 import Calendar from './pages/Calendar'
 import Reports from './pages/Reports'
+import Admin from './pages/Admin'
 
 
 
@@ -30,11 +31,10 @@ function App() {
             <Route path="/dashboard" element={<DashboardRoute />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/leaves" element={<Leaves />} />
-            <Route path= "/calendar" element={<Calendar />} />
-            <Route path= "/reports" element={<Reports />} />
-            <Route path="/reports" element={<div style={{color:'#f1f5f9'}}>Reports — coming soon</div>} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="/team" element={<div style={{color:'#f1f5f9'}}>Team — coming soon</div>} />
-            <Route path="/admin" element={<div style={{color:'#f1f5f9'}}>Admin — coming soon</div>} />
+            <Route path="/admin" element={<Admin />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

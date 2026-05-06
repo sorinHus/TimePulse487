@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from .serializers import UserSerializer, RegisterSerializer, ChangePasswordSerializer
+from .models import Department
+from .serializers import DepartmentSerializer
 
 User = get_user_model()
 
@@ -63,3 +65,15 @@ class UserListView(generics.ListAPIView):
 
     def get_queryset(self):
         return User.objects.all().select_related('department')
+
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_queryset(self):
+        return User.objects.all().select_related('department')
+
+class DepartmentListView(generics.ListAPIView):
+    serializer_class = DepartmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Department.objects.all()
