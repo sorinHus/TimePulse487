@@ -1,18 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
-import DashboardEmployee from './pages/DashboardEmployee'
 import Layout from './components/Layout'
+import DashboardEmployee from './pages/DashboardEmployee'
 import DashboardManager from './pages/DashboardManager'
 import DashboardAdmin from './pages/DashboardAdmin'
-import { useAuth } from './context/AuthContext'
 import Attendance from './pages/Attendance'
 import Leaves from './pages/Leaves'
 import Calendar from './pages/Calendar'
 import Reports from './pages/Reports'
 import Admin from './pages/Admin'
-
-
+import Team from './pages/Team'
 
 function DashboardRoute() {
   const { user } = useAuth()
@@ -33,7 +31,7 @@ function App() {
             <Route path="/leaves" element={<Leaves />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/reports" element={<Reports />} />
-            <Route path="/team" element={<div style={{color:'#f1f5f9'}}>Team — coming soon</div>} />
+            <Route path="/team" element={<Team />} />
             <Route path="/admin" element={<Admin />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
