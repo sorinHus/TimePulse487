@@ -1,52 +1,81 @@
 # TimePulse487 — HR Management SaaS App
 
-> Full-stack HR management application for employee attendance tracking, leave management, and workforce reporting.
+> **Status: In active development**
+
+A full-stack HR management application for employee attendance tracking, leave management, and workforce reporting. Built with Django 5 + DRF on the backend and React + Vite on the frontend.
 
 ---
 
 ## Overview
 
-TimePulse487 is a SaaS platform designed to streamline daily HR operations for organizations. It provides a structured workflow for employee check-in/check-out, leave request management with hierarchical approval, team calendar visibility, and exportable reports — all behind a role-based access system secured with JWT authentication.
+TimePulse487 is a SaaS platform designed to streamline daily HR operations. It provides a structured workflow for employee check-in/check-out, leave request management with hierarchical approval, team calendar visibility, and exportable reports — all behind a role-based access system secured with JWT authentication.
 
----
-
-## Features
-
-- **Attendance Tracking** — Daily check-in/check-out with timestamps and history per employee
-- **Leave Management** — Multiple leave types, balance tracking, and request submission
-- **Approval Workflow** — Hierarchical approval flow (employee → manager → HR)
-- **Team Calendar** — Visual overview of team availability and leave schedules
-- **Reports & Exports** — Excel and PDF export for attendance and leave data
-- **Role-Based Dashboards** — Separate views for employees, managers, and HR administrators
-- **JWT Authentication** — Secure token-based auth with refresh handling
+The project follows the same architecture as [MED487](https://github.com/sorinHus/med487) (also in this portfolio), with Railway for backend hosting and Cloudflare Pages for the frontend.
 
 ---
 
 ## Tech Stack
 
-### Backend
-| Technology | Purpose |
+| Layer | Technology |
 |---|---|
-| Django 5 | Web framework |
-| Django REST Framework | API layer |
-| PostgreSQL | Database |
-| djangorestframework-simplejwt | JWT authentication |
-| django-cors-headers | CORS handling |
-| openpyxl | Excel export |
-| ReportLab | PDF export |
+| Backend | Python · Django 5 · Django REST Framework |
+| Database | PostgreSQL |
+| Authentication | JWT (djangorestframework-simplejwt) |
+| Frontend | React · Vite · CSS Modules |
+| HTTP client | Axios (with JWT interceptor) |
+| Excel export | openpyxl |
+| PDF export | ReportLab |
+| Deploy | Railway (backend) · Cloudflare Pages (frontend) |
 
-### Frontend
-| Technology | Purpose |
-|---|---|
-| React + Vite | UI framework |
-| CSS Modules | Scoped styling |
-| Axios | HTTP client with JWT interceptors |
+---
 
-### Infrastructure (planned)
-| Service | Purpose |
-|---|---|
-| Railway | Backend hosting |
-| Cloudflare Pages | Frontend hosting |
+## Planned Features
+
+### Attendance
+- Daily check-in / check-out with timestamps
+- Attendance history per employee
+- Late arrivals and early departures flagged automatically
+- Monthly attendance summary per employee
+
+### Leave Management
+- Multiple leave types (annual, sick, unpaid, etc.)
+- Leave balance tracking per employee per year
+- Leave request submission with date range and type
+- Calendar conflict detection
+
+### Approval Workflow
+- Hierarchical approval: Employee → Manager → HR
+- Email notifications at each approval step
+- Reject with reason, approve, or escalate
+- Full approval history per request
+
+### Reporting & Export
+- Attendance reports: daily, weekly, monthly
+- Leave balance reports per department
+- Excel export (openpyxl)
+- PDF export (ReportLab)
+
+### Platform
+- Role-based dashboards: Employee · Manager · HR Administrator
+- JWT authentication with refresh token handling
+- Organizational hierarchy (departments, teams, managers)
+- Responsive design — desktop and mobile
+
+---
+
+## Architecture
+
+```
+Browser (React/Vite — Cloudflare Pages)
+        │  HTTPS · JSON · JWT
+        ▼
+Django 5 + DRF (Railway)
+        │  ORM
+        ▼
+PostgreSQL (Railway)
+```
+
+**Auth flow:** JWT stored in `localStorage`. Axios interceptor attaches `Authorization: Bearer <token>` to every request. Auto-refresh on 401 response.
 
 ---
 
@@ -54,95 +83,51 @@ TimePulse487 is a SaaS platform designed to streamline daily HR operations for o
 
 ```
 TimePulse4/
-├── timepulse487/         # Django project settings & URLs
-├── accounts/             # User model, departments, authentication
-├── attendance/           # Check-in/check-out logic
-├── leaves/               # Leave types, balances, requests
-├── reports/              # Dashboard, calendar, exports
-├── frontend/             # React + Vite application
-│   └── src/
-│       ├── api/          # Axios instance + API calls
-│       ├── components/   # Reusable UI components
-│       ├── pages/        # Route-level pages
-│       ├── context/      # AuthContext (useAuth hook)
-│       └── styles/       # CSS variables & global styles
-├── manage.py
-└── .env
+├── backend/
+│   ├── settings.py
+│   └── urls.py
+├── employees/              # Employee profiles, departments, hierarchy
+├── attendance/             # Check-in/check-out, daily records
+├── leaves/                 # Leave types, requests, balances, approvals
+├── reports/                # Export endpoints (Excel, PDF)
+└── frontend/
+    ├── src/
+    │   ├── App.jsx         # Router + role guards
+    │   ├── components/
+    │   │   ├── Dashboard.jsx
+    │   │   ├── Attendance.jsx
+    │   │   ├── Leaves.jsx
+    │   │   ├── Approvals.jsx
+    │   │   ├── Calendar.jsx
+    │   │   └── Reports.jsx
+    │   └── *.module.css    # CSS Modules per component
+    └── public/
 ```
 
 ---
 
-## Getting Started
+## Development Status
 
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL
-
-### Backend Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/sorinHus/TimePulse487.git
-cd TimePulse487
-
-# Create and activate virtual environment
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment variables
-cp .env.example .env
-# Edit .env with your database credentials
-
-# Run migrations
-python manage.py migrate
-
-# Create superuser
-python manage.py createsuperuser
-
-# Start development server
-python manage.py runserver
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
+| Module | Status |
+|---|---|
+| Project setup, Django + DRF + JWT | ✅ Done |
+| React + Vite + CSS Modules scaffold | ✅ Done |
+| User model + roles | ✅ Done |
+| Attendance check-in/check-out | 🔧 In progress |
+| Leave requests + approval workflow | 📋 Planned |
+| Team calendar | 📋 Planned |
+| Reports + Excel/PDF export | 📋 Planned |
+| Railway + Cloudflare Pages deploy | 📋 Planned |
 
 ---
 
-## Environment Variables
+## Related Projects
 
-```env
-SECRET_KEY=your-secret-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-DB_NAME=timepulse487
-DB_USER=postgres
-DB_PASSWORD=your-password
-DB_HOST=localhost
-DB_PORT=5432
-```
+- **[MED487](https://github.com/sorinHus/med487)** — Medical practice management app (same stack, production-deployed)
+- **[MRU_Tracker](https://github.com/sorinHus/MRU_Tracker)** — Multi-user HR file tracking tool (vanilla JS, live demo)
 
 ---
 
-## Status
+## License
 
-🚧 **In active development**
-
----
-
-## Author
-
-**Sorin Vasile Hus**
-- LinkedIn: [linkedin.com/in/sorinhus](https://linkedin.com/in/sorinhus)
-- GitHub: [github.com/sorinHus](https://github.com/sorinHus)
+Private project — all rights reserved.
