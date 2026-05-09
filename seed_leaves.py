@@ -1,7 +1,6 @@
 import os
 import django
 from datetime import date, timedelta
-import random
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'timepulse487.settings')
 django.setup()
@@ -9,11 +8,11 @@ django.setup()
 from accounts.models import User
 from leaves.models import LeaveType, LeaveBalance, LeaveRequest
 
-# --- Leave Types (get or create) ---
+# --- Leave Types ---
 leave_types_data = [
-    {'name': 'Annual Leave', 'days': 21, 'is_paid': True, 'color': '#3B82F6'},
-    {'name': 'Sick Leave', 'days': 30, 'is_paid': True, 'color': '#EF4444'},
-    {'name': 'Unpaid Leave', 'days': 30, 'is_paid': False, 'color': '#6B7280'},
+    {'name': 'Annual Leave', 'max_days_per_year': 21, 'is_paid': True, 'color': '#3B82F6'},
+    {'name': 'Sick Leave', 'max_days_per_year': 30, 'is_paid': True, 'color': '#EF4444'},
+    {'name': 'Unpaid Leave', 'max_days_per_year': 30, 'is_paid': False, 'color': '#6B7280'},
 ]
 
 leave_types = {}
@@ -21,7 +20,7 @@ for lt_data in leave_types_data:
     lt, _ = LeaveType.objects.get_or_create(
         name=lt_data['name'],
         defaults={
-            'max_days': lt_data['days'],
+            'max_days_per_year': lt_data['max_days_per_year'],
             'is_paid': lt_data['is_paid'],
             'color': lt_data['color'],
         }
@@ -41,17 +40,15 @@ for user in employees:
             user=user,
             leave_type=lt,
             year=current_year,
-            defaults={'total_days': lt.max_days, 'used_days': 0}
+            defaults={'total_days': lt.max_days_per_year, 'used_days': 0}
         )
         if created:
-            print(f'  Balance: {user.username} / {lt.name} / {lt.max_days} zile')
+            print(f'  Balance: {user.username} / {lt.name} / {lt.max_days_per_year} zile')
 
 print('\nSolduri create.')
 
 # --- Cereri de concediu ---
-# Perioade in 2026
 requests_data = [
-    # (username, leave_type_name, start, end, status, review_note)
     ('ana.muresan', 'Annual Leave', date(2026, 1, 5), date(2026, 1, 16), 'approved', 'Aprobat'),
     ('ion.crisan', 'Sick Leave', date(2026, 2, 3), date(2026, 2, 7), 'approved', 'Aprobat'),
     ('elena.stan', 'Annual Leave', date(2026, 3, 2), date(2026, 3, 13), 'approved', 'Aprobat'),
@@ -110,7 +107,7 @@ for username, lt_name, start, end, status, note in requests_data:
     try:
         user = User.objects.get(username=username)
         lt = leave_types[lt_name]
-        
+
         if LeaveRequest.objects.filter(user=user, start_date=start, end_date=end).exists():
             print(f'  Exists: {username} {start}→{end}')
             continue
@@ -128,7 +125,7 @@ for username, lt_name, start, end, status, note in requests_data:
             leave_type=lt,
             start_date=start,
             end_date=end,
-            days_requested=days,
+            total_days=days,
             status=status,
             review_note=note if note else '',
             reviewed_by=user.manager if status in ['approved', 'rejected'] else None,
@@ -136,7 +133,9 @@ for username, lt_name, start, end, status, note in requests_data:
 
         # Actualizeaza soldul daca e aprobat
         if status == 'approved':
-            balance = LeaveBalance.objects.filter(user=user, leave_type=lt, year=start.year).first()
+            balance = LeaveBalance.objects.filter(
+                user=user, leave_type=lt, year=start.year
+            ).first()
             if balance:
                 balance.used_days += days
                 balance.save()
