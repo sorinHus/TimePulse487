@@ -7,20 +7,20 @@ django.setup()
 from leaves.models import LeaveType
 
 leave_types_data = [
-    {'name': 'Concediu de odihnă', 'max_days_per_year': 21, 'is_paid': True, 'color': '#3B82F6'},
-    {'name': 'Concediu medical', 'max_days_per_year': 30, 'is_paid': True, 'color': '#EF4444'},
-    {'name': 'Concediu fără plată', 'max_days_per_year': 30, 'is_paid': False, 'color': '#6B7280'},
-    {'name': 'Concediu pentru formare profesională', 'max_days_per_year': 10, 'is_paid': True, 'color': '#8B5CF6'},
-    {'name': 'Concediu de maternitate', 'max_days_per_year': 126, 'is_paid': True, 'color': '#EC4899'},
-    {'name': 'Concediu paternal', 'max_days_per_year': 15, 'is_paid': True, 'color': '#06B6D4'},
-    {'name': 'Concediu pentru creșterea copilului', 'max_days_per_year': 365, 'is_paid': True, 'color': '#F59E0B'},
-    {'name': 'Concediu pentru îngrijirea copilului bolnav', 'max_days_per_year': 45, 'is_paid': True, 'color': '#F97316'},
-    {'name': 'Concediu de risc maternal', 'max_days_per_year': 120, 'is_paid': True, 'color': '#DB2777'},
-    {'name': 'Concediu medical accident de muncă', 'max_days_per_year': 180, 'is_paid': True, 'color': '#DC2626'},
-    {'name': 'Concediu pentru evenimente deosebite', 'max_days_per_year': 5, 'is_paid': True, 'color': '#10B981'},
-    {'name': 'Concediu de acomodare', 'max_days_per_year': 365, 'is_paid': True, 'color': '#14B8A6'},
-    {'name': 'Concediu de îngrijitor', 'max_days_per_year': 5, 'is_paid': False, 'color': '#64748B'},
-    {'name': 'Zile libere urgențe familiale', 'max_days_per_year': 10, 'is_paid': False, 'color': '#A855F7'},
+    {'name': 'Annual Leave', 'max_days_per_year': 21, 'is_paid': True, 'color': '#3B82F6'},
+    {'name': 'Sick Leave', 'max_days_per_year': 30, 'is_paid': True, 'color': '#EF4444'},
+    {'name': 'Unpaid Leave', 'max_days_per_year': 30, 'is_paid': False, 'color': '#6B7280'},
+    {'name': 'Professional Training Leave', 'max_days_per_year': 10, 'is_paid': True, 'color': '#8B5CF6'},
+    {'name': 'Maternity Leave', 'max_days_per_year': 126, 'is_paid': True, 'color': '#EC4899'},
+    {'name': 'Paternity Leave', 'max_days_per_year': 15, 'is_paid': True, 'color': '#06B6D4'},
+    {'name': 'Parental Leave', 'max_days_per_year': 365, 'is_paid': True, 'color': '#F59E0B'},
+    {'name': 'Child Care Leave', 'max_days_per_year': 45, 'is_paid': True, 'color': '#F97316'},
+    {'name': 'Maternal Risk Leave', 'max_days_per_year': 120, 'is_paid': True, 'color': '#DB2777'},
+    {'name': 'Work Accident Leave', 'max_days_per_year': 180, 'is_paid': True, 'color': '#DC2626'},
+    {'name': 'Special Events Leave', 'max_days_per_year': 5, 'is_paid': True, 'color': '#10B981'},
+    {'name': 'Adoption Leave', 'max_days_per_year': 365, 'is_paid': True, 'color': '#14B8A6'},
+    {'name': 'Carer Leave', 'max_days_per_year': 5, 'is_paid': False, 'color': '#64748B'},
+    {'name': 'Family Emergency Leave', 'max_days_per_year': 10, 'is_paid': False, 'color': '#A855F7'},
 ]
 
 print('Creez tipuri de concediu...')
