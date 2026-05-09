@@ -1,1 +1,1 @@
-web: gunicorn timepulse487.wsgi --log-file -
+web: python init_db.py && python manage.py collectstatic --noinput && gunicorn timepulse487.wsgi --log-file -
