@@ -54,9 +54,9 @@ export default function DashboardManager() {
 
   const firstName = user?.first_name || user?.username || "there";
 
-  const pendingLeaves = data?.pending_leave_requests || [];
-  const teamAttendance = data?.team_attendance || [];
-  const teamMembers = data?.team_members || [];
+  const pendingLeaves = data?.recent_pending_leaves || [];
+  const teamAttendance = data?.team_status || [];
+  const teamMembers = data?.team_status || [];
 
   return (
     <div className={styles.page}>
@@ -77,7 +77,7 @@ export default function DashboardManager() {
         </div>
         <div className={styles.headerBadge}>
           <span className={styles.teamCount}>
-            {data?.team_size ?? "--"}
+            {data?.stats?.total_team ?? "--"}
           </span>
           <span className={styles.teamLabel}>team members</span>
         </div>
@@ -87,14 +87,14 @@ export default function DashboardManager() {
       <div className={styles.statsGrid}>
         <StatCard
           label="Present today"
-          value={data?.present_today}
-          sub={`of ${data?.team_size ?? "--"} members`}
+          value={data?.stats?.present_today}
+          sub={`of ${data?.stats?.total_team ?? "--"} members`}
           accent="accentGreen"
           delay="0ms"
         />
         <StatCard
           label="On leave"
-          value={data?.on_leave_today}
+          value={data?.stats?.on_leave_today}
           sub="approved absences"
           accent="accentAmber"
           delay="50ms"
@@ -112,7 +112,7 @@ export default function DashboardManager() {
           sub="team average"
           delay="150ms"
         />
-      </div>
+    </div>
 
       {/* Tabs */}
       <div className={styles.tabs}>
