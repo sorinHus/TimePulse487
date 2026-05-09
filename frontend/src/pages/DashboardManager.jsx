@@ -231,35 +231,38 @@ export default function DashboardManager() {
         )}
 
         {/* Team tab */}
-        {activeTab === "team" && (
-          <div className={styles.teamGrid}>
-            {teamMembers.length > 0 ? (
-              teamMembers.map((member, i) => {
-                const initials = member.first_name && member.last_name
-                  ? `${member.first_name[0]}${member.last_name[0]}`.toUpperCase()
-                  : member.username?.slice(0, 2).toUpperCase() || "??";
-                return (
-                  <div key={i} className={styles.memberCard}>
-                    <div className={styles.memberAvatar}>{initials}</div>
-                    <div className={styles.memberInfo}>
-                      <span className={styles.memberName}>
-                        {member.full_name || member.username}
-                      </span>
-                      <span className={styles.memberPosition}>
-                        {member.position || member.role}
+          {activeTab === "team" && (
+            <div className={styles.teamGrid}>
+              {teamMembers.length > 0 ? (
+                teamMembers.map((member, i) => {
+                  const nameParts = (member.full_name || member.username || "").split(" ");
+                  const initials = nameParts.length >= 2
+                    ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+                    : (member.full_name || member.username || "??").slice(0, 2).toUpperCase();
+                  return (
+                    <div key={i} className={styles.memberCard}>
+                      <div className={styles.memberAvatar}>{initials}</div>
+                      <div className={styles.memberInfo}>
+                        <span className={styles.memberName}>
+                          {member.full_name || member.username}
+                        </span>
+                        <span className={styles.memberPosition}>
+                          {member.detail || member.status}
+                        </span>
+                      </div>
+                      <span className={`${styles.memberStatus} ${
+                        member.status === 'present' ? styles.memberActive : styles.memberInactive
+                      }`}>
+                        {member.status}
                       </span>
                     </div>
-                    <span className={`${styles.memberStatus} ${member.is_active ? styles.memberActive : styles.memberInactive}`}>
-                      {member.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className={styles.empty}>No team members found.</div>
-            )}
-          </div>
-        )}
+                  );
+                })
+              ) : (
+                <div className={styles.empty}>No team members found.</div>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
