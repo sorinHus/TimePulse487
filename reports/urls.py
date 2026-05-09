@@ -6,6 +6,7 @@ from .views import (
     AdminDashboardView,
     ManagerDashboardView,
     EmployeeDashboardView,
+    DebugTeamView,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/manager/', ManagerDashboardView.as_view(), name='manager_dashboard'),
     path('dashboard/employee/', EmployeeDashboardView.as_view(), name='employee_dashboard'),
+    path('debug/team/', DebugTeamView.as_view()),
 ]

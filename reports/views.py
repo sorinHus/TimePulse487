@@ -657,3 +657,16 @@ class EmployeeDashboardView(APIView):
             'leave_balances': balance_data,
             'recent_requests': requests_data,
         })    
+    
+class DebugTeamView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        team = User.objects.filter(manager=user)
+        return Response({
+            'current_user': user.username,
+            'current_user_id': user.id,
+            'team_count': team.count(),
+            'team': list(team.values('username', 'manager_id')),
+        })
