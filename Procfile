@@ -1,0 +1,1 @@
+web: python manage.py migrate && python init_db.py && python seed_data.py && python manage.py collectstatic --noinput && gunicorn timepulse487.wsgi --log-file -
