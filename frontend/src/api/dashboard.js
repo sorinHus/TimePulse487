@@ -15,3 +15,5 @@ export const exportLeaves = (year, userId = null) => {
   const params = userId ? `?year=${year}&user_id=${userId}` : `?year=${year}`
   return api.get(`/reports/leaves/export/${params}`, { responseType: 'blob' })
 }
+export const exportAttendanceExcel = exportAttendance
+export const exportLeavesPdf = exportLeaves
