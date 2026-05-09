@@ -10,4 +10,4 @@ export const approveLeave = (id, note = '') =>
 export const rejectLeave = (id, note = '') =>
   api.post(`/leaves/requests/${id}/reject/`, { review_note: note }).then(r => r.data)
 export const approveLeaveRequest = approveLeave
-export const rejectLeaveRequest = rejectLeave
+export const rejectLeaveRequest = rejectLeave 
