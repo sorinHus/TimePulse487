@@ -27,15 +27,28 @@ export default function Team() {
   const [view, setView] = useState("grid"); // grid | list
 
   useEffect(() => {
-    const endpoint = isAdmin ? "/users/" : "/attendance/team/";
-    api.get(endpoint)
+  if (isAdmin) {
+    api.get("/users/")
       .then((res) => setMembers(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setMembers([]));
+  } else {
+    api.get("/dashboard/manager/")
+      .then((res) => {
+        const team = (res.data?.team_status || []).map(m => ({
+          ...m,
+          username: m.full_name?.toLowerCase().replace(' ', '.') || '',
+          is_active: true,
+          role: 'employee',
+        }));
+        setMembers(team);
+      })
+      .catch(() => setMembers([]));
+  }
 
-    api.get("/departments/")
-      .then((res) => setDepartments(Array.isArray(res.data) ? res.data : res.data?.results || []))
-      .catch(() => setDepartments([]));
-  }, [isAdmin]);
+  api.get("/departments/")
+    .then((res) => setDepartments(Array.isArray(res.data) ? res.data : res.data?.results || []))
+    .catch(() => setDepartments([]));
+}, [isAdmin]);
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
