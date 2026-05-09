@@ -54,7 +54,7 @@ export default function Leaves() {
     try {
       const [types, bal, reqs] = await Promise.all([
         getLeaveTypes(),
-        getLeaveBalance(),
+        getLeaveBalance(new Date().getFullYear()),
         getLeaveRequests(),
       ]);
       console.log('TYPES:', types);
