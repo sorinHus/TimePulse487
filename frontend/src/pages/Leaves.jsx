@@ -57,7 +57,6 @@ export default function Leaves() {
         getLeaveBalance(new Date().getFullYear()),
         getLeaveRequests(),
       ]);
-      console.log('TYPES:', types);
       setLeaveTypes(Array.isArray(types) ? types : types?.results || []);
       setBalances(Array.isArray(bal) ? bal : bal?.results || []);
       setRequests(Array.isArray(reqs) ? reqs : reqs?.results || []);
