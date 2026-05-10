@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { logout } from "../api/auth";
+import { getLeaveRequests } from "../api/leaves";
 import styles from "./Sidebar.module.css";
 
 const NAV_ITEMS = [
@@ -94,6 +96,19 @@ export default function Sidebar({ collapsed, onToggle }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.role === "admin" || user?.role === "manager") {
+      getLeaveRequests()
+        .then((data) => {
+          const pending = data.filter((r) => r.status === "pending").length;
+          setPendingCount(pending);
+        })
+        .catch(() => {});
+    }
+  }, [user?.role]);
+  
   const visibleItems = NAV_ITEMS.filter((item) =>
     item.roles.includes(user?.role)
   );
@@ -147,6 +162,11 @@ export default function Sidebar({ collapsed, onToggle }) {
             {!collapsed && (
               <span className={styles.navLabel}>{item.label}</span>
             )}
+            {item.label === "Leaves" &&
+              pendingCount > 0 &&
+              (user?.role === "admin" || user?.role === "manager") && (
+                <span className={styles.badge}>{pendingCount}</span>
+              )}
           </NavLink>
         ))}
       </nav>
