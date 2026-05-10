@@ -345,7 +345,7 @@ export default function Leaves() {
                       Cancel
                     </button>
                   )}
-                  {req.status === "pending" && isManager && (
+                  {req.status === "pending" && isManager && req.user !== user?.id && (
                     <>
                       <button className={styles.btnApprove} onClick={() => handleApprove(req.id)} title="Approve">✓</button>
                       <button className={styles.btnReject} onClick={() => handleReject(req.id)} title="Reject">✕</button>
