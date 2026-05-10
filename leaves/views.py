@@ -28,8 +28,12 @@ class LeaveRequestListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['admin', 'manager']:
+        if user.role == 'admin':
             return LeaveRequest.objects.all().select_related('user', 'leave_type')
+        if user.role == 'manager':
+            return LeaveRequest.objects.filter(
+                user__department=user.department
+            ).select_related('user', 'leave_type')
         return LeaveRequest.objects.filter(user=user).select_related('leave_type')
 
     def perform_create(self, serializer):

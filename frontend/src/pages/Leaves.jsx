@@ -301,7 +301,7 @@ export default function Leaves() {
           {isManager ? "All requests" : "My requests"}
         </h2>
         <div className={styles.table}>
-          <div className={`${styles.tableRow} ${styles.tableHead}`}>
+          <div className={`${styles.tableRow} ${styles.tableHead} ${isManager ? styles.rowManager : ""}`}>
             {isManager && <span>Employee</span>}
             <span>Type</span>
             <span>From</span>
