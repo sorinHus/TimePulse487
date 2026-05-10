@@ -318,7 +318,7 @@ export default function Leaves() {
                 className={`${styles.tableRow} ${isManager ? styles.rowManager : ""}`}
               >
                 {isManager && (
-                  <span className={styles.empName}>{req.employee_name || req.employee}</span>
+                  <span className={styles.empName}>{req.full_name || req.username}</span>
                 )}
                 <span>
                   <span className={styles.typeChip}>{req.leave_type_name || req.leave_type}</span>
