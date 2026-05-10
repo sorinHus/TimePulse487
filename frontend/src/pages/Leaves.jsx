@@ -209,32 +209,35 @@ export default function Leaves() {
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <div className={styles.formRow}>
               <div className={styles.field}>
-              <label className={styles.label}>Reason <span className={styles.optional}>(optional)</span></label>
-              <textarea
-                className={styles.textarea}
-                value={form.reason}
-                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                placeholder="Briefly describe the reason for your absence…"
-                rows={3}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Substitute *</label>
-              <select
-                className={styles.select}
-                value={form.substitute}
-                onChange={(e) => setForm((f) => ({ ...f, substitute: e.target.value }))}
-                required
-              >
-                <option value="">Select substitute…</option>
-                {colleagues.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.first_name} {c.last_name} — {c.position || c.username}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <label className={styles.label}>Leave type *</label>
+                <select
+                  className={styles.select}
+                  value={form.leave_type}
+                  onChange={(e) => setForm((f) => ({ ...f, leave_type: e.target.value }))}
+                  required
+                >
+                  <option value="">Select type…</option>
+                  {leaveTypes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Substitute *</label>
+                <select
+                  className={styles.select}
+                  value={form.substitute}
+                  onChange={(e) => setForm((f) => ({ ...f, substitute: e.target.value }))}
+                  required
+                >
+                  <option value="">Select substitute…</option>
+                  {colleagues.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.first_name} {c.last_name} — {c.position || c.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className={styles.formRow}>
               <div className={styles.field}>
