@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { checkIn, checkOut, getTodayAttendance, getAttendanceHistory } from "../api/attendance";
 import styles from "./Attendance.module.css";
 
-function formatTime(isoString) {
-  if (!isoString) return "--:--";
-  return new Date(isoString).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatTime(timeString) {
+  if (!timeString) return "--:--";
+  // Handle both "HH:MM:SS.ffffff" and full ISO datetime
+  const t = timeString.includes("T")
+    ? new Date(timeString)
+    : new Date(`1970-01-01T${timeString}`);
+  if (isNaN(t)) return "--:--";
+  return t.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatHours(decimal) {
