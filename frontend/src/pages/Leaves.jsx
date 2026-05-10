@@ -292,8 +292,15 @@ export default function Leaves() {
                 </span>
                 <span className={styles.muted}>{req.start_date}</span>
                 <span className={styles.muted}>{req.end_date}</span>
-                <span>{req.days_requested ?? "--"}</span>
-                <span><StatusBadge status={req.status} /></span>
+                <span>{req.total_days || "--"}</span>
+                <span>
+                  <StatusBadge status={req.status} />
+                  {req.status === "rejected" && req.review_note && (
+                    <span className={styles.reviewNote} title={req.review_note}>
+                      💬 {req.review_note}
+                    </span>
+                  )}
+                </span>
                 <span className={styles.actions}>
                   {req.status === "pending" && !isManager && (
                     <button
