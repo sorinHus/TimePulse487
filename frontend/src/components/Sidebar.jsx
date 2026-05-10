@@ -158,7 +158,9 @@ export default function Sidebar({ collapsed, onToggle }) {
           {!collapsed && (
             <div className={styles.userInfo}>
               <span className={styles.userName}>
-                {user?.first_name || user?.username}
+                {user?.first_name && user?.last_name
+                  ? `${user.first_name} ${user.last_name}`
+                  : user?.username}
               </span>
               <span className={styles.userRole}>{user?.role}</span>
             </div>
