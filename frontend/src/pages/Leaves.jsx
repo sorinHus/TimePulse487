@@ -7,6 +7,7 @@ import {
   cancelLeaveRequest,
   approveLeaveRequest,
   rejectLeaveRequest,
+  getWorkingDays,
 } from "../api/leaves";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Leaves.module.css";
@@ -42,7 +43,7 @@ export default function Leaves() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-
+  const [workingDays, setWorkingDays] = useState(null);
   const [rejectModal, setRejectModal] = useState({ open: false, id: null, note: "" });
   
   const [form, setForm] = useState({
@@ -70,6 +71,16 @@ export default function Leaves() {
   useEffect(() => {
     fetchAll();
   }, []);
+
+  useEffect(() => {
+    if (form.start_date && form.end_date && form.end_date >= form.start_date) {
+      getWorkingDays(form.start_date, form.end_date)
+        .then(data => setWorkingDays(data.working_days))
+        .catch(() => setWorkingDays(null));
+    } else {
+      setWorkingDays(null);
+    }
+  }, [form.start_date, form.end_date]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,8 +146,6 @@ export default function Leaves() {
   };
 
   const selectedType = leaveTypes.find((t) => String(t.id) === String(form.leave_type));
-  const days = daysBetween(form.start_date, form.end_date);
-
   return (
     <div className={styles.page}>
 
@@ -235,7 +244,9 @@ export default function Leaves() {
 
             {form.start_date && form.end_date && (
               <div className={styles.daysPill}>
-                {days} day{days !== 1 ? "s" : ""}
+                {workingDays !== null
+                  ? `${workingDays} working day${workingDays !== 1 ? "s" : ""}`
+                  : "Calculating…"}
                 {selectedType && ` · ${selectedType.name}`}
               </div>
             )}

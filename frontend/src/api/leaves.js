@@ -11,3 +11,5 @@ export const rejectLeave = (id, note = '') =>
   api.post(`/leaves/requests/${id}/reject/`, { review_note: note }).then(r => r.data)
 export const approveLeaveRequest = approveLeave
 export const rejectLeaveRequest = rejectLeave 
+export const getWorkingDays = (start, end) =>
+  api.get(`/leaves/working-days/?start=${start}&end=${end}`).then(r => r.data)

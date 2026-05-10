@@ -32,8 +32,10 @@ class LeaveRequestListCreateView(generics.ListCreateAPIView):
         return LeaveRequest.objects.filter(user=user).select_related('leave_type')
 
     def perform_create(self, serializer):
+        from .utils import count_working_days
         instance = serializer.save(user=self.request.user)
-        instance.calculate_days()
+        instance.total_days = count_working_days(instance.start_date, instance.end_date)
+        instance.save(update_fields=['total_days'])
 
 
 class LeaveRequestDetailView(generics.RetrieveDestroyAPIView):
@@ -95,3 +97,20 @@ class LeaveApproveRejectView(APIView):
         leave.save()
 
         return Response(LeaveRequestSerializer(leave).data)
+    
+class WorkingDaysPreviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .utils import count_working_days
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        if not start or not end:
+            return Response({'detail': 'start and end required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            start_date = date.fromisoformat(start)
+            end_date = date.fromisoformat(end)
+        except ValueError:
+            return Response({'detail': 'Invalid date format.'}, status=status.HTTP_400_BAD_REQUEST)
+        days = count_working_days(start_date, end_date)
+        return Response({'working_days': days})

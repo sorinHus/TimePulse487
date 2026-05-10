@@ -91,7 +91,8 @@ class LeaveRequest(models.Model):
         return f'{self.user.username} - {self.leave_type.name} ({self.start_date} - {self.end_date})'
 
     def calculate_days(self):
-        delta = (self.end_date - self.start_date).days + 1
-        self.total_days = delta
+        from .utils import count_working_days
+        days = count_working_days(self.start_date, self.end_date)
+        self.total_days = days
         self.save(update_fields=['total_days'])
-        return delta
+        return days
