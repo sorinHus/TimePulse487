@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
+from datetime import date
 from .models import LeaveType, LeaveBalance, LeaveRequest
 from .serializers import LeaveTypeSerializer, LeaveBalanceSerializer, LeaveRequestSerializer
 
@@ -102,7 +103,6 @@ class WorkingDaysPreviewView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from .utils import count_working_days
         start = request.query_params.get('start')
         end = request.query_params.get('end')
         if not start or not end:
@@ -110,7 +110,8 @@ class WorkingDaysPreviewView(APIView):
         try:
             start_date = date.fromisoformat(start)
             end_date = date.fromisoformat(end)
-        except ValueError:
-            return Response({'detail': 'Invalid date format.'}, status=status.HTTP_400_BAD_REQUEST)
-        days = count_working_days(start_date, end_date)
-        return Response({'working_days': days})
+            from .utils import count_working_days
+            days = count_working_days(start_date, end_date)
+            return Response({'working_days': days})
+        except Exception as e:
+            return Response({'detail': str(e), 'type': type(e).__name__}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
