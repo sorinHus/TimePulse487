@@ -17,7 +17,7 @@ const NAV_ITEMS = [
         <rect x="11" y="11" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.5" />
       </svg>
     ),
-    roles: ["admin", "manager", "employee"],
+    roles: ["admin", "manager", "director", "employee"],
   },
   {
     label: "Attendance",
@@ -28,7 +28,7 @@ const NAV_ITEMS = [
         <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
-    roles: ["admin", "manager", "employee"],
+    roles: ["admin", "manager", "director", "employee"],
   },
   {
     label: "Leaves",
@@ -39,7 +39,7 @@ const NAV_ITEMS = [
         <path d="M7 2v4M13 2v4M3 9h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
-    roles: ["admin", "manager", "employee"],
+    roles: ["admin", "manager", "director", "employee"],
   },
   {
     label: "Calendar",
@@ -53,7 +53,7 @@ const NAV_ITEMS = [
         <circle cx="13.5" cy="12" r="1" fill="currentColor" />
       </svg>
     ),
-    roles: ["admin", "manager", "employee"],
+    roles: ["admin", "manager", "director", "employee"],
   },
   {
     label: "Reports",
@@ -64,7 +64,7 @@ const NAV_ITEMS = [
         <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
-    roles: ["admin", "manager"],
+    roles: ["admin", "manager", "director"],
   },
   {
     label: "Team",
@@ -77,7 +77,7 @@ const NAV_ITEMS = [
         <path d="M17.5 17c0-2.761-1.567-5-4-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
-    roles: ["admin", "manager"],
+    roles: ["admin", "manager", "director"],
   },
   {
     label: "Admin",

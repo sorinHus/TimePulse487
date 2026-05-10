@@ -14,6 +14,7 @@ import Team from './pages/Team'
 
 function DashboardRoute() {
   const { user } = useAuth()
+  if (user?.role === 'director') return <DashboardManager />
   if (user?.role === 'manager') return <DashboardManager />
   if (user?.role === 'admin') return <DashboardAdmin />
   return <DashboardEmployee />
