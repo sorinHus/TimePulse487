@@ -19,11 +19,14 @@ def get_public_holidays(year: int) -> set:
             data = response.json()
             holidays = set()
             for item in data:
-                try:
-                    d = date.fromisoformat(item['date'][:10])
-                    holidays.add(d)
-                except (KeyError, ValueError):
-                    continue
+                # date is a list of objects: [{"date": "2026/01/01", "weekday": "Thu"}, ...]
+                for day_obj in item.get('date', []):
+                    try:
+                        raw = day_obj['date'].replace('/', '-')
+                        d = date.fromisoformat(raw)
+                        holidays.add(d)
+                    except (KeyError, ValueError):
+                        continue
             cache.set(cache_key, holidays, timeout=86400)  # 24h
             return holidays
     except Exception:
@@ -45,7 +48,7 @@ def count_working_days(start_date: date, end_date: date) -> int:
     count = 0
     current = start_date
     while current <= end_date:
-        if current.weekday() < 5 and current not in holidays:  # Mon-Fri, not holiday
+        if current.weekday() < 5 and current not in holidays:
             count += 1
         current += timedelta(days=1)
 
