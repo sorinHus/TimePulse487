@@ -292,7 +292,7 @@ export default function Leaves() {
                 </span>
                 <span className={styles.muted}>{req.start_date}</span>
                 <span className={styles.muted}>{req.end_date}</span>
-                <span>{req.total_days || "--"}</span>
+                <span>{req.total_days ? Math.round(req.total_days) : "--"}</span>
                 <span>
                   <StatusBadge status={req.status} />
                   {req.status === "rejected" && req.review_note && (
