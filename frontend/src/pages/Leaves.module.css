@@ -485,4 +485,10 @@
   gap: 0.5rem;
   justify-content: flex-end;
   margin-top: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.modalActions button {
+  white-space: nowrap;
+  min-width: fit-content;
 }
