@@ -24,6 +24,7 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
     leave_type_name = serializers.CharField(source='leave_type.name', read_only=True)
     leave_type_color = serializers.CharField(source='leave_type.color', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.get_full_name', read_only=True)
+    substitute_name = serializers.CharField(source='substitute.get_full_name', read_only=True, default=None)
 
     class Meta:
         model = LeaveRequest
@@ -31,6 +32,7 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
             'id', 'user', 'username', 'full_name',
             'leave_type', 'leave_type_name', 'leave_type_color',
             'start_date', 'end_date', 'total_days', 'reason',
+            'substitute', 'substitute_name',
             'status', 'reviewed_by', 'reviewed_by_name',
             'reviewed_at', 'review_note', 'created_at'
         ]

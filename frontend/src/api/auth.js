@@ -25,3 +25,5 @@ export const getMe = async () => {
   const res = await api.get('/auth/me/')
   return res.data
 }
+
+export const getColleagues = () => api.get('/users/colleagues/').then(r => r.data)

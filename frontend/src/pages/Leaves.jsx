@@ -9,6 +9,7 @@ import {
   rejectLeaveRequest,
   getWorkingDays,
 } from "../api/leaves";
+import { getColleagues } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Leaves.module.css";
 
@@ -44,6 +45,7 @@ export default function Leaves() {
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [workingDays, setWorkingDays] = useState(null);
+  const [colleagues, setColleagues] = useState([]);
   const [rejectModal, setRejectModal] = useState({ open: false, id: null, note: "" });
   
   const [form, setForm] = useState({
@@ -51,18 +53,21 @@ export default function Leaves() {
     start_date: "",
     end_date: "",
     reason: "",
+    substitute: "",
   });
 
   const fetchAll = async () => {
     try {
-      const [types, bal, reqs] = await Promise.all([
+      const [types, bal, reqs, cols] = await Promise.all([
         getLeaveTypes(),
         getLeaveBalance(new Date().getFullYear()),
         getLeaveRequests(),
+        getColleagues(),
       ]);
       setLeaveTypes(Array.isArray(types) ? types : types?.results || []);
       setBalances(Array.isArray(bal) ? bal : bal?.results || []);
       setRequests(Array.isArray(reqs) ? reqs : reqs?.results || []);
+      setColleagues(Array.isArray(cols) ? cols : cols?.results || []);
     } catch {
       // silent
     }
@@ -89,8 +94,8 @@ export default function Leaves() {
       setFormError("Please fill in all required fields.");
       return;
     }
-    if (new Date(form.end_date) < new Date(form.start_date)) {
-      setFormError("End date cannot be before start date.");
+    if (!form.leave_type || !form.start_date || !form.end_date || !form.substitute) {
+      setFormError("Please fill in all required fields.");
       return;
     }
     setSubmitting(true);
@@ -204,19 +209,32 @@ export default function Leaves() {
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <div className={styles.formRow}>
               <div className={styles.field}>
-                <label className={styles.label}>Leave type *</label>
-                <select
-                  className={styles.select}
-                  value={form.leave_type}
-                  onChange={(e) => setForm((f) => ({ ...f, leave_type: e.target.value }))}
-                  required
-                >
-                  <option value="">Select type…</option>
-                  {leaveTypes.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
+              <label className={styles.label}>Reason <span className={styles.optional}>(optional)</span></label>
+              <textarea
+                className={styles.textarea}
+                value={form.reason}
+                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                placeholder="Briefly describe the reason for your absence…"
+                rows={3}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>Substitute *</label>
+              <select
+                className={styles.select}
+                value={form.substitute}
+                onChange={(e) => setForm((f) => ({ ...f, substitute: e.target.value }))}
+                required
+              >
+                <option value="">Select substitute…</option>
+                {colleagues.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.first_name} {c.last_name} — {c.position || c.username}
+                  </option>
+                ))}
+              </select>
+            </div>
             </div>
             <div className={styles.formRow}>
               <div className={styles.field}>
@@ -286,6 +304,7 @@ export default function Leaves() {
             <span>From</span>
             <span>To</span>
             <span>Days</span>
+            <span>Substitute</span>
             <span>Status</span>
             <span>Actions</span>
           </div>
@@ -304,6 +323,7 @@ export default function Leaves() {
                 <span className={styles.muted}>{req.start_date}</span>
                 <span className={styles.muted}>{req.end_date}</span>
                 <span>{req.total_days ? Math.round(req.total_days) : "--"}</span>
+                <span className={styles.muted}>{req.substitute_name || "—"}</span>
                 <span>
                   <StatusBadge status={req.status} />
                   {req.status === "rejected" && req.review_note && (

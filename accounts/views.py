@@ -77,3 +77,14 @@ class DepartmentListView(generics.ListAPIView):
     serializer_class = DepartmentSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = Department.objects.all()
+
+class ColleaguesListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return User.objects.filter(
+            department=user.department,
+            is_active=True
+        ).exclude(id=user.id).select_related('department')

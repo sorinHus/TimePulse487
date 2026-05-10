@@ -69,6 +69,13 @@ class LeaveRequest(models.Model):
     end_date = models.DateField()
     total_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
     reason = models.TextField(blank=True)
+    substitute = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='substitute_for',
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
