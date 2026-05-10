@@ -84,11 +84,14 @@ class AttendanceHistoryView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         queryset = Attendance.objects.filter(user=user)
-        month = self.request.query_params.get('month')
-        year = self.request.query_params.get('year')
-        if month and year:
-            queryset = queryset.filter(date__month=month, date__year=year)
-        return queryset
+        month_param = self.request.query_params.get('month')
+        if month_param:
+            try:
+                year, month = month_param.split('-')
+                queryset = queryset.filter(date__year=int(year), date__month=int(month))
+            except (ValueError, AttributeError):
+                pass
+        return queryset.order_by('date')
 
 
 class TeamAttendanceView(generics.ListAPIView):

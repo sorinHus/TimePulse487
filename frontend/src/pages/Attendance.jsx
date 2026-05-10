@@ -102,7 +102,7 @@ export default function Attendance() {
 
   // Summary stats from history
   const totalDays = history.filter((r) => r.check_in).length;
-  const totalHours = history.reduce((sum, r) => sum + (r.hours_worked || 0), 0);
+  const totalHours = history.reduce((sum, r) => sum + (r.work_hours || 0), 0);
   const completeDays = history.filter((r) => r.check_in && r.check_out).length;
 
   return (
@@ -145,7 +145,7 @@ export default function Attendance() {
                 <div className={styles.timeSep} />
                 <div className={styles.timeBlock}>
                   <span className={styles.timeLabel}>Duration</span>
-                  <span className={styles.timeValue}>{formatHours(today?.hours_worked)}</span>
+                  <span className={styles.timeValue}>{formatHours(today?.work_hours)}</span>
                 </div>
               </>
             )}
@@ -239,7 +239,7 @@ export default function Attendance() {
                   </span>
                   <span>{formatTime(row.check_in)}</span>
                   <span>{formatTime(row.check_out)}</span>
-                  <span>{formatHours(row.hours_worked)}</span>
+                  <span>{formatHours(row.work_hours)}</span>
                   <span>
                     <span className={`${styles.badge} ${
                       row.check_in && row.check_out ? styles.badgeGreen :
