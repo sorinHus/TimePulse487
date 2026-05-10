@@ -43,6 +43,8 @@ export default function Leaves() {
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  const [rejectModal, setRejectModal] = useState({ open: false, id: null, note: "" });
+  
   const [form, setForm] = useState({
     leave_type: "",
     start_date: "",
@@ -117,9 +119,15 @@ export default function Leaves() {
     }
   };
 
-  const handleReject = async (id) => {
+  const handleReject = (id) => {
+    setRejectModal({ open: true, id, note: "" });
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectModal.note.trim()) return;
     try {
-      await rejectLeaveRequest(id);
+      await rejectLeaveRequest(rejectModal.id, rejectModal.note.trim());
+      setRejectModal({ open: false, id: null, note: "" });
       await fetchAll();
     } catch {
       // silent
@@ -310,6 +318,42 @@ export default function Leaves() {
           )}
         </div>
       </div>
+    {/* Reject modal */}
+      {rejectModal.open && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <h3 className={styles.modalTitle}>Reject leave request</h3>
+            <p className={styles.modalSubtitle}>Please provide a reason for rejection.</p>
+            <textarea
+              className={styles.textarea}
+              rows={4}
+              placeholder="Reason for rejection… *"
+              value={rejectModal.note}
+              onChange={(e) => setRejectModal((m) => ({ ...m, note: e.target.value }))}
+              autoFocus
+            />
+            {!rejectModal.note.trim() && (
+              <p className={styles.formError}>Reason is required.</p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnCancel}
+                onClick={() => setRejectModal({ open: false, id: null, note: "" })}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.btnReject}
+                onClick={handleRejectConfirm}
+                disabled={!rejectModal.note.trim()}
+              >
+                Confirm reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
