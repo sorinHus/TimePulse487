@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { checkIn, checkOut, getTodayAttendance, getAttendanceHistory } from "../api/attendance";
+import { checkIn, checkOut, getTodayAttendance, getAttendanceHistory } from "../api/attendence";
 import styles from "./Attendance.module.css";
 
 function formatTime(isoString) {
