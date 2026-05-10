@@ -18,6 +18,7 @@ class Department(models.Model):
 class User(AbstractUser):
     ROLE_CHOICES = [
         ('admin', 'Administrator'),
+        ('director', 'Director'),
         ('manager', 'Manager'),
         ('employee', 'Angajat'),
     ]

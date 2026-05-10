@@ -99,7 +99,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
-    if (user?.role === "admin" || user?.role === "manager") {
+    if (user?.role === "admin" || user?.role === "manager" || user?.role === "director") {
       getLeaveRequests()
         .then((data) => {
           const pending = data.filter((r) => r.status === "pending").length;

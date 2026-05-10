@@ -30,14 +30,16 @@ if not User.objects.filter(username='director.general').exists():
         first_name='Alexandru',
         last_name='Ionescu',
         email='director@timepulse.app',
-        role='manager',
+        role='director',
         position='Director General',
         hire_date=date(2015, 1, 10),
     )
     print('Created: director.general')
 else:
     director = User.objects.get(username='director.general')
-    print('Exists: director.general')
+    director.role = 'director'
+    director.save()
+    print('Updated: director.general role=director')
 
 # --- Manageri si angajati per departament ---
 dept_data = {

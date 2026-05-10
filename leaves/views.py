@@ -30,10 +30,14 @@ class LeaveRequestListCreateView(generics.ListCreateAPIView):
         user = self.request.user
         if user.role == 'admin':
             return LeaveRequest.objects.all().select_related('user', 'leave_type')
+        if user.role == 'director':
+            return LeaveRequest.objects.filter(
+                user__role='manager'
+            ).select_related('user', 'leave_type')
         if user.role == 'manager':
             return LeaveRequest.objects.filter(
                 user__department=user.department
-            ).select_related('user', 'leave_type')
+            ).exclude(user=user).select_related('user', 'leave_type')
         return LeaveRequest.objects.filter(user=user).select_related('leave_type')
 
     def perform_create(self, serializer):
@@ -69,7 +73,7 @@ class LeaveApproveRejectView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk, action):
-        if request.user.role not in ['admin', 'manager']:
+        if request.user.role not in ['admin', 'director', 'manager']:
             return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:

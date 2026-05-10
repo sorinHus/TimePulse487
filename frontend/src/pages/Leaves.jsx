@@ -35,7 +35,7 @@ function StatusBadge({ status }) {
 
 export default function Leaves() {
   const { user } = useAuth();
-  const isManager = user?.role === "manager" || user?.role === "admin";
+  const isManager = user?.role === "manager" || user?.role === "admin" || user?.role === "director";
 
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [balances, setBalances] = useState([]);
