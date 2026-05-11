@@ -15,9 +15,9 @@ import Notifications from './pages/Notifications'
 
 function DashboardRoute() {
   const { user } = useAuth()
-  if (user?.role === 'director') return <DashboardManager />
-  if (user?.role === 'manager') return <DashboardManager />
-  if (user?.role === 'admin') return <DashboardAdmin />
+  if (user?.effective_role === 'director') return <DashboardManager />
+  if (user?.effective_role === 'manager') return <DashboardManager />
+  if (user?.effective_role === 'admin') return <DashboardAdmin />
   return <DashboardEmployee />
 }
 

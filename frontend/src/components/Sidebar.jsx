@@ -99,7 +99,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
-    if (user?.role === "admin" || user?.role === "manager" || user?.role === "director") {
+    if (user?.effective_role === "admin" || user?.effective_role === "manager" || user?.effective_role === "director") {
       getLeaveRequests()
         .then((data) => {
           const pending = data.filter((r) => r.status === "pending").length;
@@ -107,10 +107,10 @@ export default function Sidebar({ collapsed, onToggle }) {
         })
         .catch(() => {});
     }
-  }, [user?.role]);
+  }, [user?.effective_role]);
   
   const visibleItems = NAV_ITEMS.filter((item) =>
-    item.roles.includes(user?.role)
+    item.roles.includes(user?.effective_role)
   );
 
   const handleLogout = async () => {
@@ -164,7 +164,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             )}
             {item.label === "Leaves" &&
               pendingCount > 0 &&
-              (user?.role === "admin" || user?.role === "manager") && (
+              (user?.effective_role === "admin" || user?.effective_role === "manager") && (
                 <span className={styles.badge}>{pendingCount}</span>
               )}
           </NavLink>
@@ -182,7 +182,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                   ? `${user.first_name} ${user.last_name}`
                   : user?.username}
               </span>
-              <span className={styles.userRole}>{user?.role}</span>
+              <span className={styles.userRole}>{user?.effective_role}</span>
             </div>
           )}
         </div>

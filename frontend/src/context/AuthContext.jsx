@@ -12,9 +12,9 @@ export function AuthProvider({ children }) {
     if (token) {
       getMe()
         .then((data) => {
-        console.log('USER DATA:', data)
-        setUser(data)
-      })
+          // effective_role vine din backend — folosim asta pentru UI
+          setUser(data)
+        })
         .catch(() => {
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
