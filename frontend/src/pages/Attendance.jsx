@@ -1,21 +1,28 @@
 import { useState, useEffect } from "react";
-import { checkIn, checkOut, getTodayAttendance, getAttendanceHistory } from "../api/attendance";
+import { clockIn, clockOut, getTodaySessions, getSessionHistory } from "../api/attendence";
 import styles from "./Attendance.module.css";
 
-function formatTime(timeString) {
-  if (!timeString) return "--:--";
-  // Handle both "HH:MM:SS.ffffff" and full ISO datetime
-  const t = timeString.includes("T")
-    ? new Date(timeString)
-    : new Date(`1970-01-01T${timeString}`);
-  if (isNaN(t)) return "--:--";
-  return t.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const WORKDAY_HOURS = 8.5;
+const NIGHT_START = 22;
+const NIGHT_END = 6;
+
+function isNightHour(hour) {
+  return hour >= NIGHT_START || hour < NIGHT_END;
+}
+
+function formatTime(isoString) {
+  if (!isoString) return "--:--";
+  const d = new Date(isoString);
+  if (isNaN(d)) return "--:--";
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatHours(decimal) {
-  if (!decimal && decimal !== 0) return "--";
-  const h = Math.floor(decimal);
-  const m = Math.round((decimal - h) * 60);
+  if (decimal === null || decimal === undefined || decimal === "") return "--";
+  const num = parseFloat(decimal);
+  if (isNaN(num)) return "--";
+  const h = Math.floor(num);
+  const m = Math.round((num - h) * 60);
   return `${h}h ${m}m`;
 }
 
@@ -32,19 +39,21 @@ function getMonthParam(offset = 0) {
 }
 
 export default function Attendance() {
-  const [today, setToday] = useState(null);
+  const [todaySummary, setTodaySummary] = useState(null);
   const [history, setHistory] = useState([]);
+  const [expandedDates, setExpandedDates] = useState({});
   const [monthOffset, setMonthOffset] = useState(0);
   const [loadingAction, setLoadingAction] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [error, setError] = useState("");
+  const [nightWarning, setNightWarning] = useState(false);
 
   const fetchToday = async () => {
     try {
-      const data = await getTodayAttendance();
-      setToday(data);
+      const data = await getTodaySessions();
+      setTodaySummary(data);
     } catch {
-      setToday(null);
+      setTodaySummary(null);
     }
   };
 
@@ -52,8 +61,8 @@ export default function Attendance() {
     setLoadingHistory(true);
     try {
       const month = getMonthParam(offset);
-      const data = await getAttendanceHistory(month);
-      setHistory(Array.isArray(data) ? data : data?.results || []);
+      const data = await getSessionHistory(month);
+      setHistory(Array.isArray(data) ? data : []);
     } catch {
       setHistory([]);
     } finally {
@@ -61,49 +70,71 @@ export default function Attendance() {
     }
   };
 
+  useEffect(() => { fetchToday(); }, []);
+  useEffect(() => { fetchHistory(monthOffset); }, [monthOffset]);
+
+  // Warning noapte la 21:45
   useEffect(() => {
-    fetchToday();
+    const check = () => {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      if (h === 21 && m >= 45) setNightWarning(true);
+      else setNightWarning(false);
+    };
+    check();
+    const interval = setInterval(check, 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    fetchHistory(monthOffset);
-  }, [monthOffset]);
-
-  const handleCheckIn = async () => {
+  const handleClockIn = async () => {
     setError("");
+    const hour = new Date().getHours();
+    if (isNightHour(hour)) {
+      const confirmed = window.confirm(
+        "Atenție: urmează să contorizați ore de noapte (22:00–06:00). Continuați?"
+      );
+      if (!confirmed) return;
+    }
     setLoadingAction(true);
     try {
-      await checkIn();
+      await clockIn();
       await fetchToday();
       await fetchHistory(monthOffset);
     } catch (e) {
-      setError(e?.response?.data?.detail || "Check-in failed.");
+      setError(e?.response?.data?.detail || "Clock-in failed.");
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const handleCheckOut = async () => {
+  const handleClockOut = async () => {
     setError("");
     setLoadingAction(true);
     try {
-      await checkOut();
+      await clockOut();
       await fetchToday();
       await fetchHistory(monthOffset);
     } catch (e) {
-      setError(e?.response?.data?.detail || "Check-out failed.");
+      setError(e?.response?.data?.detail || "Clock-out failed.");
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const isCheckedIn = today?.check_in && !today?.check_out;
-  const isCheckedOut = today?.check_in && today?.check_out;
+  const toggleExpand = (date) => {
+    setExpandedDates((prev) => ({ ...prev, [date]: !prev[date] }));
+  };
 
-  // Summary stats from history
-  const totalDays = history.filter((r) => r.check_in).length;
-  const totalHours = history.reduce((sum, r) => sum + (r.work_hours || 0), 0);
-  const completeDays = history.filter((r) => r.check_in && r.check_out).length;
+  const hasOpenSession = todaySummary?.has_open_session;
+  const isDayComplete = todaySummary?.status === "complete";
+  const openSession = todaySummary?.sessions?.find((s) => s.status === "open");
+
+  // Sumarul lunii din history
+  const totalDays = history.length;
+  const totalHours = history.reduce((sum, d) => sum + parseFloat(d.total_hours || 0), 0);
+  const completeDays = history.filter((d) => d.status === "complete").length;
+  const incompleteDays = history.filter((d) => d.status === "in_progress" || (d.status !== "complete" && d.total_hours > 0)).length;
 
   return (
     <div className={styles.page}>
@@ -116,13 +147,20 @@ export default function Attendance() {
         </div>
       </div>
 
+      {/* Warning noapte */}
+      {nightWarning && (
+        <div className={styles.nightWarning}>
+          ⚠ Se apropie intervalul de noapte (22:00–06:00)
+        </div>
+      )}
+
       {/* Today card */}
-      <div className={`${styles.todayCard} ${isCheckedIn ? styles.cardActive : ""} ${isCheckedOut ? styles.cardDone : ""}`}>
+      <div className={`${styles.todayCard} ${hasOpenSession ? styles.cardActive : ""} ${isDayComplete ? styles.cardDone : ""}`}>
         <div className={styles.todayLeft}>
           <div className={styles.todayStatus}>
-            <span className={`${styles.pulse} ${isCheckedIn ? styles.pulseOn : ""}`} />
+            <span className={`${styles.pulse} ${hasOpenSession ? styles.pulseOn : ""}`} />
             <span className={styles.todayStatusText}>
-              {isCheckedOut ? "Shift complete" : isCheckedIn ? "Currently working" : "Not checked in"}
+              {isDayComplete ? "Shift complete" : hasOpenSession ? "Currently working" : "Not clocked in"}
             </span>
           </div>
           <div className={styles.todayDate}>
@@ -131,41 +169,73 @@ export default function Attendance() {
             })}
           </div>
           <div className={styles.timeRow}>
-            <div className={styles.timeBlock}>
-              <span className={styles.timeLabel}>Check in</span>
-              <span className={styles.timeValue}>{formatTime(today?.check_in)}</span>
-            </div>
-            <div className={styles.timeSep} />
-            <div className={styles.timeBlock}>
-              <span className={styles.timeLabel}>Check out</span>
-              <span className={styles.timeValue}>{formatTime(today?.check_out)}</span>
-            </div>
-            {isCheckedOut && (
+            {openSession ? (
               <>
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Clock in</span>
+                  <span className={styles.timeValue}>{formatTime(openSession.clock_in)}</span>
+                </div>
                 <div className={styles.timeSep} />
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>Duration</span>
-                  <span className={styles.timeValue}>{formatHours(today?.work_hours)}</span>
+                  <span className={styles.timeLabel}>Clock out</span>
+                  <span className={styles.timeValue}>--:--</span>
                 </div>
               </>
+            ) : todaySummary?.sessions?.length > 0 ? (
+              <>
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Total azi</span>
+                  <span className={styles.timeValue}>{formatHours(todaySummary.total_hours)}</span>
+                </div>
+                <div className={styles.timeSep} />
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Sesiuni</span>
+                  <span className={styles.timeValue}>{todaySummary.sessions.length}</span>
+                </div>
+                {parseFloat(todaySummary.overtime_hours) > 0 && (
+                  <>
+                    <div className={styles.timeSep} />
+                    <div className={styles.timeBlock}>
+                      <span className={styles.timeLabel}>Overtime</span>
+                      <span className={`${styles.timeValue} ${styles.overtime}`}>
+                        +{formatHours(todaySummary.overtime_hours)}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {parseFloat(todaySummary.remaining_hours) > 0 && (
+                  <>
+                    <div className={styles.timeSep} />
+                    <div className={styles.timeBlock}>
+                      <span className={styles.timeLabel}>Rămase</span>
+                      <span className={styles.timeValue}>{formatHours(todaySummary.remaining_hours)}</span>
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className={styles.timeBlock}>
+                <span className={styles.timeLabel}>Clock in</span>
+                <span className={styles.timeValue}>--:--</span>
+              </div>
             )}
           </div>
         </div>
         <div className={styles.todayRight}>
           {error && <p className={styles.errorMsg}>{error}</p>}
-          {!isCheckedIn && !isCheckedOut && (
-            <button className={styles.btnIn} onClick={handleCheckIn} disabled={loadingAction}>
+          {!hasOpenSession && (
+            <button className={styles.btnIn} onClick={handleClockIn} disabled={loadingAction}>
               {loadingAction && <span className={styles.spinner} />}
-              Check In
+              Clock In
             </button>
           )}
-          {isCheckedIn && (
-            <button className={styles.btnOut} onClick={handleCheckOut} disabled={loadingAction}>
+          {hasOpenSession && (
+            <button className={styles.btnOut} onClick={handleClockOut} disabled={loadingAction}>
               {loadingAction && <span className={styles.spinner} />}
-              Check Out
+              Clock Out
             </button>
           )}
-          {isCheckedOut && (
+          {isDayComplete && !hasOpenSession && (
             <span className={styles.doneTag}>✓ Done for today</span>
           )}
         </div>
@@ -187,7 +257,7 @@ export default function Attendance() {
         </div>
         <div className={styles.summaryCard}>
           <span className={styles.summaryLabel}>Incomplete</span>
-          <span className={styles.summaryValue}>{totalDays - completeDays}</span>
+          <span className={styles.summaryValue}>{incompleteDays}</span>
         </div>
       </div>
 
@@ -196,20 +266,13 @@ export default function Attendance() {
         <div className={styles.historyHeader}>
           <h2 className={styles.sectionTitle}>Monthly history</h2>
           <div className={styles.monthNav}>
-            <button
-              className={styles.monthBtn}
-              onClick={() => setMonthOffset((o) => o - 1)}
-            >
-              ‹
-            </button>
+            <button className={styles.monthBtn} onClick={() => setMonthOffset((o) => o - 1)}>‹</button>
             <span className={styles.monthLabel}>{getMonthLabel(monthOffset)}</span>
             <button
               className={styles.monthBtn}
               onClick={() => setMonthOffset((o) => Math.min(o + 1, 0))}
               disabled={monthOffset === 0}
-            >
-              ›
-            </button>
+            >›</button>
           </div>
         </div>
 
@@ -217,38 +280,79 @@ export default function Attendance() {
           <div className={`${styles.tableRow} ${styles.tableHead}`}>
             <span>Date</span>
             <span>Day</span>
-            <span>Check in</span>
-            <span>Check out</span>
-            <span>Hours</span>
+            <span>Total hours</span>
+            <span>Sesiuni</span>
+            <span>Remaining / Overtime</span>
             <span>Status</span>
           </div>
+
           {loadingHistory ? (
             <div className={styles.empty}>Loading…</div>
           ) : history.length > 0 ? (
             history.map((row, i) => {
-              const date = new Date(row.date);
+              const date = new Date(row.date + "T00:00:00");
               const isToday = row.date === new Date().toISOString().slice(0, 10);
+              const expanded = expandedDates[row.date];
+              const hasNight = parseFloat(row.total_night_hours) > 0;
+              const isOvertime = parseFloat(row.overtime_hours) > 0;
+
               return (
-                <div key={i} className={`${styles.tableRow} ${isToday ? styles.rowToday : ""}`}>
-                  <span className={styles.dateCell}>
-                    {date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                    {isToday && <span className={styles.todayPill}>today</span>}
-                  </span>
-                  <span className={styles.muted}>
-                    {date.toLocaleDateString("en-GB", { weekday: "short" })}
-                  </span>
-                  <span>{formatTime(row.check_in)}</span>
-                  <span>{formatTime(row.check_out)}</span>
-                  <span>{formatHours(row.work_hours)}</span>
-                  <span>
-                    <span className={`${styles.badge} ${
-                      row.check_in && row.check_out ? styles.badgeGreen :
-                      row.check_in ? styles.badgeAmber : styles.badgeGray
-                    }`}>
-                      {row.check_in && row.check_out ? "Complete" :
-                       row.check_in ? "In progress" : "Absent"}
+                <div key={i}>
+                  <div
+                    className={`${styles.tableRow} ${isToday ? styles.rowToday : ""} ${styles.rowClickable}`}
+                    onClick={() => toggleExpand(row.date)}
+                  >
+                    <span className={styles.dateCell}>
+                      {date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                      {isToday && <span className={styles.todayPill}>today</span>}
                     </span>
-                  </span>
+                    <span className={styles.muted}>
+                      {date.toLocaleDateString("en-GB", { weekday: "short" })}
+                    </span>
+                    <span>
+                      {formatHours(row.total_hours)}
+                      {hasNight && <span className={styles.nightBadge}>🌙</span>}
+                    </span>
+                    <span>{row.sessions?.length || 0}</span>
+                    <span>
+                      {isOvertime
+                        ? <span className={styles.overtimeText}>+{formatHours(row.overtime_hours)}</span>
+                        : <span className={styles.remainingText}>{formatHours(row.remaining_hours)}</span>
+                      }
+                    </span>
+                    <span>
+                      <span className={`${styles.badge} ${
+                        row.status === "complete" ? styles.badgeGreen :
+                        row.status === "in_progress" ? styles.badgeAmber :
+                        styles.badgeGray
+                      }`}>
+                        {row.status === "complete" ? "Complete" :
+                         row.status === "in_progress" ? "In progress" : "Absent"}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Sesiuni expandate */}
+                  {expanded && row.sessions?.map((s, j) => (
+                    <div key={j} className={styles.sessionRow}>
+                      <span className={styles.sessionIndex}>#{j + 1}</span>
+                      <span />
+                      <span>
+                        {formatTime(s.clock_in)} → {s.clock_out ? formatTime(s.clock_out) : "open"}
+                      </span>
+                      <span>{formatHours(s.work_hours)}</span>
+                      <span>
+                        {parseFloat(s.night_hours) > 0 && (
+                          <span className={styles.nightBadge}>🌙 {formatHours(s.night_hours)}</span>
+                        )}
+                      </span>
+                      <span>
+                        <span className={`${styles.badge} ${s.status === "complete" ? styles.badgeGreen : styles.badgeAmber}`}>
+                          {s.status === "complete" ? "Complete" : "Open"}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               );
             })
