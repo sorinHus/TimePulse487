@@ -1,21 +1,22 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { checkIn, checkOut, getTodayAttendance } from "../api/attendance";
+import { clockIn, clockOut, getTodaySessions } from "../api/attendance";
 import { getEmployeeDashboard } from "../api/dashboard";
 import styles from "./DashboardEmployee.module.css";
 
 function formatTime(isoString) {
   if (!isoString) return "--:--";
-  return new Date(isoString).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const d = new Date(isoString);
+  if (isNaN(d)) return "--:--";
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatHours(decimal) {
   if (!decimal && decimal !== 0) return "--";
-  const h = Math.floor(decimal);
-  const m = Math.round((decimal - h) * 60);
+  const num = parseFloat(decimal);
+  if (isNaN(num)) return "--";
+  const h = Math.floor(num);
+  const m = Math.round((num - h) * 60);
   return `${h}h ${m}m`;
 }
 
@@ -32,7 +33,7 @@ function StatCard({ label, value, accent, sublabel }) {
 export default function DashboardEmployee() {
   const { user } = useAuth();
 
-  const [today, setToday] = useState(null);
+  const [todaySummary, setTodaySummary] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
   const [error, setError] = useState("");
@@ -40,48 +41,47 @@ export default function DashboardEmployee() {
   const fetchData = async () => {
     try {
       const [todayData, dashData] = await Promise.all([
-        getTodayAttendance(),
+        getTodaySessions(),
         getEmployeeDashboard(),
       ]);
-      setToday(todayData);
+      setTodaySummary(todayData);
       setDashboard(dashData);
     } catch {
-      // silently fail — show empty state
+      // silently fail
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const handleCheckIn = async () => {
+  const handleClockIn = async () => {
     setError("");
     setLoadingAction(true);
     try {
-      await checkIn();
+      await clockIn();
       await fetchData();
     } catch (e) {
-      setError(e?.response?.data?.detail || "Check-in failed.");
+      setError(e?.response?.data?.detail || "Clock-in failed.");
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const handleCheckOut = async () => {
+  const handleClockOut = async () => {
     setError("");
     setLoadingAction(true);
     try {
-      await checkOut();
+      await clockOut();
       await fetchData();
     } catch (e) {
-      setError(e?.response?.data?.detail || "Check-out failed.");
+      setError(e?.response?.data?.detail || "Clock-out failed.");
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const isCheckedIn = today?.check_in && !today?.check_out;
-  const isCheckedOut = today?.check_in && today?.check_out;
+  const hasOpenSession = todaySummary?.has_open_session;
+  const isDayComplete = todaySummary?.status === "complete";
+  const openSession = todaySummary?.sessions?.find((s) => s.status === "open");
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -97,49 +97,59 @@ export default function DashboardEmployee() {
       {/* Header */}
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>
-            {greeting()}, {firstName}.
-          </h1>
+          <h1 className={styles.pageTitle}>{greeting()}, {firstName}.</h1>
           <p className={styles.pageSubtitle}>
             {new Date().toLocaleDateString("en-GB", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
+              weekday: "long", day: "numeric", month: "long", year: "numeric",
             })}
           </p>
         </div>
       </div>
 
-      {/* Check-in card */}
-      <div className={`${styles.checkinCard} ${isCheckedIn ? styles.checkinActive : ""} ${isCheckedOut ? styles.checkinDone : ""}`}>
+      {/* Clock-in card */}
+      <div className={`${styles.checkinCard} ${hasOpenSession ? styles.checkinActive : ""} ${isDayComplete ? styles.checkinDone : ""}`}>
         <div className={styles.checkinLeft}>
           <div className={styles.checkinStatus}>
-            <span className={`${styles.pulse} ${isCheckedIn ? styles.pulseActive : ""}`} />
+            <span className={`${styles.pulse} ${hasOpenSession ? styles.pulseActive : ""}`} />
             <span className={styles.checkinStatusText}>
-              {isCheckedOut
-                ? "Shift complete"
-                : isCheckedIn
-                ? "Currently working"
-                : "Not checked in"}
+              {isDayComplete ? "Shift complete" : hasOpenSession ? "Currently working" : "Not clocked in"}
             </span>
           </div>
           <div className={styles.checkinTimes}>
-            <div className={styles.timeBlock}>
-              <span className={styles.timeLabel}>In</span>
-              <span className={styles.timeValue}>{formatTime(today?.check_in)}</span>
-            </div>
-            <div className={styles.timeDivider} />
-            <div className={styles.timeBlock}>
-              <span className={styles.timeLabel}>Out</span>
-              <span className={styles.timeValue}>{formatTime(today?.check_out)}</span>
-            </div>
-            {isCheckedOut && (
+            {openSession ? (
               <>
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>In</span>
+                  <span className={styles.timeValue}>{formatTime(openSession.clock_in)}</span>
+                </div>
                 <div className={styles.timeDivider} />
                 <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Out</span>
+                  <span className={styles.timeValue}>--:--</span>
+                </div>
+              </>
+            ) : todaySummary?.sessions?.length > 0 ? (
+              <>
+                <div className={styles.timeBlock}>
                   <span className={styles.timeLabel}>Total</span>
-                  <span className={styles.timeValue}>{formatHours(today?.hours_worked)}</span>
+                  <span className={styles.timeValue}>{formatHours(todaySummary.total_hours)}</span>
+                </div>
+                <div className={styles.timeDivider} />
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Sessions</span>
+                  <span className={styles.timeValue}>{todaySummary.sessions.length}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>In</span>
+                  <span className={styles.timeValue}>--:--</span>
+                </div>
+                <div className={styles.timeDivider} />
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Out</span>
+                  <span className={styles.timeValue}>--:--</span>
                 </div>
               </>
             )}
@@ -147,27 +157,19 @@ export default function DashboardEmployee() {
         </div>
         <div className={styles.checkinRight}>
           {error && <p className={styles.checkinError}>{error}</p>}
-          {!isCheckedIn && !isCheckedOut && (
-            <button
-              className={styles.btnCheckIn}
-              onClick={handleCheckIn}
-              disabled={loadingAction}
-            >
+          {!hasOpenSession && (
+            <button className={styles.btnCheckIn} onClick={handleClockIn} disabled={loadingAction}>
               {loadingAction ? <span className={styles.spinner} /> : null}
-              Check In
+              Clock In
             </button>
           )}
-          {isCheckedIn && (
-            <button
-              className={styles.btnCheckOut}
-              onClick={handleCheckOut}
-              disabled={loadingAction}
-            >
+          {hasOpenSession && (
+            <button className={styles.btnCheckOut} onClick={handleClockOut} disabled={loadingAction}>
               {loadingAction ? <span className={styles.spinner} /> : null}
-              Check Out
+              Clock Out
             </button>
           )}
-          {isCheckedOut && (
+          {isDayComplete && !hasOpenSession && (
             <span className={styles.doneTag}>✓ Done for today</span>
           )}
         </div>
@@ -205,8 +207,8 @@ export default function DashboardEmployee() {
         <div className={styles.table}>
           <div className={styles.tableHead}>
             <span>Date</span>
-            <span>Check in</span>
-            <span>Check out</span>
+            <span>Clock in</span>
+            <span>Clock out</span>
             <span>Hours</span>
             <span>Status</span>
           </div>
@@ -214,10 +216,8 @@ export default function DashboardEmployee() {
             dashboard.recent_attendance.map((row, i) => (
               <div key={i} className={styles.tableRow}>
                 <span>
-                  {new Date(row.date).toLocaleDateString("en-GB", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
+                  {new Date(row.date + "T00:00:00").toLocaleDateString("en-GB", {
+                    weekday: "short", day: "numeric", month: "short",
                   })}
                 </span>
                 <span>{formatTime(row.check_in)}</span>
