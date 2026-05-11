@@ -123,8 +123,9 @@ class AttendanceExportView(APIView):
         else:
             target_user = user
 
-        attendances = Attendance.objects.filter(
-            user=target_user, date__year=year, date__month=month
+        from attendance.models import AttendanceSession
+        attendances = AttendanceSession.objects.filter(
+            user=target_user, date__year=year, date__month=month, status='complete'
         ).order_by('date')
 
         wb = openpyxl.Workbook()
@@ -171,10 +172,10 @@ class AttendanceExportView(APIView):
             is_weekend = d.weekday() >= 5
             if day in attendance_map:
                 a = attendance_map[day]
-                check_in = str(a.check_in)[:5] if a.check_in else '-'
-                check_out = str(a.check_out)[:5] if a.check_out else '-'
+                check_in = a.clock_in.strftime('%H:%M') if a.clock_in else '-'
+                check_out = a.clock_out.strftime('%H:%M') if a.clock_out else '-'
                 work_hours = float(a.work_hours) if a.work_hours else 0
-                status = a.status.capitalize()
+                status = 'Present'
                 fill = present_fill
                 if work_hours:
                     total_hours += work_hours
