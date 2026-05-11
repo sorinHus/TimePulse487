@@ -164,7 +164,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             )}
             {item.label === "Leaves" &&
               pendingCount > 0 &&
-              (user?.effective_role === "admin" || user?.effective_role === "manager") && (
+              (user?.effective_role === "admin" || user?.effective_role === "manager" || user?.effective_role === "director") && (
                 <span className={styles.badge}>{pendingCount}</span>
               )}
           </NavLink>
