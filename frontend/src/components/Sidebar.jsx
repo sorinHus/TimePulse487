@@ -127,7 +127,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       {/* Logo */}
       <div className={styles.logo}>
-        <div className={styles.logoMark}>T</div>
+        <img src="/favicon.svg" alt="TimePulse487" width="32" height="32" className={styles.logoMark} />
         {!collapsed && <span className={styles.logoText}>TimePulse</span>}
         <button
           className={styles.toggleBtn}
