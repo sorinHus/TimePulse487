@@ -455,3 +455,39 @@
 .overtime {
   color: #f87171;
 }
+
+.overtimeCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.otBtn {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.otBtn:hover {
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.otStatus {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.otPending  { background: rgba(100,116,139,0.1); color: #94a3b8; }
+.otApproved { background: rgba(34,197,94,0.12);  color: #4ade80; }
+.otPartial  { background: rgba(59,130,246,0.12); color: #60a5fa; }
+.otRejected { background: rgba(239,68,68,0.12);  color: #f87171; }

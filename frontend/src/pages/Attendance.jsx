@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { clockIn, clockOut, getTodaySessions, getSessionHistory } from "../api/attendance";
+import { clockIn, clockOut, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendence";
 import styles from "./Attendance.module.css";
+
 
 const WORKDAY_HOURS = 8.5;
 const NIGHT_START = 22;
@@ -119,6 +120,15 @@ export default function Attendance() {
       setError(e?.response?.data?.detail || "Clock-out failed.");
     } finally {
       setLoadingAction(false);
+    }
+  };
+
+  const handleRequestOvertime = async (date) => {
+    try {
+      await requestOvertime(date);
+      await fetchHistory(monthOffset);
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Failed to request overtime.");
     }
   };
 
@@ -329,10 +339,35 @@ export default function Attendance() {
                     </span>
                     <span>{row.sessions?.length || 0}</span>
                     <span>
-                      {isOvertime
-                        ? <span className={styles.overtimeText}>+{formatHours(row.overtime_hours)}</span>
-                        : <span className={styles.remainingText}>{formatHours(row.remaining_hours)}</span>
-                      }
+                      <span>
+                      {isOvertime ? (
+                        <span className={styles.overtimeCell}>
+                          <span className={styles.overtimeText}>+{formatHours(row.overtime_hours)}</span>
+                          {!row.overtime_request && (
+                            <button
+                              className={styles.otBtn}
+                              onClick={(e) => { e.stopPropagation(); handleRequestOvertime(row.date); }}
+                            >
+                              Request
+                            </button>
+                          )}
+                          {row.overtime_request && (
+                            <span className={`${styles.otStatus} ${
+                              row.overtime_request.status === 'approved' ? styles.otApproved :
+                              row.overtime_request.status === 'partially_approved' ? styles.otPartial :
+                              row.overtime_request.status === 'rejected' ? styles.otRejected :
+                              styles.otPending
+                            }`}>
+                              {row.overtime_request.status === 'approved' ? '✓ Approved' :
+                               row.overtime_request.status === 'partially_approved' ? `✓ ${row.overtime_request.approved_hours}h` :
+                               row.overtime_request.status === 'rejected' ? '✗ Rejected' :
+                               '⏳ Pending'}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className={styles.remainingText}>{formatHours(row.remaining_hours)}</span>
+                      )}
                     </span>
                     <span>
                       <span className={`${styles.badge} ${
