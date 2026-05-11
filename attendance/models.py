@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from datetime import datetime, timedelta
 
 
 class Attendance(models.Model):
@@ -26,22 +27,61 @@ class Attendance(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Attendance'
-        verbose_name_plural = 'Attendances'
+        verbose_name = 'Attendance (legacy)'
+        verbose_name_plural = 'Attendances (legacy)'
         unique_together = ['user', 'date']
         ordering = ['-date']
 
     def __str__(self):
         return f'{self.user.username} - {self.date}'
 
-    def calculate_work_hours(self):
-        if self.check_in and self.check_out:
-            from datetime import datetime, date
-            check_in_dt = datetime.combine(date.today(), self.check_in)
-            check_out_dt = datetime.combine(date.today(), self.check_out)
-            diff = check_out_dt - check_in_dt
-            hours = diff.total_seconds() / 3600
-            self.work_hours = round(hours, 2)
-            self.save(update_fields=['work_hours'])
-            return self.work_hours
-        return None
+
+class AttendanceSession(models.Model):
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('complete', 'Complete'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sessions'
+    )
+    date = models.DateField(default=timezone.localdate)
+    clock_in = models.DateTimeField()
+    clock_out = models.DateTimeField(null=True, blank=True)
+    work_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    night_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Attendance Session'
+        verbose_name_plural = 'Attendance Sessions'
+        ordering = ['-date', '-clock_in']
+
+    def __str__(self):
+        return f'{self.user.username} - {self.date} - session {self.pk}'
+
+    def calculate_hours(self):
+        if not self.clock_in or not self.clock_out:
+            return
+
+        diff = self.clock_out - self.clock_in
+        total_seconds = diff.total_seconds()
+        self.work_hours = round(total_seconds / 3600, 2)
+
+        night_seconds = 0
+        current = self.clock_in
+        while current < self.clock_out:
+            next_tick = min(current + timedelta(minutes=1), self.clock_out)
+            hour = current.hour
+            if hour >= 22 or hour < 6:
+                night_seconds += (next_tick - current).total_seconds()
+            current = next_tick
+
+        self.night_hours = round(night_seconds / 3600, 2)
+        self.status = 'complete'
+        self.save(update_fields=['work_hours', 'night_hours', 'status'])
