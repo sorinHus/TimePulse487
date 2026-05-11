@@ -53,6 +53,7 @@ export default function Team() {
         .then((res) => {
           const team = (res.data?.team_status || []).map(m => ({
             ...m,
+            id: m.user_id,
             username: m.full_name?.toLowerCase().replace(' ', '.') || '',
             is_active: true,
             role: 'employee',
