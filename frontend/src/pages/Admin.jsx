@@ -24,7 +24,7 @@ export default function Admin() {
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("users"); // "users" | "seniority"
+  const [activeTab, setActiveTab] = useState("users");
   const [seniorityRules, setSeniorityRules] = useState([]);
   const [seniorityForm, setSeniorityForm] = useState({ min_years: "", extra_days: "" });
   const [seniorityError, setSeniorityError] = useState("");
@@ -45,17 +45,17 @@ export default function Admin() {
   };
 
   const fetchSeniorityRules = async () => {
-  try {
-    const res = await api.get("/leaves/seniority-rules/");
-    setSeniorityRules(Array.isArray(res.data) ? res.data : []);
-  } catch { setSeniorityRules([]); }
-};
+    try {
+      const res = await api.get("/leaves/seniority-rules/");
+      setSeniorityRules(Array.isArray(res.data) ? res.data : []);
+    } catch { setSeniorityRules([]); }
+  };
 
-useEffect(() => {
-  fetchUsers();
-  fetchDepartments();
-  fetchSeniorityRules();
-}, []);
+  useEffect(() => {
+    fetchUsers();
+    fetchDepartments();
+    fetchSeniorityRules();
+  }, []);
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
@@ -108,198 +108,203 @@ useEffect(() => {
   const f = (key) => (e) => setForm((v) => ({ ...v, [key]: e.target.value }));
 
   const handleSeniorityAdd = async () => {
-  setSeniorityError("");
-  if (!seniorityForm.min_years || !seniorityForm.extra_days) {
-    setSeniorityError("Both fields are required.");
-    return;
-  }
-  try {
-    await api.post("/leaves/seniority-rules/", {
-      min_years: parseInt(seniorityForm.min_years),
-      extra_days: parseInt(seniorityForm.extra_days),
-    });
-    setSeniorityForm({ min_years: "", extra_days: "" });
-    await fetchSeniorityRules();
-  } catch (e) {
-    setSeniorityError(e?.response?.data?.min_years?.[0] || e?.response?.data?.detail || "Error adding rule.");
-  }
-};
+    setSeniorityError("");
+    if (!seniorityForm.min_years || !seniorityForm.extra_days) {
+      setSeniorityError("Both fields are required.");
+      return;
+    }
+    try {
+      await api.post("/leaves/seniority-rules/", {
+        min_years: parseInt(seniorityForm.min_years),
+        extra_days: parseInt(seniorityForm.extra_days),
+      });
+      setSeniorityForm({ min_years: "", extra_days: "" });
+      await fetchSeniorityRules();
+    } catch (e) {
+      setSeniorityError(e?.response?.data?.min_years?.[0] || e?.response?.data?.detail || "Error adding rule.");
+    }
+  };
 
-const handleSeniorityDelete = async (id) => {
-  try {
-    await api.delete(`/leaves/seniority-rules/${id}/`);
-    await fetchSeniorityRules();
-  } catch { /* silent */ }
-};
+  const handleSeniorityDelete = async (id) => {
+    try {
+      await api.delete(`/leaves/seniority-rules/${id}/`);
+      await fetchSeniorityRules();
+    } catch { /* silent */ }
+  };
 
-const handleApplySeniority = async () => {
-  setApplyMsg("");
-  try {
-    const res = await api.post("/leaves/seniority-rules/apply/");
-    setApplyMsg(res.data?.detail || "Applied.");
-    setTimeout(() => setApplyMsg(""), 4000);
-  } catch (e) {
-    setApplyMsg(e?.response?.data?.detail || "Error applying rules.");
-  }
-};
+  const handleApplySeniority = async () => {
+    setApplyMsg("");
+    try {
+      const res = await api.post("/leaves/seniority-rules/apply/");
+      setApplyMsg(res.data?.detail || "Applied.");
+      setTimeout(() => setApplyMsg(""), 4000);
+    } catch (e) {
+      setApplyMsg(e?.response?.data?.detail || "Error applying rules.");
+    }
+  };
 
-return (
-  <div className={styles.page}>
+  return (
+    <div className={styles.page}>
 
-    {/* Header */}
-    <div className={styles.header}>
-      <div>
-        <h1 className={styles.title}>Administration</h1>
-        <p className={styles.subtitle}>{users.length} accounts total</p>
-      </div>
-      {activeTab === "users" && (
-        <button
-          className={styles.btnNew}
-          onClick={() => { setShowForm((v) => !v); setFormError(""); }}
-        >
-          {showForm ? "✕ Cancel" : "+ New user"}
-        </button>
-      )}
-    </div>
-
-    {/* Tabs */}
-    <div className={styles.tabs}>
-      <button
-        className={`${styles.tab} ${activeTab === "users" ? styles.tabActive : ""}`}
-        onClick={() => setActiveTab("users")}
-      >
-        Users
-      </button>
-      <button
-        className={`${styles.tab} ${activeTab === "seniority" ? styles.tabActive : ""}`}
-        onClick={() => setActiveTab("seniority")}
-      >
-        Seniority Rules
-      </button>
-    </div>
-
-      {successMsg && <div className={styles.successBanner}>{successMsg}</div>}
-
-      {/* New user form */}
-      {showForm && (
-        <div className={styles.formCard}>
-          <h2 className={styles.formTitle}>Create new user</h2>
-          <form onSubmit={handleSubmit} className={styles.form} noValidate>
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>First name</label>
-                <input className={styles.input} value={form.first_name} onChange={f("first_name")} placeholder="Ion" />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Last name</label>
-                <input className={styles.input} value={form.last_name} onChange={f("last_name")} placeholder="Popescu" />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Username *</label>
-                <input className={styles.input} value={form.username} onChange={f("username")} placeholder="ion.popescu" required />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Email</label>
-                <input className={styles.input} type="email" value={form.email} onChange={f("email")} placeholder="ion@example.com" />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Password *</label>
-                <input className={styles.input} type="password" value={form.password} onChange={f("password")} placeholder="min. 8 characters" required />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Confirm password *</label>
-                <input className={styles.input} type="password" value={form.password2} onChange={f("password2")} placeholder="repeat password" required />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Role *</label>
-                <select className={styles.select} value={form.role} onChange={f("role")}>
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Department</label>
-                <select className={styles.select} value={form.department} onChange={f("department")}>
-                  <option value="">— None —</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {formError && <div className={styles.formError}>{formError}</div>}
-            <div className={styles.formActions}>
-              <button type="submit" className={styles.btnSubmit} disabled={submitting}>
-                {submitting && <span className={styles.spinner} />}
-                Create user
-              </button>
-            </div>
-          </form>
+      {/* Header */}
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Administration</h1>
+          <p className={styles.subtitle}>{users.length} accounts total</p>
         </div>
-      )}
-
-      {/* Search */}
-      <div className={styles.searchWrap}>
-        <svg viewBox="0 0 16 16" fill="none" width="14" height="14" className={styles.searchIcon}>
-          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-        <input
-          className={styles.searchInput}
-          placeholder="Search by name, username, role…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      {/* Users table */}
-      <div className={styles.table}>
-        <div className={`${styles.tableRow} ${styles.tableHead}`}>
-          <span>User</span>
-          <span>Role</span>
-          <span>Department</span>
-          <span>Position</span>
-          <span>Email</span>
-          <span>Status</span>
-        </div>
-        {filtered.length > 0 ? (
-          filtered.map((u, i) => (
-            <div key={i} className={styles.tableRow}>
-              <span className={styles.userCell}>
-                <span className={`${styles.avatar} ${!u.is_active ? styles.avatarInactive : ""}`}>
-                  {getInitials(u)}
-                </span>
-                <span className={styles.userInfo}>
-                  <span className={styles.userName}>{u.full_name || u.username}</span>
-                  <span className={styles.userUsername}>@{u.username}</span>
-                </span>
-              </span>
-              <span>
-                <span className={`${styles.roleBadge} ${styles[`role_${u.role}`]}`}>
-                  {u.role}
-                </span>
-              </span>
-              <span className={styles.muted}>{u.department_name || "—"}</span>
-              <span className={styles.muted}>{u.position || "—"}</span>
-              <span className={styles.muted}>{u.email || "—"}</span>
-              <span className={styles.statusCell}>
-                <button
-                  className={`${styles.toggleBtn} ${u.is_active ? styles.toggleActive : styles.toggleInactive}`}
-                  onClick={() => toggleActive(u)}
-                  title={u.is_active ? "Deactivate user" : "Activate user"}
-                >
-                  {u.is_active ? "Active" : "Inactive"}
-                </button>
-              </span>
-            </div>
-          ))
-        ) : (
-          <div className={styles.empty}>
-            {search ? `No users matching "${search}".` : "No users found."}
-          </div>
+        {activeTab === "users" && (
+          <button
+            className={styles.btnNew}
+            onClick={() => { setShowForm((v) => !v); setFormError(""); }}
+          >
+            {showForm ? "✕ Cancel" : "+ New user"}
+          </button>
         )}
-    </div> {/* ← închide styles.table */}
+      </div>
+
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === "users" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("users")}
+        >
+          Users
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "seniority" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("seniority")}
+        >
+          Seniority Rules
+        </button>
+      </div>
+
+      {/* ── Users Tab ── */}
+      {activeTab === "users" && (
+        <>
+          {successMsg && <div className={styles.successBanner}>{successMsg}</div>}
+
+          {/* New user form */}
+          {showForm && (
+            <div className={styles.formCard}>
+              <h2 className={styles.formTitle}>Create new user</h2>
+              <form onSubmit={handleSubmit} className={styles.form} noValidate>
+                <div className={styles.formGrid}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>First name</label>
+                    <input className={styles.input} value={form.first_name} onChange={f("first_name")} placeholder="Ion" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Last name</label>
+                    <input className={styles.input} value={form.last_name} onChange={f("last_name")} placeholder="Popescu" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Username *</label>
+                    <input className={styles.input} value={form.username} onChange={f("username")} placeholder="ion.popescu" required />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Email</label>
+                    <input className={styles.input} type="email" value={form.email} onChange={f("email")} placeholder="ion@example.com" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Password *</label>
+                    <input className={styles.input} type="password" value={form.password} onChange={f("password")} placeholder="min. 8 characters" required />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Confirm password *</label>
+                    <input className={styles.input} type="password" value={form.password2} onChange={f("password2")} placeholder="repeat password" required />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Role *</label>
+                    <select className={styles.select} value={form.role} onChange={f("role")}>
+                      {ROLES.map((r) => (
+                        <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Department</label>
+                    <select className={styles.select} value={form.department} onChange={f("department")}>
+                      <option value="">— None —</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {formError && <div className={styles.formError}>{formError}</div>}
+                <div className={styles.formActions}>
+                  <button type="submit" className={styles.btnSubmit} disabled={submitting}>
+                    {submitting && <span className={styles.spinner} />}
+                    Create user
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Search */}
+          <div className={styles.searchWrap}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14" className={styles.searchIcon}>
+              <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Search by name, username, role…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Users table */}
+          <div className={styles.table}>
+            <div className={`${styles.tableRow} ${styles.tableHead}`}>
+              <span>User</span>
+              <span>Role</span>
+              <span>Department</span>
+              <span>Position</span>
+              <span>Email</span>
+              <span>Status</span>
+            </div>
+            {filtered.length > 0 ? (
+              filtered.map((u, i) => (
+                <div key={i} className={styles.tableRow}>
+                  <span className={styles.userCell}>
+                    <span className={`${styles.avatar} ${!u.is_active ? styles.avatarInactive : ""}`}>
+                      {getInitials(u)}
+                    </span>
+                    <span className={styles.userInfo}>
+                      <span className={styles.userName}>{u.full_name || u.username}</span>
+                      <span className={styles.userUsername}>@{u.username}</span>
+                    </span>
+                  </span>
+                  <span>
+                    <span className={`${styles.roleBadge} ${styles[`role_${u.role}`]}`}>
+                      {u.role}
+                    </span>
+                  </span>
+                  <span className={styles.muted}>{u.department_name || "—"}</span>
+                  <span className={styles.muted}>{u.position || "—"}</span>
+                  <span className={styles.muted}>{u.email || "—"}</span>
+                  <span className={styles.statusCell}>
+                    <button
+                      className={`${styles.toggleBtn} ${u.is_active ? styles.toggleActive : styles.toggleInactive}`}
+                      onClick={() => toggleActive(u)}
+                      title={u.is_active ? "Deactivate user" : "Activate user"}
+                    >
+                      {u.is_active ? "Active" : "Inactive"}
+                    </button>
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className={styles.empty}>
+                {search ? `No users matching "${search}".` : "No users found."}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* ── Seniority Rules Tab ── */}
       {activeTab === "seniority" && (
