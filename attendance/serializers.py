@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Attendance, AttendanceSession
+from .models import Attendance, AttendanceSession, OvertimeRequest, Notification
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -65,6 +65,7 @@ class DaySummarySerializer(serializers.Serializer):
     status = serializers.CharField()
     remaining_hours = serializers.DecimalField(max_digits=5, decimal_places=2)
     overtime_hours = serializers.DecimalField(max_digits=5, decimal_places=2)
+    overtime_request = serializers.DictField(required=False, allow_null=True)
 
 
 class ClockInSerializer(serializers.Serializer):
@@ -73,3 +74,47 @@ class ClockInSerializer(serializers.Serializer):
 
 class ClockOutSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class OvertimeRequestSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    full_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    reviewed_by_name = serializers.CharField(
+        source='reviewed_by.get_full_name', read_only=True, default=None
+    )
+
+    class Meta:
+        model = OvertimeRequest
+        fields = [
+            'id', 'user', 'username', 'full_name', 'date',
+            'requested_hours', 'approved_hours', 'status',
+            'manager_note', 'reviewed_by', 'reviewed_by_name',
+            'requested_at', 'reviewed_at'
+        ]
+        read_only_fields = [
+            'id', 'user', 'approved_hours', 'status',
+            'reviewed_by', 'reviewed_at', 'requested_at'
+        ]
+
+
+class OvertimeReviewSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=['approve', 'partially_approve', 'reject'])
+    approved_hours = serializers.DecimalField(
+        max_digits=4, decimal_places=2, required=False, allow_null=True
+    )
+    manager_note = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        if data['action'] == 'partially_approve':
+            if not data.get('approved_hours'):
+                raise serializers.ValidationError(
+                    {'approved_hours': 'Required for partial approval.'}
+                )
+        return data
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'title', 'message', 'type', 'is_read', 'created_at']
+        read_only_fields = ['id', 'title', 'message', 'type', 'created_at']
