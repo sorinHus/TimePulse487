@@ -184,6 +184,20 @@ export default function Attendance() {
             ) : todaySummary?.sessions?.length > 0 ? (
               <>
                 <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>First clock-in</span>
+                  <span className={styles.timeValue}>
+                    {formatTime(todaySummary.sessions[0]?.clock_in)}
+                  </span>
+                </div>
+                <div className={styles.timeSep} />
+                <div className={styles.timeBlock}>
+                  <span className={styles.timeLabel}>Last clock-out</span>
+                  <span className={styles.timeValue}>
+                    {formatTime([...todaySummary.sessions].reverse().find(s => s.clock_out)?.clock_out)}
+                  </span>
+                </div>
+                <div className={styles.timeSep} />
+                <div className={styles.timeBlock}>
                   <span className={styles.timeLabel}>Total azi</span>
                   <span className={styles.timeValue}>{formatHours(todaySummary.total_hours)}</span>
                 </div>
