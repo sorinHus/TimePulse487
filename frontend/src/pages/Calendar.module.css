@@ -343,3 +343,59 @@
   color: #334155;
   margin: 0;
 }
+
+/* ── B11 additions ── */
+
+.filterBar {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filterSelect {
+  padding: 0.55rem 2rem 0.55rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #161f2e;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  transition: border-color 0.15s;
+}
+
+.filterSelect:focus { border-color: rgba(37, 99, 235, 0.4); }
+
+.cellBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 0 0 6px 6px;
+  opacity: 0.6;
+}
+
+.detailCount {
+  font-size: 0.8rem;
+  color: #475569;
+  margin-left: auto;
+  margin-right: 0.75rem;
+}
+
+.deptGroup {
+  margin-bottom: 0.5rem;
+}
+
+.deptGroupTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #334155;
+  padding: 0.5rem 1.25rem 0.25rem;
+}

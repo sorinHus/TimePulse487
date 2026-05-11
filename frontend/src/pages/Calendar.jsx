@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { getTeamCalendar } from "../api/dashboard";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
 import styles from "./Calendar.module.css";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function getMonthGrid(year, month) {
-  // month is 0-indexed
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  // Monday-first: 0=Mon ... 6=Sun
   const startOffset = (firstDay.getDay() + 6) % 7;
   const cells = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
@@ -16,44 +16,53 @@ function getMonthGrid(year, month) {
   return cells;
 }
 
-function getMonthParam(year, month) {
-  return `${year}-${String(month + 1).padStart(2, "0")}`;
-}
-
 const STATUS_COLOR = {
-  present:  "#22c55e",
-  leave:    "#f59e0b",
-  absent:   "#ef4444",
-  weekend:  "transparent",
-  holiday:  "#8b5cf6",
+  present: "#22c55e",
+  leave:   "#f59e0b",
+  absent:  "#ef4444",
 };
 
 export default function Calendar() {
+  const { user } = useAuth();
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
+  const [year, setYear]   = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
-  const [calData, setCalData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState(null); // { day, entries }
+  const [calData, setCalData]     = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [selected, setSelected]   = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [filterDept, setFilterDept]   = useState("");
+
+  const isAdmin    = user?.effective_role === "admin";
+  const isDirector = user?.effective_role === "director";
+  const canFilterDept = isAdmin || isDirector;
+
+  // Încarcă departamente pentru admin/director
+  useEffect(() => {
+    if (canFilterDept) {
+      api.get("/departments/")
+        .then(r => setDepartments(Array.isArray(r.data) ? r.data : r.data?.results || []))
+        .catch(() => setDepartments([]));
+    }
+  }, [canFilterDept]);
 
   useEffect(() => {
     setLoading(true);
-    getTeamCalendar(getMonthParam(year, month))
-      .then((data) => setCalData(Array.isArray(data) ? data : data?.results || []))
+    setSelected(null);
+    getTeamCalendar(year, month + 1, filterDept || null)
+      .then(data => setCalData(Array.isArray(data) ? data : []))
       .catch(() => setCalData([]))
       .finally(() => setLoading(false));
-  }, [year, month]);
+  }, [year, month, filterDept]);
 
   const prevMonth = () => {
     if (month === 0) { setYear(y => y - 1); setMonth(11); }
     else setMonth(m => m - 1);
-    setSelected(null);
   };
 
   const nextMonth = () => {
     if (month === 11) { setYear(y => y + 1); setMonth(0); }
     else setMonth(m => m + 1);
-    setSelected(null);
   };
 
   const cells = getMonthGrid(year, month);
@@ -62,7 +71,7 @@ export default function Calendar() {
 
   // Build lookup: day -> entries[]
   const dayMap = {};
-  calData.forEach((entry) => {
+  calData.forEach(entry => {
     const d = new Date(entry.date);
     if (d.getFullYear() === year && d.getMonth() === month) {
       const day = d.getDate();
@@ -71,13 +80,11 @@ export default function Calendar() {
     }
   });
 
-  // Legend counts for this month
+  // Legend counts
   const counts = { present: 0, leave: 0, absent: 0 };
-  Object.values(dayMap).forEach((entries) => {
-    entries.forEach((e) => {
-      if (counts[e.status] !== undefined) counts[e.status]++;
-    });
-  });
+  Object.values(dayMap).forEach(entries =>
+    entries.forEach(e => { if (counts[e.status] !== undefined) counts[e.status]++; })
+  );
 
   const handleDayClick = (day) => {
     if (!day) return;
@@ -89,6 +96,17 @@ export default function Calendar() {
     month: "long", year: "numeric",
   });
 
+  // Grupează entries din ziua selectată per departament
+  const groupByDept = (entries) => {
+    const groups = {};
+    entries.forEach(e => {
+      const key = e.department_name || "—";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(e);
+    });
+    return groups;
+  };
+
   return (
     <div className={styles.page}>
 
@@ -96,7 +114,7 @@ export default function Calendar() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Team Calendar</h1>
-          <p className={styles.subtitle}>Monthly attendance overview</p>
+          <p className={styles.subtitle}>Monthly attendance & leave overview</p>
         </div>
         <div className={styles.legend}>
           {Object.entries({ present: "Present", leave: "On leave", absent: "Absent" }).map(([key, label]) => (
@@ -109,6 +127,22 @@ export default function Calendar() {
         </div>
       </div>
 
+      {/* Filtrare departament (admin/director) */}
+      {canFilterDept && departments.length > 0 && (
+        <div className={styles.filterBar}>
+          <select
+            className={styles.filterSelect}
+            value={filterDept}
+            onChange={e => { setFilterDept(e.target.value); setSelected(null); }}
+          >
+            <option value="">All departments</option>
+            {departments.map(d => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Month nav */}
       <div className={styles.monthNav}>
         <button className={styles.navBtn} onClick={prevMonth}>‹</button>
@@ -118,40 +152,40 @@ export default function Calendar() {
 
       {/* Calendar grid */}
       <div className={styles.calendarWrap}>
-        {/* Day headers */}
         <div className={styles.dayHeaders}>
-          {DAYS.map((d) => (
+          {DAYS.map(d => (
             <div key={d} className={`${styles.dayHeader} ${d === "Sat" || d === "Sun" ? styles.weekend : ""}`}>
               {d}
             </div>
           ))}
         </div>
 
-        {/* Cells */}
         {loading ? (
           <div className={styles.loadingMsg}>Loading…</div>
         ) : (
           <div className={styles.grid}>
             {cells.map((day, i) => {
-              const entries = day ? (dayMap[day] || []) : [];
-              const isToday = day === todayDay;
+              const entries  = day ? (dayMap[day] || []) : [];
+              const isToday  = day === todayDay;
               const isWeekend = day ? ((i % 7) >= 5) : false;
-              const isEmpty = !day;
               const isSelected = selected?.day === day;
+              const statuses = [...new Set(entries.map(e => e.status))];
 
-              // Aggregate status dots (unique statuses)
-              const statuses = [...new Set(entries.map((e) => e.status))];
+              // Culoare dominantă a zilei
+              const dominantStatus = statuses.includes("leave") ? "leave"
+                : statuses.includes("present") ? "present"
+                : statuses.includes("absent") ? "absent" : null;
 
               return (
                 <div
                   key={i}
                   className={`
                     ${styles.cell}
-                    ${isEmpty ? styles.cellEmpty : ""}
+                    ${!day ? styles.cellEmpty : ""}
                     ${isToday ? styles.cellToday : ""}
-                    ${isWeekend && !isEmpty ? styles.cellWeekend : ""}
+                    ${isWeekend && day ? styles.cellWeekend : ""}
                     ${isSelected ? styles.cellSelected : ""}
-                    ${!isEmpty && entries.length > 0 ? styles.cellHasData : ""}
+                    ${day && entries.length > 0 ? styles.cellHasData : ""}
                   `}
                   onClick={() => handleDayClick(day)}
                 >
@@ -172,6 +206,12 @@ export default function Calendar() {
                           )}
                         </div>
                       )}
+                      {dominantStatus && (
+                        <div
+                          className={styles.cellBar}
+                          style={{ background: STATUS_COLOR[dominantStatus] }}
+                        />
+                      )}
                     </>
                   )}
                 </div>
@@ -190,38 +230,62 @@ export default function Calendar() {
                 weekday: "long", day: "numeric", month: "long",
               })}
             </h2>
+            <span className={styles.detailCount}>{selected.entries.length} member{selected.entries.length !== 1 ? "s" : ""}</span>
             <button className={styles.detailClose} onClick={() => setSelected(null)}>✕</button>
           </div>
+
           {selected.entries.length > 0 ? (
-            <div className={styles.detailList}>
-              {selected.entries.map((entry, i) => (
-                <div key={i} className={styles.detailRow}>
-                  <div className={styles.detailAvatar}>
-                    {(entry.full_name || entry.username || "?")[0].toUpperCase()}
+            canFilterDept && !filterDept ? (
+              // Grupat per departament pentru admin/director fără filtru
+              Object.entries(groupByDept(selected.entries)).map(([dept, entries]) => (
+                <div key={dept} className={styles.deptGroup}>
+                  <div className={styles.deptGroupTitle}>{dept}</div>
+                  <div className={styles.detailList}>
+                    {entries.map((entry, i) => (
+                      <EntryRow key={i} entry={entry} />
+                    ))}
                   </div>
-                  <div className={styles.detailInfo}>
-                    <span className={styles.detailName}>{entry.full_name || entry.username}</span>
-                    {entry.check_in && (
-                      <span className={styles.detailMeta}>
-                        {new Date(entry.check_in).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-                        {entry.check_out && ` → ${new Date(entry.check_out).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`}
-                      </span>
-                    )}
-                  </div>
-                  <span
-                    className={styles.detailStatus}
-                    style={{ background: `${STATUS_COLOR[entry.status]}22`, color: STATUS_COLOR[entry.status] }}
-                  >
-                    {entry.status}
-                  </span>
                 </div>
-              ))}
-            </div>
+              ))
+            ) : (
+              <div className={styles.detailList}>
+                {selected.entries.map((entry, i) => (
+                  <EntryRow key={i} entry={entry} />
+                ))}
+              </div>
+            )
           ) : (
             <p className={styles.detailEmpty}>No data for this day.</p>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function EntryRow({ entry }) {
+  const STATUS_COLOR = {
+    present: "#22c55e",
+    leave:   "#f59e0b",
+    absent:  "#ef4444",
+  };
+  return (
+    <div className={styles.detailRow}>
+      <div className={styles.detailAvatar}>
+        {(entry.full_name || entry.username || "?")[0].toUpperCase()}
+      </div>
+      <div className={styles.detailInfo}>
+        <span className={styles.detailName}>{entry.full_name || entry.username}</span>
+        {entry.leave_type && (
+          <span className={styles.detailMeta}>{entry.leave_type}</span>
+        )}
+      </div>
+      <span
+        className={styles.detailStatus}
+        style={{ background: `${STATUS_COLOR[entry.status]}22`, color: STATUS_COLOR[entry.status] }}
+      >
+        {entry.status}
+      </span>
     </div>
   );
 }

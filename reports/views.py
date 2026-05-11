@@ -18,39 +18,56 @@ class TeamCalendarView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        import calendar as cal_module
+        from datetime import date, timedelta
+        from leaves.models import LeaveRequest
+        from attendance.models import AttendanceSession
+
         year = int(request.query_params.get('year', timezone.now().year))
         month = int(request.query_params.get('month', timezone.now().month))
+        dept_id = request.query_params.get('department')
 
         user = request.user
 
-        if user.role == 'admin':
-            users = User.objects.filter(is_active=True).exclude(is_superuser=True)
-        elif user.role == 'manager':
-            users = User.objects.filter(is_active=True, manager=user)
+        # Filtrare useri în funcție de rol
+        if user.effective_role == 'admin':
+            users = User.objects.filter(is_active=True)
+            if dept_id:
+                users = users.filter(department_id=dept_id)
+        elif user.effective_role == 'director':
+            users = User.objects.filter(is_active=True)
+            if dept_id:
+                users = users.filter(department_id=dept_id)
+        elif user.effective_role == 'manager':
+            users = User.objects.filter(is_active=True, department=user.department)
         else:
             users = User.objects.filter(id=user.id)
 
-        num_days = calendar.monthrange(year, month)[1]
+        num_days = cal_module.monthrange(year, month)[1]
+        today = timezone.localdate()
 
         result = []
         for u in users:
-            attendances = Attendance.objects.filter(
-                user=u, date__year=year, date__month=month
+            # Sesiuni attendance pentru luna
+            sessions = AttendanceSession.objects.filter(
+                user=u,
+                date__year=year,
+                date__month=month,
+                status='complete',
             )
-            attendance_map = {a.date.day: a for a in attendances}
+            attended_days = set(s.date.day for s in sessions)
 
+            # Concedii aprobate care se suprapun cu luna
             leaves = LeaveRequest.objects.filter(
                 user=u,
                 status='approved',
-                start_date__year__lte=year,
-                end_date__year__gte=year,
-                start_date__month__lte=month,
-                end_date__month__gte=month,
-            )
+            ).filter(
+                start_date__lte=date(year, month, num_days),
+                end_date__gte=date(year, month, 1),
+            ).select_related('leave_type')
 
             leave_days = {}
             for leave in leaves:
-                from datetime import date, timedelta
                 current = leave.start_date
                 while current <= leave.end_date:
                     if current.year == year and current.month == month:
@@ -60,55 +77,44 @@ class TeamCalendarView(APIView):
                         }
                     current += timedelta(days=1)
 
-            days = []
+            # Construiește entries flat (câte una per zi cu activitate)
             for day in range(1, num_days + 1):
-                from datetime import date
                 d = date(year, month, day)
                 weekday = d.weekday()
                 is_weekend = weekday >= 5
 
-                day_data = {
-                    'day': day,
-                    'weekday': weekday,
-                    'is_weekend': is_weekend,
-                    'status': None,
-                    'check_in': None,
-                    'check_out': None,
-                    'work_hours': None,
-                    'leave_type': None,
-                    'color': None,
-                }
+                if is_weekend:
+                    continue
+
+                status = None
+                leave_type = None
+                color = None
 
                 if day in leave_days:
-                    day_data['status'] = 'leave'
-                    day_data['leave_type'] = leave_days[day]['leave_type']
-                    day_data['color'] = leave_days[day]['color']
-                elif day in attendance_map:
-                    a = attendance_map[day]
-                    day_data['status'] = a.status
-                    day_data['check_in'] = str(a.check_in) if a.check_in else None
-                    day_data['check_out'] = str(a.check_out) if a.check_out else None
-                    day_data['work_hours'] = str(a.work_hours) if a.work_hours else None
-                    day_data['color'] = '#22C55E'
-                elif not is_weekend and d <= timezone.localdate():
-                    day_data['status'] = 'absent'
-                    day_data['color'] = '#EF4444'
+                    status = 'leave'
+                    leave_type = leave_days[day]['leave_type']
+                    color = leave_days[day]['color']
+                elif day in attended_days:
+                    status = 'present'
+                    color = '#22C55E'
+                elif d <= today:
+                    status = 'absent'
+                    color = '#EF4444'
 
-                days.append(day_data)
+                if status:
+                    result.append({
+                        'user_id': u.id,
+                        'username': u.username,
+                        'full_name': u.get_full_name() or u.username,
+                        'department_id': u.department_id,
+                        'department_name': u.department.name if u.department else None,
+                        'date': str(d),
+                        'status': status,
+                        'leave_type': leave_type,
+                        'color': color,
+                    })
 
-            result.append({
-                'user_id': u.id,
-                'username': u.username,
-                'full_name': u.get_full_name() or u.username,
-                'days': days,
-            })
-
-        return Response({
-            'year': year,
-            'month': month,
-            'num_days': num_days,
-            'users': result,
-        })
+        return Response(result)
 
 
 class AttendanceExportView(APIView):
