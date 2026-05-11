@@ -4,17 +4,28 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Sum
 from decimal import Decimal
-from .models import Attendance, AttendanceSession
+from .models import Attendance, AttendanceSession, OvertimeRequest, Notification
 from .serializers import (
     AttendanceSerializer, CheckInSerializer, CheckOutSerializer,
     AttendanceSessionSerializer, DaySummarySerializer,
-    ClockInSerializer, ClockOutSerializer
+    ClockInSerializer, ClockOutSerializer,
+    OvertimeRequestSerializer, OvertimeReviewSerializer,
+    NotificationSerializer
 )
 
 WORKDAY_HOURS = Decimal('8.50')
 
 
-def build_day_summary(date, sessions):
+def create_notification(user, title, message, notif_type='system'):
+    Notification.objects.create(
+        user=user,
+        title=title,
+        message=message,
+        type=notif_type
+    )
+
+
+def build_day_summary(date, sessions, user=None):
     total_hours = sessions.aggregate(s=Sum('work_hours'))['s'] or Decimal('0')
     total_night = sessions.aggregate(s=Sum('night_hours'))['s'] or Decimal('0')
     complete = sessions.filter(status='complete').count()
@@ -29,6 +40,17 @@ def build_day_summary(date, sessions):
     else:
         day_status = 'absent'
 
+    overtime_request = None
+    if user:
+        ot_req = OvertimeRequest.objects.filter(user=user, date=date).first()
+        if ot_req:
+            overtime_request = {
+                'id': ot_req.id,
+                'status': ot_req.status,
+                'requested_hours': str(ot_req.requested_hours),
+                'approved_hours': str(ot_req.approved_hours) if ot_req.approved_hours else None,
+            }
+
     return {
         'date': date,
         'day_of_week': date.strftime('%a'),
@@ -41,10 +63,11 @@ def build_day_summary(date, sessions):
         'status': day_status,
         'remaining_hours': round(remaining, 2),
         'overtime_hours': round(overtime, 2),
+        'overtime_request': overtime_request,
     }
 
 
-# --- Legacy views (check-in/check-out) ---
+# --- Legacy views ---
 
 class CheckInView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -203,7 +226,7 @@ class TodaySessionsView(APIView):
     def get(self, request):
         today = timezone.localdate()
         sessions = AttendanceSession.objects.filter(user=request.user, date=today)
-        summary = build_day_summary(today, sessions)
+        summary = build_day_summary(today, sessions, user=request.user)
         return Response(DaySummarySerializer(summary).data)
 
 
@@ -227,7 +250,7 @@ class SessionHistoryView(APIView):
         result = []
         for date in dates:
             day_sessions = sessions_qs.filter(date=date)
-            result.append(build_day_summary(date, day_sessions))
+            result.append(build_day_summary(date, day_sessions, user=request.user))
 
         return Response(DaySummarySerializer(result, many=True).data)
 
@@ -252,3 +275,196 @@ class TeamSessionsView(APIView):
             sessions = AttendanceSession.objects.filter(date=date_param)
 
         return Response(AttendanceSessionSerializer(sessions, many=True).data)
+
+
+# --- Overtime views ---
+
+class OvertimeRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        date_str = request.data.get('date')
+        if not date_str:
+            return Response({'detail': 'Date is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            from datetime import date as date_type
+            req_date = date_type.fromisoformat(date_str)
+        except ValueError:
+            return Response({'detail': 'Invalid date format.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        sessions = AttendanceSession.objects.filter(
+            user=request.user, date=req_date, status='complete'
+        )
+        total_hours = sessions.aggregate(s=Sum('work_hours'))['s'] or Decimal('0')
+        overtime = total_hours - WORKDAY_HOURS
+
+        if overtime <= 0:
+            return Response(
+                {'detail': 'No overtime hours for this day.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if OvertimeRequest.objects.filter(user=request.user, date=req_date).exists():
+            return Response(
+                {'detail': 'Overtime request already submitted for this day.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ot_request = OvertimeRequest.objects.create(
+            user=request.user,
+            date=req_date,
+            requested_hours=round(overtime, 2)
+        )
+
+        # Notificare manager
+        manager = getattr(request.user, 'manager', None)
+        if manager:
+            create_notification(
+                manager,
+                'New overtime request',
+                f'{request.user.get_full_name()} requested {round(overtime, 2)}h overtime for {req_date}.',
+                'overtime'
+            )
+
+        return Response(OvertimeRequestSerializer(ot_request).data, status=status.HTTP_201_CREATED)
+
+
+class OvertimeRequestListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.role in ['admin', 'director']:
+            requests = OvertimeRequest.objects.all()
+        elif user.role == 'manager':
+            team_ids = user.subordinates.values_list('id', flat=True)
+            requests = OvertimeRequest.objects.filter(user_id__in=team_ids)
+        else:
+            requests = OvertimeRequest.objects.filter(user=user)
+
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            requests = requests.filter(status=status_filter)
+
+        month_param = request.query_params.get('month')
+        if month_param:
+            try:
+                year, month = month_param.split('-')
+                requests = requests.filter(date__year=int(year), date__month=int(month))
+            except (ValueError, AttributeError):
+                pass
+
+        return Response(OvertimeRequestSerializer(requests, many=True).data)
+
+
+class OvertimeReviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        user = request.user
+        if user.role not in ['admin', 'manager', 'director']:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            ot_request = OvertimeRequest.objects.get(pk=pk)
+        except OvertimeRequest.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Director auto-aprobă pentru el însuși; manager aprobă pentru echipa lui
+        if user.role == 'manager':
+            team_ids = user.subordinates.values_list('id', flat=True)
+            if ot_request.user_id not in team_ids:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+
+        serializer = OvertimeReviewSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        action = serializer.validated_data['action']
+        approved_hours = serializer.validated_data.get('approved_hours')
+        manager_note = serializer.validated_data.get('manager_note', '')
+
+        if action == 'approve':
+            ot_request.status = 'approved'
+            ot_request.approved_hours = ot_request.requested_hours
+        elif action == 'partially_approve':
+            if approved_hours > ot_request.requested_hours:
+                return Response(
+                    {'detail': 'Approved hours cannot exceed requested hours.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            ot_request.status = 'partially_approved'
+            ot_request.approved_hours = approved_hours
+        elif action == 'reject':
+            ot_request.status = 'rejected'
+            ot_request.approved_hours = Decimal('0')
+
+        ot_request.manager_note = manager_note
+        ot_request.reviewed_by = user
+        ot_request.reviewed_at = timezone.now()
+        ot_request.save()
+
+        # Notificare angajat
+        if action == 'approve':
+            msg = f'Your overtime request for {ot_request.date} has been approved ({ot_request.approved_hours}h).'
+        elif action == 'partially_approve':
+            msg = f'Your overtime request for {ot_request.date} has been partially approved ({ot_request.approved_hours}h out of {ot_request.requested_hours}h requested).'
+        else:
+            msg = f'Your overtime request for {ot_request.date} has been rejected.'
+            if manager_note:
+                msg += f' Note: {manager_note}'
+
+        create_notification(ot_request.user, 'Overtime request reviewed', msg, 'overtime')
+
+        return Response(OvertimeRequestSerializer(ot_request).data)
+
+
+# --- Notification views ---
+
+class NotificationListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)
+        unread_only = request.query_params.get('unread')
+        if unread_only:
+            notifications = notifications.filter(is_read=False)
+        return Response(NotificationSerializer(notifications, many=True).data)
+
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            notif = Notification.objects.get(pk=pk, user=request.user)
+            notif.is_read = True
+            notif.save()
+            return Response({'detail': 'Marked as read.'})
+        except Notification.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        try:
+            notif = Notification.objects.get(pk=pk, user=request.user)
+            notif.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Notification.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class NotificationMarkAllReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'detail': 'All notifications marked as read.'})
+
+
+class UnreadNotificationCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({'count': count})
