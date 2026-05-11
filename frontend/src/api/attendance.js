@@ -20,3 +20,23 @@ export const getSessionHistory = (month) =>
   api.get(`/attendance/session-history/?month=${month}`).then(r => r.data)
 export const getTeamSessions = (date) =>
   api.get(`/attendance/team-sessions/?date=${date}`).then(r => r.data)
+
+// Overtime
+export const requestOvertime = (date) =>
+  api.post('/attendance/overtime/', { date }).then(r => r.data)
+export const getOvertimeList = (params = '') =>
+  api.get(`/attendance/overtime/list/${params}`).then(r => r.data)
+export const reviewOvertime = (id, data) =>
+  api.post(`/attendance/overtime/${id}/review/`, data).then(r => r.data)
+
+// Notifications
+export const getNotifications = () =>
+  api.get('/notifications/').then(r => r.data)
+export const getUnreadCount = () =>
+  api.get('/notifications/unread-count/').then(r => r.data)
+export const markNotificationRead = (id) =>
+  api.post(`/notifications/${id}/`).then(r => r.data)
+export const markAllRead = () =>
+  api.post('/notifications/mark-all-read/').then(r => r.data)
+export const deleteNotification = (id) =>
+  api.delete(`/notifications/${id}/`).then(r => r.data)

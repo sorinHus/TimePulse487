@@ -63,3 +63,40 @@
   background: rgba(255, 255, 255, 0.07);
   border-radius: 2px;
 }
+
+.notifBtn {
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.notifBtn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.notifCount {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
