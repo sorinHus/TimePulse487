@@ -339,7 +339,6 @@ export default function Attendance() {
                     </span>
                     <span>{row.sessions?.length || 0}</span>
                     <span>
-                      <span>
                       {isOvertime ? (
                         <span className={styles.overtimeCell}>
                           <span className={styles.overtimeText}>+{formatHours(row.overtime_hours)}</span>

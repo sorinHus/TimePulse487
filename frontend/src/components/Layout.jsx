@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { getUnreadCount } from "../api/attendence";
+import { getUnreadCount } from "../api/attendance";
 import styles from "./Layout.module.css";
 
 export default function Layout() {

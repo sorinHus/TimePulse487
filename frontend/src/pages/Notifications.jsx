@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getNotifications, markNotificationRead, markAllRead, deleteNotification } from "../api/attendence";
+import { getNotifications, markNotificationRead, markAllRead, deleteNotification } from "../api/attendance";
 import styles from "./Notifications.module.css";
 
 function timeAgo(dateStr) {
