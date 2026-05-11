@@ -28,13 +28,13 @@ class LeaveRequestListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        if user.effective_role == 'admin':
             return LeaveRequest.objects.all().select_related('user', 'leave_type')
-        if user.role == 'director':
+        if user.effective_role == 'director':
             return LeaveRequest.objects.filter(
                 user__role='manager'
             ).select_related('user', 'leave_type')
-        if user.role == 'manager':
+        if user.effective_role == 'manager':
             return LeaveRequest.objects.filter(
                 user__department=user.department
             ).exclude(user=user).select_related('user', 'leave_type')
@@ -53,7 +53,7 @@ class LeaveRequestDetailView(generics.RetrieveDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['admin', 'manager']:
+        if user.effective_role in ['admin', 'manager']:
             return LeaveRequest.objects.all()
         return LeaveRequest.objects.filter(user=user)
 
@@ -73,7 +73,7 @@ class LeaveApproveRejectView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk, action):
-        if request.user.role not in ['admin', 'director', 'manager']:
+        if request.user.effective_role not in ['admin', 'director', 'manager']:
             return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -95,10 +95,31 @@ class LeaveApproveRejectView(APIView):
             )
             balance.used_days += leave.total_days
             balance.save()
-        elif action == 'reject':
-            leave.status = 'rejected'
-        else:
-            return Response({'detail': 'Invalid action.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Setare rol temporar pentru înlocuitor
+            if leave.substitute:
+                substitute = leave.substitute
+                substitute.temporary_role = leave.user.effective_role
+                substitute.temporary_role_start = leave.start_date
+                substitute.temporary_role_end = leave.end_date
+                substitute.substituting_for = leave.user
+                substitute.save(update_fields=[
+                    'temporary_role', 'temporary_role_start',
+                    'temporary_role_end', 'substituting_for'
+                ])
+
+                # Notificare înlocuitor
+                from attendance.models import Notification
+                Notification.objects.create(
+                    user=substitute,
+                    title='Substitute role assigned',
+                    message=(
+                        f'You will substitute {leave.user.get_full_name()} '
+                        f'({leave.user.effective_role}) from {leave.start_date} to {leave.end_date}. '
+                        f'You will have {leave.user.effective_role} permissions during this period.'
+                    ),
+                    type='system'
+                )
 
         leave.reviewed_by = request.user
         leave.reviewed_at = timezone.now()

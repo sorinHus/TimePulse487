@@ -157,8 +157,8 @@ class TeamAttendanceView(generics.ListAPIView):
         user = self.request.user
         today = timezone.localdate()
         date = self.request.query_params.get('date', today)
-        if user.role in ['admin', 'manager']:
-            if user.role == 'manager':
+        if user.effective_role in ['admin', 'manager']:
+            if user.effective_role == 'manager':
                 team_ids = user.subordinates.values_list('id', flat=True)
                 return Attendance.objects.filter(user_id__in=team_ids, date=date)
             return Attendance.objects.filter(date=date)
@@ -260,13 +260,13 @@ class TeamSessionsView(APIView):
 
     def get(self, request):
         user = request.user
-        if user.role not in ['admin', 'manager', 'director']:
+        if user.effective_role not in ['admin', 'manager', 'director']:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         today = timezone.localdate()
         date_param = request.query_params.get('date', str(today))
 
-        if user.role == 'manager':
+        if user.effective_role == 'manager':
             team_ids = user.subordinates.values_list('id', flat=True)
             sessions = AttendanceSession.objects.filter(
                 user_id__in=team_ids, date=date_param
@@ -335,9 +335,9 @@ class OvertimeRequestListView(APIView):
 
     def get(self, request):
         user = request.user
-        if user.role in ['admin', 'director']:
+        if user.effective_role in ['admin', 'director']:
             requests = OvertimeRequest.objects.all()
-        elif user.role == 'manager':
+        elif user.effective_role == 'manager':
             team_ids = user.subordinates.values_list('id', flat=True)
             requests = OvertimeRequest.objects.filter(user_id__in=team_ids)
         else:
@@ -363,7 +363,7 @@ class OvertimeReviewView(APIView):
 
     def post(self, request, pk):
         user = request.user
-        if user.role not in ['admin', 'manager', 'director']:
+        if user.effective_role not in ['admin', 'manager', 'director']:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -372,7 +372,7 @@ class OvertimeReviewView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         # Director auto-aprobă pentru el însuși; manager aprobă pentru echipa lui
-        if user.role == 'manager':
+        if user.effective_role == 'manager':
             team_ids = user.subordinates.values_list('id', flat=True)
             if ot_request.user_id not in team_ids:
                 return Response(status=status.HTTP_403_FORBIDDEN)

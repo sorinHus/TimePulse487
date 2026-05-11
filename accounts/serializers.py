@@ -14,18 +14,34 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True)
     full_name = serializers.SerializerMethodField()
+    effective_role = serializers.SerializerMethodField()
+    is_substituting = serializers.SerializerMethodField()
+    substituting_for_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'full_name', 'role', 'department', 'department_name',
-            'phone', 'position', 'hire_date', 'avatar', 'is_active'
+            'full_name', 'role', 'effective_role', 'department', 'department_name',
+            'phone', 'position', 'hire_date', 'avatar', 'is_active',
+            'temporary_role', 'temporary_role_start', 'temporary_role_end',
+            'is_substituting', 'substituting_for', 'substituting_for_name',
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'effective_role', 'is_substituting', 'substituting_for_name']
 
     def get_full_name(self, obj):
         return obj.get_full_name() or obj.username
+
+    def get_effective_role(self, obj):
+        return obj.effective_role
+
+    def get_is_substituting(self, obj):
+        return obj.is_substituting
+
+    def get_substituting_for_name(self, obj):
+        if obj.substituting_for:
+            return obj.substituting_for.get_full_name()
+        return None
 
 
 class RegisterSerializer(serializers.ModelSerializer):
