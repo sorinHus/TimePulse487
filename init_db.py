@@ -27,10 +27,11 @@ else:
     print(f'Updated {username}: password reset, role=admin.')
 
     # B10: Marchează Sick Leave type
-from leaves.models import LeaveType
-updated = LeaveType.objects.filter(name='Sick Leave').update(is_sick_leave=True)
+from leaves.models import LeaveType, LeaveBalance
+updated = LeaveType.objects.filter(name='Sick Leave').update(is_sick_leave=True, max_days_per_year=365)
+LeaveBalance.objects.filter(leave_type__name='Sick Leave').update(total_days=365)
 if updated:
-    print('Sick Leave type marked with is_sick_leave=True.')
+    print('Sick Leave type marked with is_sick_leave=True, max_days_per_year=365.')
 else:
     print('WARNING: Sick Leave type not found — check seed data.')
 
