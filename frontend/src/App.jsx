@@ -11,6 +11,7 @@ import Calendar from './pages/Calendar'
 import Reports from './pages/Reports'
 import Admin from './pages/Admin'
 import Team from './pages/Team'
+import Notifications from './pages/Notifications'
 
 function DashboardRoute() {
   const { user } = useAuth()
@@ -34,6 +35,7 @@ function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/team" element={<Team />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

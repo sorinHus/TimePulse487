@@ -1,0 +1,153 @@
+import { useState, useEffect } from "react";
+import { getNotifications, markNotificationRead, markAllRead, deleteNotification } from "../api/attendence";
+import styles from "./Notifications.module.css";
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+const TYPE_ICONS = {
+  overtime: (
+    <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+      <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+  leave: (
+    <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+      <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M7 2v4M13 2v4M3 9h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+  system: (
+    <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+      <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 7v3M10 13h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+};
+
+const TYPE_COLORS = {
+  overtime: styles.typeOvertime,
+  leave: styles.typeLeave,
+  system: styles.typeSystem,
+};
+
+export default function Notifications() {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchNotifications(); }, []);
+
+  const handleMarkRead = async (id) => {
+    await markNotificationRead(id);
+    setNotifications((prev) =>
+      prev.map((n) => n.id === id ? { ...n, is_read: true } : n)
+    );
+  };
+
+  const handleDelete = async (id) => {
+    await deleteNotification(id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllRead();
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+  };
+
+  const filtered = notifications.filter((n) => {
+    if (filter === "unread") return !n.is_read;
+    if (filter === "overtime") return n.type === "overtime";
+    if (filter === "leave") return n.type === "leave";
+    return true;
+  });
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Notifications</h1>
+          <p className={styles.subtitle}>
+            {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+          </p>
+        </div>
+        {unreadCount > 0 && (
+          <button className={styles.markAllBtn} onClick={handleMarkAllRead}>
+            Mark all as read
+          </button>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className={styles.filters}>
+        {["all", "unread", "overtime", "leave"].map((f) => (
+          <button
+            key={f}
+            className={`${styles.filterBtn} ${filter === f ? styles.filterActive : ""}`}
+            onClick={() => setFilter(f)}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className={styles.list}>
+        {loading ? (
+          <div className={styles.empty}>Loading…</div>
+        ) : filtered.length === 0 ? (
+          <div className={styles.empty}>No notifications.</div>
+        ) : (
+          filtered.map((n) => (
+            <div
+              key={n.id}
+              className={`${styles.item} ${!n.is_read ? styles.unread : ""}`}
+              onClick={() => !n.is_read && handleMarkRead(n.id)}
+            >
+              <div className={`${styles.typeIcon} ${TYPE_COLORS[n.type] || styles.typeSystem}`}>
+                {TYPE_ICONS[n.type] || TYPE_ICONS.system}
+              </div>
+              <div className={styles.itemBody}>
+                <div className={styles.itemTitle}>{n.title}</div>
+                <div className={styles.itemMessage}>{n.message}</div>
+                <div className={styles.itemMeta}>{timeAgo(n.created_at)}</div>
+              </div>
+              {!n.is_read && <div className={styles.unreadDot} />}
+              <button
+                className={styles.deleteBtn}
+                onClick={(e) => { e.stopPropagation(); handleDelete(n.id); }}
+                aria-label="Delete notification"
+              >
+                <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                  <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
