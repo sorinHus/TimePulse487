@@ -35,7 +35,7 @@ function StatusBadge({ status }) {
 
 export default function Leaves() {
   const { user } = useAuth();
-  const isManager = user?.role === "manager" || user?.role === "admin" || user?.role === "director";
+  const isManager = user?.effective_role === "manager" || user?.role === "admin" || user?.role === "director";
 
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [balances, setBalances] = useState([]);
@@ -246,6 +246,7 @@ export default function Leaves() {
                   type="date"
                   className={styles.input}
                   value={form.start_date}
+                  min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
                   required
                 />

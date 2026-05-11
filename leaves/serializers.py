@@ -43,8 +43,11 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'user', 'total_days', 'status', 'reviewed_by', 'reviewed_at', 'created_at']
 
     def validate(self, data):
+        from datetime import date
         if data['start_date'] > data['end_date']:
             raise serializers.ValidationError({'end_date': 'End date must be after start date.'})
+        if data['start_date'] < date.today():
+            raise serializers.ValidationError({'start_date': 'Start date cannot be in the past.'})
         return data
 
 
