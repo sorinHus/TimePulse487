@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { exportAttendanceExcel, exportLeavesPdf } from "../api/dashboard";
+import { useState, useEffect } from "react";
+import { exportAttendanceExcel, exportLeavesPdf, exportPontaj } from "../api/dashboard";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
 import styles from "./Reports.module.css";
 
 function getCurrentMonth() {
@@ -7,48 +9,36 @@ function getCurrentMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function ReportCard({ icon, title, description, format, color, onExport, loading }) {
-  return (
-    <div className={styles.reportCard}>
-      <div className={styles.cardIcon} style={{ background: `${color}18`, color }}>
-        {icon}
-      </div>
-      <div className={styles.cardBody}>
-        <h3 className={styles.cardTitle}>{title}</h3>
-        <p className={styles.cardDesc}>{description}</p>
-      </div>
-      <div className={styles.cardFooter}>
-        <span className={styles.formatBadge}>{format}</span>
-        <button
-          className={styles.exportBtn}
-          style={{ background: `${color}18`, color, borderColor: `${color}33` }}
-          onClick={onExport}
-          disabled={loading}
-        >
-          {loading ? <span className={styles.spinner} /> : (
-            <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-              <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-          {loading ? "Exporting…" : "Export"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function Reports() {
+  const { user } = useAuth();
   const [attendanceMonth, setAttendanceMonth] = useState(getCurrentMonth());
   const [leavesMonth, setLeavesMonth] = useState(getCurrentMonth());
+  const [pontajMonth, setPontajMonth] = useState(getCurrentMonth());
+  const [pontajType, setPontajType] = useState("department");
+  const [pontajDept, setPontajDept] = useState("");
+  const [pontajUser, setPontajUser] = useState("");
+  const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [loadingLeaves, setLoadingLeaves] = useState(false);
+  const [loadingPontaj, setLoadingPontaj] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    api.get("/departments/")
+      .then(r => setDepartments(Array.isArray(r.data) ? r.data : r.data?.results || []))
+      .catch(() => {});
+    api.get("/users/")
+      .then(r => setUsers(Array.isArray(r.data) ? r.data : r.data?.results || []))
+      .catch(() => {});
+  }, []);
 
   const handleExportAttendance = async () => {
     setErrors({});
     setLoadingAttendance(true);
     try {
-      const blob = await exportAttendanceExcel(attendanceMonth);
+      const [year, month] = attendanceMonth.split("-");
+      const blob = await exportAttendanceExcel(year, month);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -56,7 +46,7 @@ export default function Reports() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      setErrors((e) => ({ ...e, attendance: "Export failed. Please try again." }));
+      setErrors(e => ({ ...e, attendance: "Export failed. Please try again." }));
     } finally {
       setLoadingAttendance(false);
     }
@@ -66,7 +56,8 @@ export default function Reports() {
     setErrors({});
     setLoadingLeaves(true);
     try {
-      const blob = await exportLeavesPdf(leavesMonth);
+      const [year] = leavesMonth.split("-");
+      const blob = await exportLeavesPdf(year);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -74,9 +65,32 @@ export default function Reports() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      setErrors((e) => ({ ...e, leaves: "Export failed. Please try again." }));
+      setErrors(e => ({ ...e, leaves: "Export failed. Please try again." }));
     } finally {
       setLoadingLeaves(false);
+    }
+  };
+
+  const handleExportPontaj = async () => {
+    setErrors({});
+    setLoadingPontaj(true);
+    try {
+      const [year, month] = pontajMonth.split("-");
+      const blob = await exportPontaj(
+        year, month,
+        pontajType === "department" ? pontajDept || null : null,
+        pontajType === "individual" ? pontajUser || null : null,
+      );
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance_sheet_${pontajMonth}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setErrors(e => ({ ...e, pontaj: "Export failed. Please try again." }));
+    } finally {
+      setLoadingPontaj(false);
     }
   };
 
@@ -114,17 +128,13 @@ export default function Reports() {
                   type="month"
                   className={styles.monthInput}
                   value={attendanceMonth}
-                  onChange={(e) => setAttendanceMonth(e.target.value)}
+                  onChange={e => setAttendanceMonth(e.target.value)}
                 />
               </div>
-              {errors.attendance && (
-                <p className={styles.errorMsg}>{errors.attendance}</p>
-              )}
+              {errors.attendance && <p className={styles.errorMsg}>{errors.attendance}</p>}
             </div>
             <div className={styles.cardFooter}>
-              <span className={styles.formatBadge} style={{ background: "#22c55e18", color: "#22c55e" }}>
-                .xlsx
-              </span>
+              <span className={styles.formatBadge} style={{ background: "#22c55e18", color: "#22c55e" }}>.xlsx</span>
               <button
                 className={styles.exportBtn}
                 style={{ background: "#22c55e18", color: "#22c55e", borderColor: "#22c55e33" }}
@@ -154,7 +164,7 @@ export default function Reports() {
             <div className={styles.cardBody}>
               <h3 className={styles.cardTitle}>Leave Requests Report</h3>
               <p className={styles.cardDesc}>
-                Summary of all approved, rejected and pending leave requests for the selected month.
+                Summary of all approved, rejected and pending leave requests for the selected year.
               </p>
               <div className={styles.filterRow}>
                 <label className={styles.filterLabel}>Month</label>
@@ -162,17 +172,13 @@ export default function Reports() {
                   type="month"
                   className={styles.monthInput}
                   value={leavesMonth}
-                  onChange={(e) => setLeavesMonth(e.target.value)}
+                  onChange={e => setLeavesMonth(e.target.value)}
                 />
               </div>
-              {errors.leaves && (
-                <p className={styles.errorMsg}>{errors.leaves}</p>
-              )}
+              {errors.leaves && <p className={styles.errorMsg}>{errors.leaves}</p>}
             </div>
             <div className={styles.cardFooter}>
-              <span className={styles.formatBadge} style={{ background: "#ef444418", color: "#ef4444" }}>
-                .pdf
-              </span>
+              <span className={styles.formatBadge} style={{ background: "#ef444418", color: "#ef4444" }}>.pdf</span>
               <button
                 className={styles.exportBtn}
                 style={{ background: "#ef444418", color: "#ef4444", borderColor: "#ef444433" }}
@@ -185,6 +191,93 @@ export default function Reports() {
                   </svg>
                 )}
                 {loadingLeaves ? "Exporting…" : "Export PDF"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Attendance Sheet */}
+        <div className={styles.reportCardWrap}>
+          <div className={styles.reportCard}>
+            <div className={styles.cardIcon} style={{ background: "#3b82f618", color: "#3b82f6" }}>
+              <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
+                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M3 9h18M9 3v18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className={styles.cardBody}>
+              <h3 className={styles.cardTitle}>Monthly Attendance Sheet</h3>
+              <p className={styles.cardDesc}>
+                Nexoria Group attendance register — worked days and leave codes (CO, CM, FP etc.) per employee.
+              </p>
+              <div className={styles.filterRow}>
+                <label className={styles.filterLabel}>Month</label>
+                <input
+                  type="month"
+                  className={styles.monthInput}
+                  value={pontajMonth}
+                  onChange={e => setPontajMonth(e.target.value)}
+                />
+              </div>
+              <div className={styles.filterRow}>
+                <label className={styles.filterLabel}>Type</label>
+                <select
+                  className={styles.monthInput}
+                  value={pontajType}
+                  onChange={e => setPontajType(e.target.value)}
+                >
+                  <option value="department">By department</option>
+                  <option value="individual">By employee</option>
+                </select>
+              </div>
+              {pontajType === "department" && (
+                <div className={styles.filterRow}>
+                  <label className={styles.filterLabel}>Department</label>
+                  <select
+                    className={styles.monthInput}
+                    value={pontajDept}
+                    onChange={e => setPontajDept(e.target.value)}
+                  >
+                    <option value="">All departments</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {pontajType === "individual" && (
+                <div className={styles.filterRow}>
+                  <label className={styles.filterLabel}>Employee</label>
+                  <select
+                    className={styles.monthInput}
+                    value={pontajUser}
+                    onChange={e => setPontajUser(e.target.value)}
+                  >
+                    <option value="">Select employee…</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.first_name} {u.last_name} — {u.department_name || u.username}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {errors.pontaj && <p className={styles.errorMsg}>{errors.pontaj}</p>}
+            </div>
+            <div className={styles.cardFooter}>
+              <span className={styles.formatBadge} style={{ background: "#3b82f618", color: "#3b82f6" }}>.xlsx</span>
+              <button
+                className={styles.exportBtn}
+                style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
+                onClick={handleExportPontaj}
+                disabled={loadingPontaj}
+              >
+                {loadingPontaj ? <span className={styles.spinner} /> : (
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                    <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                {loadingPontaj ? "Generating…" : "Export Excel"}
               </button>
             </div>
           </div>
