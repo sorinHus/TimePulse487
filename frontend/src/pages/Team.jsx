@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
+import { registerSickLeave } from "../api/leaves";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Team.module.css";
 
@@ -15,40 +16,55 @@ const ROLE_COLORS = {
   employee: { bg: "rgba(100,116,139,0.1)",  color: "#94a3b8" },
 };
 
+const EMPTY_SICK = {
+  start_date: "",
+  end_date: "",
+  medical_document: "",
+  overlap_action: "return",
+};
+
 export default function Team() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.effective_role === "admin";
+  const isManager = user?.effective_role === "manager";
+  const canRegisterSick = isAdmin || isManager;
 
   const [members, setMembers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [view, setView] = useState("grid"); // grid | list
+  const [view, setView] = useState("grid");
+
+  // Modal sick leave
+  const [sickModal, setSickModal] = useState(null); // { member } sau null
+  const [sickForm, setSickForm] = useState(EMPTY_SICK);
+  const [sickLoading, setSickLoading] = useState(false);
+  const [sickError, setSickError] = useState("");
+  const [sickSuccess, setSickSuccess] = useState(null); // răspuns de la API
 
   useEffect(() => {
-  if (isAdmin) {
-    api.get("/users/")
-      .then((res) => setMembers(Array.isArray(res.data) ? res.data : res.data?.results || []))
-      .catch(() => setMembers([]));
-  } else {
-    api.get("/dashboard/manager/")
-      .then((res) => {
-        const team = (res.data?.team_status || []).map(m => ({
-          ...m,
-          username: m.full_name?.toLowerCase().replace(' ', '.') || '',
-          is_active: true,
-          role: 'employee',
-        }));
-        setMembers(team);
-      })
-      .catch(() => setMembers([]));
-  }
-
-  api.get("/departments/")
-    .then((res) => setDepartments(Array.isArray(res.data) ? res.data : res.data?.results || []))
-    .catch(() => setDepartments([]));
-}, [isAdmin]);
+    if (isAdmin) {
+      api.get("/users/")
+        .then((res) => setMembers(Array.isArray(res.data) ? res.data : res.data?.results || []))
+        .catch(() => setMembers([]));
+    } else {
+      api.get("/dashboard/manager/")
+        .then((res) => {
+          const team = (res.data?.team_status || []).map(m => ({
+            ...m,
+            username: m.full_name?.toLowerCase().replace(' ', '.') || '',
+            is_active: true,
+            role: 'employee',
+          }));
+          setMembers(team);
+        })
+        .catch(() => setMembers([]));
+    }
+    api.get("/departments/")
+      .then((res) => setDepartments(Array.isArray(res.data) ? res.data : res.data?.results || []))
+      .catch(() => setDepartments([]));
+  }, [isAdmin]);
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
@@ -66,6 +82,50 @@ export default function Team() {
 
   const activeCount = members.filter((m) => m.is_active !== false).length;
 
+  // ── Modal handlers ───────────────────────────────────────────────────────
+  function openSickModal(member) {
+    setSickModal({ member });
+    setSickForm(EMPTY_SICK);
+    setSickError("");
+    setSickSuccess(null);
+  }
+
+  function closeSickModal() {
+    setSickModal(null);
+    setSickSuccess(null);
+    setSickError("");
+  }
+
+  async function handleSickSubmit() {
+    if (!sickForm.start_date || !sickForm.end_date) {
+      setSickError("Start date and end date are required.");
+      return;
+    }
+    if (sickForm.start_date > sickForm.end_date) {
+      setSickError("End date must be after start date.");
+      return;
+    }
+    setSickLoading(true);
+    setSickError("");
+    try {
+      const payload = {
+        user_id: sickModal.member.id,
+        start_date: sickForm.start_date,
+        end_date: sickForm.end_date,
+        medical_document: sickForm.medical_document || "",
+        overlap_action: sickForm.overlap_action,
+      };
+      const result = await registerSickLeave(payload);
+      setSickSuccess(result);
+    } catch (err) {
+      const msg = err?.response?.data?.detail || JSON.stringify(err?.response?.data) || "An error occurred.";
+      setSickError(msg);
+    } finally {
+      setSickLoading(false);
+    }
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
 
@@ -176,6 +236,15 @@ export default function Team() {
                   )}
                 </div>
                 {m.email && <div className={styles.cardEmail}>{m.email}</div>}
+                {canRegisterSick && m.id && (
+                  <button
+                    className={styles.sickBtn}
+                    onClick={() => openSickModal(m)}
+                    title="Register sick leave"
+                  >
+                    + Sick Leave
+                  </button>
+                )}
               </div>
             );
           }) : (
@@ -194,11 +263,12 @@ export default function Team() {
             <span>Position</span>
             <span>Email</span>
             <span>Status</span>
+            {canRegisterSick && <span></span>}
           </div>
           {filtered.length > 0 ? filtered.map((m, i) => {
             const roleStyle = ROLE_COLORS[m.role] || ROLE_COLORS.employee;
             return (
-              <div key={i} className={styles.tableRow}>
+              <div key={i} className={`${styles.tableRow} ${canRegisterSick ? styles.tableRowWithAction : ""}`}>
                 <span className={styles.memberCell}>
                   <span className={styles.listAvatar} style={{ background: roleStyle.bg, color: roleStyle.color }}>
                     {getInitials(m)}
@@ -221,11 +291,169 @@ export default function Team() {
                     {m.is_active === false ? "Inactive" : "Active"}
                   </span>
                 </span>
+                {canRegisterSick && (
+                  <span>
+                    {m.id && (
+                      <button
+                        className={styles.sickBtnSmall}
+                        onClick={() => openSickModal(m)}
+                        title="Register sick leave"
+                      >
+                        + Sick Leave
+                      </button>
+                    )}
+                  </span>
+                )}
               </div>
             );
           }) : (
             <div className={styles.empty}>No team members found.</div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal Sick Leave ────────────────────────────────────────────── */}
+      {sickModal && (
+        <div className={styles.modalOverlay} onClick={closeSickModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+
+            {/* Header modal */}
+            <div className={styles.modalHeader}>
+              <div>
+                <h2 className={styles.modalTitle}>Register Sick Leave</h2>
+                <p className={styles.modalSub}>
+                  {sickModal.member.full_name || sickModal.member.username}
+                </p>
+              </div>
+              <button className={styles.modalClose} onClick={closeSickModal}>✕</button>
+            </div>
+
+            {!sickSuccess ? (
+              <>
+                {/* Formular */}
+                <div className={styles.modalBody}>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Start Date *</label>
+                      <input
+                        type="date"
+                        className={styles.formInput}
+                        value={sickForm.start_date}
+                        onChange={(e) => setSickForm(f => ({ ...f, start_date: e.target.value }))}
+                      />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>End Date *</label>
+                      <input
+                        type="date"
+                        className={styles.formInput}
+                        value={sickForm.end_date}
+                        onChange={(e) => setSickForm(f => ({ ...f, end_date: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Medical Document <span className={styles.optional}>(optional)</span></label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      placeholder="Document number or reference…"
+                      value={sickForm.medical_document}
+                      onChange={(e) => setSickForm(f => ({ ...f, medical_document: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>If overlapping leaves exist</label>
+                    <div className={styles.overlapOptions}>
+                      <label className={`${styles.overlapOption} ${sickForm.overlap_action === 'return' ? styles.overlapOptionActive : ''}`}>
+                        <input
+                          type="radio"
+                          name="overlap_action"
+                          value="return"
+                          checked={sickForm.overlap_action === 'return'}
+                          onChange={() => setSickForm(f => ({ ...f, overlap_action: 'return' }))}
+                        />
+                        <div>
+                          <span className={styles.overlapTitle}>Return days</span>
+                          <span className={styles.overlapDesc}>Overlapping days are returned to the employee's balance</span>
+                        </div>
+                      </label>
+                      <label className={`${styles.overlapOption} ${sickForm.overlap_action === 'extend' ? styles.overlapOptionActive : ''}`}>
+                        <input
+                          type="radio"
+                          name="overlap_action"
+                          value="extend"
+                          checked={sickForm.overlap_action === 'extend'}
+                          onChange={() => setSickForm(f => ({ ...f, overlap_action: 'extend' }))}
+                        />
+                        <div>
+                          <span className={styles.overlapTitle}>Extend leave</span>
+                          <span className={styles.overlapDesc}>Leave is extended after sick leave ends, skipping weekends & holidays</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className={styles.autoApproveNote}>
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                      <circle cx="8" cy="8" r="7" stroke="#4ade80" strokeWidth="1.4"/>
+                      <path d="M5 8l2 2 4-4" stroke="#4ade80" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Sick leave is auto-approved — no manager action required
+                  </div>
+
+                  {sickError && <div className={styles.errorMsg}>{sickError}</div>}
+                </div>
+
+                <div className={styles.modalFooter}>
+                  <button className={styles.cancelBtn} onClick={closeSickModal} disabled={sickLoading}>
+                    Cancel
+                  </button>
+                  <button className={styles.submitBtn} onClick={handleSickSubmit} disabled={sickLoading}>
+                    {sickLoading ? "Registering…" : "Register Sick Leave"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Success state */
+              <div className={styles.modalBody}>
+                <div className={styles.successBlock}>
+                  <div className={styles.successIcon}>
+                    <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                      <circle cx="12" cy="12" r="11" stroke="#4ade80" strokeWidth="1.5"/>
+                      <path d="M7 12l3.5 3.5L17 8.5" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <p className={styles.successTitle}>Sick leave registered</p>
+                  <p className={styles.successDays}>
+                    {sickSuccess.sick_leave?.total_days} working day{sickSuccess.sick_leave?.total_days !== 1 ? "s" : ""}
+                    {" "}· {sickSuccess.sick_leave?.start_date} → {sickSuccess.sick_leave?.end_date}
+                  </p>
+                  {sickSuccess.overlaps_resolved?.length > 0 && (
+                    <div className={styles.overlapSummary}>
+                      <p className={styles.overlapSummaryTitle}>Overlaps resolved ({sickSuccess.overlaps_resolved.length})</p>
+                      {sickSuccess.overlaps_resolved.map((o, i) => (
+                        <div key={i} className={styles.overlapItem}>
+                          <span className={styles.overlapItemType}>{o.leave_type}</span>
+                          <span className={styles.overlapItemDetail}>
+                            {o.action === 'return'
+                              ? `${o.days_returned} day(s) returned · ${o.original_period}`
+                              : `Extended to ${o.new_end_date} · ${o.days_shifted} day(s) shifted`
+                            }
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className={styles.modalFooter}>
+                  <button className={styles.submitBtn} onClick={closeSickModal}>Done</button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

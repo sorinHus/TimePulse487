@@ -10,6 +10,7 @@ class LeaveType(models.Model):
     is_paid = models.BooleanField(default=True)
     color = models.CharField(max_length=7, default='#3B82F6')
     is_active = models.BooleanField(default=True)
+    is_sick_leave = models.BooleanField(default=False)  # B10: marchează Sick Leave
 
     class Meta:
         verbose_name = 'Leave Type'
@@ -55,6 +56,11 @@ class LeaveRequest(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
+    OVERLAP_ACTION_CHOICES = [
+        ('return', 'Return days to balance'),
+        ('extend', 'Extend leave after sick leave'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -86,6 +92,25 @@ class LeaveRequest(models.Model):
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     review_note = models.TextField(blank=True)
+
+    # B10: câmpuri pentru concediu medical
+    medical_document = models.CharField(max_length=500, blank=True, default='')  # URL/nume fișier, opțional
+    registered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='registered_sick_leaves'
+    )  # managerul care a înregistrat CM
+
+    # B13: acțiunea la suprapunere
+    overlap_action = models.CharField(
+        max_length=10,
+        choices=OVERLAP_ACTION_CHOICES,
+        default='return',
+        blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

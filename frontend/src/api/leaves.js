@@ -13,3 +13,5 @@ export const approveLeaveRequest = approveLeave
 export const rejectLeaveRequest = rejectLeave 
 export const getWorkingDays = (start, end) =>
   api.get(`/leaves/working-days/?start=${start}&end=${end}`).then(r => r.data)
+export const registerSickLeave = (data) =>
+  api.post('/leaves/sick-leave/register/', data).then((r) => r.data);

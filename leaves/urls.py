@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     LeaveTypeListView, LeaveBalanceView,
     LeaveRequestListCreateView, LeaveRequestDetailView,
-    LeaveApproveRejectView, WorkingDaysPreviewView
+    LeaveApproveRejectView, WorkingDaysPreviewView,
+    SickLeaveRegisterView,
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path('leaves/requests/<int:pk>/', LeaveRequestDetailView.as_view(), name='leave_request_detail'),
     path('leaves/requests/<int:pk>/<str:action>/', LeaveApproveRejectView.as_view(), name='leave_approve_reject'),
     path('leaves/working-days/', WorkingDaysPreviewView.as_view(), name='working_days_preview'),
+    path('leaves/sick-leave/register/', SickLeaveRegisterView.as_view(), name='sick_leave_register'),
 ]
