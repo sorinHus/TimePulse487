@@ -71,3 +71,11 @@ for rule in default_rules:
         defaults={'extra_days': rule['extra_days']}
     )
 print('Seniority rules seeded.')
+
+# Fix nume: Ioana Rus → Dana Rus
+User.objects.filter(first_name='Ioana', last_name='Rus').update(
+    first_name='Dana',
+    username='dana.rus',
+    email='dana.rus@timepulse.app'
+)
+print('Updated: Ioana Rus → Dana Rus')
