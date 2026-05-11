@@ -1,22 +1,33 @@
-from django.urls import path
-from .views import (
-    TeamCalendarView,
-    AttendanceExportView,
-    LeaveExportView,
-    AdminDashboardView,
-    ManagerDashboardView,
-    EmployeeDashboardView,
-    DebugTeamView,
-    PontajExportView,
-)
+import api from './axios'
 
-urlpatterns = [
-    path('calendar/', TeamCalendarView.as_view(), name='team_calendar'),
-    path('reports/attendance/export/', AttendanceExportView.as_view(), name='attendance_export'),
-    path('reports/leaves/export/', LeaveExportView.as_view(), name='leave_export'),
-    path('reports/pontaj/export/', PontajExportView.as_view(), name='pontaj_export'),
-    path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
-    path('dashboard/manager/', ManagerDashboardView.as_view(), name='manager_dashboard'),
-    path('dashboard/employee/', EmployeeDashboardView.as_view(), name='employee_dashboard'),
-    path('debug/team/', DebugTeamView.as_view()),
-]
+export const getAdminDashboard = () => api.get('/dashboard/admin/')
+export const getManagerDashboard = () => api.get('/dashboard/manager/')
+export const getEmployeeDashboard = () => api.get('/dashboard/employee/')
+
+export const getTeamCalendar = (year, month, departmentId = null) => {
+  let url = `/calendar/?year=${year}&month=${month}`
+  if (departmentId) url += `&department=${departmentId}`
+  return api.get(url).then(r => r.data)
+}
+
+export const exportAttendance = (year, month, userId = null) => {
+  const params = userId
+    ? `?year=${year}&month=${month}&user_id=${userId}`
+    : `?year=${year}&month=${month}`
+  return api.get(`/reports/attendance/export/${params}`, { responseType: 'blob' }).then(r => r.data)
+}
+
+export const exportLeaves = (year, userId = null) => {
+  const params = userId ? `?year=${year}&user_id=${userId}` : `?year=${year}`
+  return api.get(`/reports/leaves/export/${params}`, { responseType: 'blob' }).then(r => r.data)
+}
+
+export const exportAttendanceExcel = exportAttendance
+export const exportLeavesPdf = exportLeaves
+
+export const exportPontaj = (year, month, departmentId = null, userId = null) => {
+  let url = `/reports/pontaj/export/?year=${year}&month=${month}`
+  if (departmentId) url += `&department_id=${departmentId}`
+  if (userId) url += `&user_id=${userId}`
+  return api.get(url, { responseType: 'blob' }).then(r => r.data)
+}
