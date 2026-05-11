@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { clockIn, clockOut, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendence";
+import { clockIn, clockOut, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendance";
 import styles from "./Attendance.module.css";
 
 
