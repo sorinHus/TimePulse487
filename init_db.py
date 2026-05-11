@@ -56,3 +56,18 @@ for u in all_users:
             created_count += 1
 
 print(f'Leave balances: {created_count} create pentru {current_year}.')    
+
+# B12: Seed reguli vechime (Codul Muncii RO) — doar dacă nu există
+from leaves.models import SeniorityRule
+default_rules = [
+    {'min_years': 5,  'extra_days': 1},
+    {'min_years': 10, 'extra_days': 2},
+    {'min_years': 15, 'extra_days': 3},
+    {'min_years': 20, 'extra_days': 4},
+]
+for rule in default_rules:
+    SeniorityRule.objects.get_or_create(
+        min_years=rule['min_years'],
+        defaults={'extra_days': rule['extra_days']}
+    )
+print('Seniority rules seeded.')

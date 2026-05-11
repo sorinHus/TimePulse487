@@ -63,3 +63,10 @@ class SickLeaveRegisterSerializer(serializers.Serializer):
         if data['start_date'] > data['end_date']:
             raise serializers.ValidationError({'end_date': 'End date must be after start date.'})
         return data
+
+class SeniorityRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import SeniorityRule
+        model = SeniorityRule
+        fields = ['id', 'min_years', 'extra_days', 'created_at']
+        read_only_fields = ['id', 'created_at']        

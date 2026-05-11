@@ -128,3 +128,22 @@ class LeaveRequest(models.Model):
         self.total_days = days
         self.save(update_fields=['total_days'])
         return days
+
+class SeniorityRule(models.Model):
+    """Reguli zile extra concediu după vechime — configurabile de admin."""
+    min_years = models.PositiveIntegerField(
+        unique=True,
+        help_text='Număr minim de ani de vechime'
+    )
+    extra_days = models.PositiveIntegerField(
+        help_text='Zile extra de concediu de odihnă'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Seniority Rule'
+        verbose_name_plural = 'Seniority Rules'
+        ordering = ['min_years']
+
+    def __str__(self):
+        return f'{self.min_years}+ years → +{self.extra_days} days'        

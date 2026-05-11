@@ -4,6 +4,8 @@ from .views import (
     LeaveRequestListCreateView, LeaveRequestDetailView,
     LeaveApproveRejectView, WorkingDaysPreviewView,
     SickLeaveRegisterView,
+    SeniorityRuleListCreateView, SeniorityRuleDetailView,
+    ApplySeniorityToBalancesView,
 )
 
 urlpatterns = [
@@ -14,4 +16,7 @@ urlpatterns = [
     path('leaves/requests/<int:pk>/<str:action>/', LeaveApproveRejectView.as_view(), name='leave_approve_reject'),
     path('leaves/working-days/', WorkingDaysPreviewView.as_view(), name='working_days_preview'),
     path('leaves/sick-leave/register/', SickLeaveRegisterView.as_view(), name='sick_leave_register'),
+    path('leaves/seniority-rules/', SeniorityRuleListCreateView.as_view(), name='seniority_rules'),
+    path('leaves/seniority-rules/<int:pk>/', SeniorityRuleDetailView.as_view(), name='seniority_rule_detail'),
+    path('leaves/seniority-rules/apply/', ApplySeniorityToBalancesView.as_view(), name='seniority_apply'),
 ]

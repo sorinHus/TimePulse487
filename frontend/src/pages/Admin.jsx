@@ -24,6 +24,11 @@ export default function Admin() {
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("users"); // "users" | "seniority"
+  const [seniorityRules, setSeniorityRules] = useState([]);
+  const [seniorityForm, setSeniorityForm] = useState({ min_years: "", extra_days: "" });
+  const [seniorityError, setSeniorityError] = useState("");
+  const [applyMsg, setApplyMsg] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -39,10 +44,18 @@ export default function Admin() {
     } catch { setDepartments([]); }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchDepartments();
-  }, []);
+  const fetchSeniorityRules = async () => {
+  try {
+    const res = await api.get("/leaves/seniority-rules/");
+    setSeniorityRules(Array.isArray(res.data) ? res.data : []);
+  } catch { setSeniorityRules([]); }
+};
+
+useEffect(() => {
+  fetchUsers();
+  fetchDepartments();
+  fetchSeniorityRules();
+}, []);
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
@@ -94,22 +107,76 @@ export default function Admin() {
 
   const f = (key) => (e) => setForm((v) => ({ ...v, [key]: e.target.value }));
 
-  return (
-    <div className={styles.page}>
+  const handleSeniorityAdd = async () => {
+  setSeniorityError("");
+  if (!seniorityForm.min_years || !seniorityForm.extra_days) {
+    setSeniorityError("Both fields are required.");
+    return;
+  }
+  try {
+    await api.post("/leaves/seniority-rules/", {
+      min_years: parseInt(seniorityForm.min_years),
+      extra_days: parseInt(seniorityForm.extra_days),
+    });
+    setSeniorityForm({ min_years: "", extra_days: "" });
+    await fetchSeniorityRules();
+  } catch (e) {
+    setSeniorityError(e?.response?.data?.min_years?.[0] || e?.response?.data?.detail || "Error adding rule.");
+  }
+};
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>User Management</h1>
-          <p className={styles.subtitle}>{users.length} accounts total</p>
-        </div>
+const handleSeniorityDelete = async (id) => {
+  try {
+    await api.delete(`/leaves/seniority-rules/${id}/`);
+    await fetchSeniorityRules();
+  } catch { /* silent */ }
+};
+
+const handleApplySeniority = async () => {
+  setApplyMsg("");
+  try {
+    const res = await api.post("/leaves/seniority-rules/apply/");
+    setApplyMsg(res.data?.detail || "Applied.");
+    setTimeout(() => setApplyMsg(""), 4000);
+  } catch (e) {
+    setApplyMsg(e?.response?.data?.detail || "Error applying rules.");
+  }
+};
+
+return (
+  <div className={styles.page}>
+
+    {/* Header */}
+    <div className={styles.header}>
+      <div>
+        <h1 className={styles.title}>Administration</h1>
+        <p className={styles.subtitle}>{users.length} accounts total</p>
+      </div>
+      {activeTab === "users" && (
         <button
           className={styles.btnNew}
           onClick={() => { setShowForm((v) => !v); setFormError(""); }}
         >
           {showForm ? "✕ Cancel" : "+ New user"}
         </button>
-      </div>
+      )}
+    </div>
+
+    {/* Tabs */}
+    <div className={styles.tabs}>
+      <button
+        className={`${styles.tab} ${activeTab === "users" ? styles.tabActive : ""}`}
+        onClick={() => setActiveTab("users")}
+      >
+        Users
+      </button>
+      <button
+        className={`${styles.tab} ${activeTab === "seniority" ? styles.tabActive : ""}`}
+        onClick={() => setActiveTab("seniority")}
+      >
+        Seniority Rules
+      </button>
+    </div>
 
       {successMsg && <div className={styles.successBanner}>{successMsg}</div>}
 
@@ -232,7 +299,87 @@ export default function Admin() {
             {search ? `No users matching "${search}".` : "No users found."}
           </div>
         )}
-      </div>
+    </div> {/* ← închide styles.table */}
+
+      {/* ── Seniority Rules Tab ── */}
+      {activeTab === "seniority" && (
+        <div className={styles.senioritySection}>
+
+          <div className={styles.seniorityInfo}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <circle cx="8" cy="8" r="7" stroke="#60a5fa" strokeWidth="1.4"/>
+              <path d="M8 7v4M8 5.5v.5" stroke="#60a5fa" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            Extra annual leave days based on seniority (years since hire date). Default values follow Romanian Labor Code.
+            After modifying rules, click <strong>Apply to all balances</strong> to recalculate.
+          </div>
+
+          <div className={styles.seniorityTable}>
+            <div className={`${styles.seniorityRow} ${styles.seniorityHead}`}>
+              <span>Min. years</span>
+              <span>Extra days</span>
+              <span></span>
+            </div>
+            {seniorityRules.length > 0 ? seniorityRules.map((rule) => (
+              <div key={rule.id} className={styles.seniorityRow}>
+                <span className={styles.seniorityVal}>{rule.min_years}+ years</span>
+                <span className={styles.seniorityExtra}>+{rule.extra_days} day{rule.extra_days !== 1 ? "s" : ""}</span>
+                <span>
+                  <button
+                    className={styles.btnDelete}
+                    onClick={() => handleSeniorityDelete(rule.id)}
+                    title="Delete rule"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            )) : (
+              <div className={styles.empty}>No seniority rules configured.</div>
+            )}
+          </div>
+
+          <div className={styles.seniorityAddForm}>
+            <div className={styles.seniorityAddRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>Min. years *</label>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  placeholder="e.g. 5"
+                  value={seniorityForm.min_years}
+                  onChange={e => setSeniorityForm(f => ({ ...f, min_years: e.target.value }))}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Extra days *</label>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  placeholder="e.g. 1"
+                  value={seniorityForm.extra_days}
+                  onChange={e => setSeniorityForm(f => ({ ...f, extra_days: e.target.value }))}
+                />
+              </div>
+              <button className={styles.btnSubmit} onClick={handleSeniorityAdd} style={{ alignSelf: "flex-end" }}>
+                Add rule
+              </button>
+            </div>
+            {seniorityError && <div className={styles.formError}>{seniorityError}</div>}
+          </div>
+
+          <div className={styles.seniorityApply}>
+            <button className={styles.btnApply} onClick={handleApplySeniority}>
+              Apply to all balances
+            </button>
+            {applyMsg && <span className={styles.applyMsg}>{applyMsg}</span>}
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }

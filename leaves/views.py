@@ -467,3 +467,115 @@ class SickLeaveRegisterView(APIView):
             'overlaps_resolved': overlap_results,
             'message': f'Sick leave registered successfully. {len(overlap_results)} overlap(s) resolved.',
         }, status=status.HTTP_201_CREATED)
+
+# ── B12: Seniority Rules ─────────────────────────────────────────────────────
+
+def get_seniority_extra_days(user):
+    """Calculează zilele extra de concediu pe baza vechimii userului."""
+    from .models import SeniorityRule
+    if not user.hire_date:
+        return 0
+    today = date.today()
+    years = (today - user.hire_date).days // 365
+    rules = SeniorityRule.objects.filter(min_years__lte=years).order_by('-min_years')
+    if rules.exists():
+        return rules.first().extra_days
+    return 0
+
+
+class SeniorityRuleListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models import SeniorityRule
+        from .serializers import SeniorityRuleSerializer
+        rules = SeniorityRule.objects.all()
+        return Response(SeniorityRuleSerializer(rules, many=True).data)
+
+    def post(self, request):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        from .serializers import SeniorityRuleSerializer
+        serializer = SeniorityRuleSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SeniorityRuleDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        from .models import SeniorityRule
+        try:
+            rule = SeniorityRule.objects.get(pk=pk)
+            rule.delete()
+            return Response({'detail': 'Deleted.'})
+        except SeniorityRule.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        from .models import SeniorityRule
+        from .serializers import SeniorityRuleSerializer
+        try:
+            rule = SeniorityRule.objects.get(pk=pk)
+            serializer = SeniorityRuleSerializer(rule, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except SeniorityRule.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ApplySeniorityToBalancesView(APIView):
+    """
+    POST /api/leaves/seniority-rules/apply/
+    Recalculează total_days pentru Annual Leave pentru toți userii activi,
+    aplicând regulile de vechime peste valoarea de bază din LeaveType.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        from .models import SeniorityRule
+
+        try:
+            annual_leave_type = LeaveType.objects.get(name='Annual Leave', is_active=True)
+        except LeaveType.DoesNotExist:
+            return Response({'detail': 'Annual Leave type not found.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        current_year = timezone.now().year
+        users = User.objects.filter(is_active=True)
+        updated = 0
+
+        for u in users:
+            extra = get_seniority_extra_days(u)
+            new_total = annual_leave_type.max_days_per_year + extra
+            balance, created = LeaveBalance.objects.get_or_create(
+                user=u,
+                leave_type=annual_leave_type,
+                year=current_year,
+                defaults={'total_days': new_total}
+            )
+            if not created and balance.total_days != new_total:
+                balance.total_days = new_total
+                balance.save(update_fields=['total_days'])
+                updated += 1
+            elif created:
+                updated += 1
+
+        return Response({
+            'detail': f'Seniority applied. {updated} balances updated.',
+            'year': current_year,
+            'base_days': annual_leave_type.max_days_per_year,
+        })        
