@@ -15,3 +15,11 @@ class AttendanceSessionAdmin(admin.ModelAdmin):
     list_filter = ['status', 'date']
     search_fields = ['user__username', 'user__first_name', 'user__last_name']
     ordering = ['-date', '-clock_in']
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if obj.clock_out and obj.status == 'open':
+            obj.status = 'complete'
+            obj.save()
+        if obj.clock_out:
+            obj.calculate_hours()
