@@ -188,7 +188,7 @@ class ClockInView(APIView):
         now = timezone.now()
         session = AttendanceSession.objects.create(
             user=request.user,
-            date=timezone.localdate(),
+            date=today,
             clock_in=now,
             notes=serializer.validated_data.get('notes', '')
         )
@@ -205,8 +205,7 @@ class ClockOutView(APIView):
 
         today = timezone.localdate()
         open_session = AttendanceSession.objects.filter(
-                        user=request.user, status='open', date=today
-                                )
+            user=request.user, status='open', date=today
         ).first()
         if not open_session:
             return Response(
