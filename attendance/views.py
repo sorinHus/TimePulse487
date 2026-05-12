@@ -175,8 +175,9 @@ class ClockInView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        today = timezone.localdate()
         open_session = AttendanceSession.objects.filter(
-            user=request.user, status='open'
+            user=request.user, status='open', date=today
         ).first()
         if open_session:
             return Response(
@@ -202,8 +203,10 @@ class ClockOutView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        today = timezone.localdate()
         open_session = AttendanceSession.objects.filter(
-            user=request.user, status='open'
+                        user=request.user, status='open', date=today
+                                )
         ).first()
         if not open_session:
             return Response(
