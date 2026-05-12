@@ -52,7 +52,7 @@ dept_data = {
             ('mihai.dobre', 'Mihai', 'Dobre', 'Specialist Training'),
             ('laura.popa', 'Laura', 'Popa', 'Administrator HR'),
             ('dan.moldovan', 'Dan', 'Moldovan', 'Specialist Pontaj'),
-            ('ioana.rus', 'Ioana', 'Rus', 'Recrutor Senior'),
+            ('dana.rus', 'Dana', 'Rus', 'Recrutor Senior'),
             ('andrei.nitu', 'Andrei', 'Nițu', 'Specialist Beneficii'),
             ('raluca.gheorghe', 'Raluca', 'Gheorghe', 'Asistent HR'),
             ('bogdan.stoica', 'Bogdan', 'Stoica', 'Specialist Evaluare'),
