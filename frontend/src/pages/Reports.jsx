@@ -11,11 +11,15 @@ function getCurrentMonth() {
 
 export default function Reports() {
   const { user } = useAuth();
+  const isManager = user?.effective_role === "manager";
+
   const [attendanceMonth, setAttendanceMonth] = useState(getCurrentMonth());
   const [leavesMonth, setLeavesMonth] = useState(getCurrentMonth());
   const [pontajMonth, setPontajMonth] = useState(getCurrentMonth());
   const [pontajType, setPontajType] = useState("department");
-  const [pontajDept, setPontajDept] = useState("");
+  const [pontajDept, setPontajDept] = useState(() =>
+    user?.effective_role === "manager" ? String(user.department_id) : ""
+  );
   const [pontajUser, setPontajUser] = useState("");
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]);
@@ -32,6 +36,13 @@ export default function Reports() {
       .then(r => setUsers(Array.isArray(r.data) ? r.data : r.data?.results || []))
       .catch(() => {});
   }, []);
+
+  // Daca e manager, forteaza intotdeauna department_id-ul sau
+  useEffect(() => {
+    if (isManager && user?.department_id) {
+      setPontajDept(String(user.department_id));
+    }
+  }, [isManager, user?.department_id]);
 
   const handleExportAttendance = async () => {
     setErrors({});
@@ -230,7 +241,9 @@ export default function Reports() {
                   <option value="individual">By employee</option>
                 </select>
               </div>
-              {pontajType === "department" && (
+
+              {/* Selectorul de departament: vizibil doar pentru admin */}
+              {pontajType === "department" && !isManager && (
                 <div className={styles.filterRow}>
                   <label className={styles.filterLabel}>Department</label>
                   <select
@@ -245,6 +258,20 @@ export default function Reports() {
                   </select>
                 </div>
               )}
+
+              {/* Daca e manager si type=department, arata departamentul sau (read-only) */}
+              {pontajType === "department" && isManager && (
+                <div className={styles.filterRow}>
+                  <label className={styles.filterLabel}>Department</label>
+                  <input
+                    className={styles.monthInput}
+                    value={departments.find(d => String(d.id) === String(user.department_id))?.name || "Your department"}
+                    readOnly
+                    style={{ opacity: 0.7, cursor: "not-allowed" }}
+                  />
+                </div>
+              )}
+
               {pontajType === "individual" && (
                 <div className={styles.filterRow}>
                   <label className={styles.filterLabel}>Employee</label>
@@ -262,6 +289,7 @@ export default function Reports() {
                   </select>
                 </div>
               )}
+
               {errors.pontaj && <p className={styles.errorMsg}>{errors.pontaj}</p>}
             </div>
             <div className={styles.cardFooter}>
