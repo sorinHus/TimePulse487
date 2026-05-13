@@ -1,0 +1,472 @@
+/* MobileApp.module.css — mobile-first, standalone */
+
+.container {
+  min-height: 100svh;
+  background: #0f1117;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  background: #1a2035;
+  border-bottom: 1px solid #1e2d45;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.headerTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: #60a5fa;
+  letter-spacing: 0.02em;
+}
+
+.headerSub {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.logoutBtn {
+  background: none;
+  border: 1px solid #1e2d45;
+  color: #64748b;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ── Content ─────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* space for tab bar */
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+/* ── Bottom tab bar ──────────────────────────────────────── */
+.tabBar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: #1a2035;
+  border-top: 1px solid #1e2d45;
+  display: flex;
+  z-index: 10;
+}
+
+.tabBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 0 12px;
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tabBtnActive {
+  color: #60a5fa;
+}
+
+/* ── Login ───────────────────────────────────────────────── */
+.loginWrap {
+  min-height: 100svh;
+  background: #0f1117;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 24px;
+}
+
+.loginLogo {
+  font-size: 28px;
+  font-weight: 800;
+  color: #60a5fa;
+  letter-spacing: 0.03em;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 380px;
+  background: #1a2035;
+  border: 1px solid #1e2d45;
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loginTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-align: center;
+}
+
+.loginErr {
+  color: #f87171;
+  font-size: 13px;
+  text-align: center;
+}
+
+.installHint {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.6;
+}
+
+/* ── Inputs ──────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 13px 14px;
+  background: #0f1117;
+  border: 1px solid #1e2d45;
+  border-radius: 10px;
+  color: #f1f5f9;
+  font-size: 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* ── Big action buttons ──────────────────────────────────── */
+.bigBtn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.bigBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.bigBtn:active:not(:disabled) { opacity: 0.8; }
+
+.btnIn  { background: #1d4ed8; color: #fff; }
+.btnOut { background: #be123c; color: #fff; }
+
+/* ── Date label ──────────────────────────────────────────── */
+.dateLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ── Leave banner ────────────────────────────────────────── */
+.leaveBanner {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #a5b4fc;
+  text-align: center;
+}
+
+/* ── Clock card ──────────────────────────────────────────── */
+.clockCard {
+  background: #1a2035;
+  border: 1px solid #1e2d45;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.2s;
+}
+
+.clockCardActive {
+  border-color: rgba(37, 99, 235, 0.5);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.clockCardDone {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.clockStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #475569;
+  flex-shrink: 0;
+}
+
+.pulseOn {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+  animation: pulseAnim 2s infinite;
+}
+
+@keyframes pulseAnim {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25); }
+  50%       { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.08); }
+}
+
+.clockTimes {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.clockTimeBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.clockTimeLabel {
+  font-size: 11px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.clockTimeValue {
+  font-size: 22px;
+  font-weight: 800;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.clockTimeSep {
+  width: 1px;
+  height: 36px;
+  background: #1e2d45;
+  flex-shrink: 0;
+}
+
+/* ── Done / error messages ───────────────────────────────── */
+.doneMsg {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4ade80;
+  padding: 10px;
+}
+
+.errMsg {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #f87171;
+  text-align: center;
+}
+
+.okMsg {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #4ade80;
+  text-align: center;
+}
+
+/* ── Balance cards ───────────────────────────────────────── */
+.balanceRow {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.balanceCard {
+  flex: 1;
+  min-width: 100px;
+  background: #1a2035;
+  border: 1px solid #1e2d45;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.balanceName {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.balanceNum {
+  font-size: 28px;
+  font-weight: 800;
+  color: #60a5fa;
+  line-height: 1;
+}
+
+.balanceSub {
+  font-size: 11px;
+  color: #475569;
+  margin-top: 3px;
+}
+
+/* ── Leave request form ──────────────────────────────────── */
+.formCard {
+  background: #1a2035;
+  border: 1px solid #1e2d45;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+
+.formLabel {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: -4px;
+}
+
+.workDaysInfo {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #60a5fa;
+  font-weight: 600;
+  text-align: center;
+}
+
+.formBtns {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 14px;
+  background: none;
+  border: 1px solid #1e2d45;
+  border-radius: 12px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.bigBtn.btnIn { flex: 2; }
+
+/* ── Requests list ───────────────────────────────────────── */
+.requestsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.requestCard {
+  background: #1a2035;
+  border: 1px solid #1e2d45;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.requestTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.requestType {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.requestDates {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.reqBadge {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reqBadgeGreen { background: rgba(34,197,94,0.12);  color: #4ade80; }
+.reqBadgeAmber { background: rgba(251,191,36,0.12); color: #fbbf24; }
+.reqBadgeRed   { background: rgba(239,68,68,0.12);  color: #f87171; }

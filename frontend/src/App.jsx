@@ -12,6 +12,7 @@ import Reports from './pages/Reports'
 import Admin from './pages/Admin'
 import Team from './pages/Team'
 import Notifications from './pages/Notifications'
+import MobileApp from './pages/MobileApp'
 
 function DashboardRoute() {
   const { user } = useAuth()
@@ -27,6 +28,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/m" element={<MobileApp />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<DashboardRoute />} />
             <Route path="/attendance" element={<Attendance />} />
