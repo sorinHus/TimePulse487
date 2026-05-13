@@ -3,7 +3,6 @@ import { clockIn, clockOut, getTodaySessions, getSessionHistory, requestOvertime
 import styles from "./Attendance.module.css";
 
 
-const WORKDAY_HOURS = 8.5;
 const NIGHT_START = 22;
 const NIGHT_END = 6;
 
@@ -71,8 +70,22 @@ export default function Attendance() {
     }
   };
 
-  useEffect(() => { fetchToday(); }, []);
-  useEffect(() => { fetchHistory(monthOffset); }, [monthOffset]);
+  useEffect(() => {
+    getTodaySessions()
+      .then((data) => setTodaySummary(data))
+      .catch(() => setTodaySummary(null));
+  }, []);
+
+  useEffect(() => {
+    Promise.resolve()
+      .then(() => {
+        setLoadingHistory(true);
+        return getSessionHistory(getMonthParam(monthOffset));
+      })
+      .then((data) => setHistory(Array.isArray(data) ? data : []))
+      .catch(() => setHistory([]))
+      .finally(() => setLoadingHistory(false));
+  }, [monthOffset]);
 
   // Warning noapte la 21:45
   useEffect(() => {
