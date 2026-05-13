@@ -41,7 +41,7 @@
   border-radius: 8px;
   border: 1px solid rgba(37, 99, 235, 0.4);
   background: rgba(37, 99, 235, 0.1);
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 0.875rem;
   font-weight: 600;
   font-family: inherit;
@@ -220,7 +220,7 @@
   transition: border-color 0.15s;
 }
 
-.searchInput::placeholder { color: #334155; }
+.searchInput::placeholder { color: var(--text-muted); }
 .searchInput:focus { border-color: rgba(37, 99, 235, 0.4); }
 
 /* ── Table ── */
@@ -241,7 +241,7 @@
   font-weight: 600 !important;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #334155 !important;
+  color: var(--text-dim) !important;
 }
 
 .tableRow {
@@ -273,7 +273,7 @@
   min-width: 32px;
   border-radius: 50%;
   background: rgba(37, 99, 235, 0.15);
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 11px;
   font-weight: 700;
   display: flex;
@@ -304,7 +304,7 @@
 
 .userUsername {
   font-size: 0.72rem;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 .muted {
@@ -323,8 +323,8 @@
   text-transform: capitalize;
 }
 
-.role_admin    { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
-.role_manager  { background: rgba(14, 165, 233, 0.12); color: #38bdf8; }
+.role_admin    { background: rgba(139, 92, 246, 0.15); color: var(--role-admin-color); }
+.role_manager  { background: rgba(14, 165, 233, 0.12); color: var(--role-manager-color); }
 .role_employee { background: rgba(100, 116, 139, 0.1); color: var(--text-muted); }
 
 /* ── Status toggle ── */
@@ -363,7 +363,7 @@
   padding: 2.5rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 .tabs {
@@ -390,8 +390,8 @@
 .tab:hover { color: var(--text-muted); }
 
 .tabActive {
-  color: #60a5fa;
-  border-bottom-color: #60a5fa;
+  color: var(--accent-light);
+  border-bottom-color: var(--accent-light);
   font-weight: 600;
 }
 
@@ -431,7 +431,7 @@
   font-weight: 600 !important;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #334155 !important;
+  color: var(--text-dim) !important;
 }
 
 .seniorityRow {
@@ -493,7 +493,7 @@
   padding: 0.6rem 1.25rem;
   border-radius: 8px;
   background: rgba(37, 99, 235, 0.15);
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 0.875rem;
   font-weight: 600;
   font-family: inherit;

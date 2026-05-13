@@ -135,7 +135,7 @@
 }
 
 .input::placeholder {
-  color: #334155;
+  color: var(--text-muted);
 }
 
 .input:focus {
@@ -227,7 +227,7 @@
 
 .footer {
   font-size: 0.75rem;
-  color: #334155;
+  color: var(--text-muted);
   margin: 0;
   animation: fadeIn 0.4s ease 0.15s both;
 }

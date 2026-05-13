@@ -41,7 +41,7 @@
   border-radius: 8px;
   border: 1px solid rgba(37, 99, 235, 0.4);
   background: rgba(37, 99, 235, 0.1);
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 0.875rem;
   font-weight: 600;
   font-family: inherit;
@@ -96,7 +96,7 @@
 .balanceName {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: var(--text-primary);
 }
 
 .balanceDays {
@@ -133,7 +133,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.7rem;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 /* ── Form card ── */
@@ -238,7 +238,7 @@
   padding: 4px 12px;
   border-radius: 20px;
   background: rgba(37, 99, 235, 0.12);
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 0.8rem;
   font-weight: 600;
   align-self: flex-start;
@@ -324,7 +324,7 @@
   font-weight: 600 !important;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #334155 !important;
+  color: var(--text-dim) !important;
 }
 
 .tableRow {
@@ -362,7 +362,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   background: rgba(37, 99, 235, 0.12);
-  color: #60a5fa;
+  color: var(--accent-light);
 }
 
 /* ── Badges ── */
@@ -440,7 +440,7 @@
   padding: 2.5rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 /* ── Reject Modal ── */
@@ -561,7 +561,7 @@
 .planBtnEdit {
   border: 1px solid rgba(96,165,250,0.3);
   background: rgba(37,99,235,0.1);
-  color: #60a5fa;
+  color: var(--accent-light);
 }
 .planBtnEdit:hover { background: rgba(37,99,235,0.18); }
 
@@ -650,10 +650,10 @@
 .planMonthValue {
   font-size: 1rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
-.planMonthFilled { color: #60a5fa; }
+.planMonthFilled { color: var(--accent-light); }
 
 .planProgress {
   display: flex;

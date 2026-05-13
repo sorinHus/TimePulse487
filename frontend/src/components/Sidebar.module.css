@@ -110,7 +110,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #334155;
+  color: var(--text-muted);
   padding: 0.5rem 0.6rem 0.25rem;
   white-space: nowrap;
 }
@@ -132,12 +132,12 @@
 
 .navItem:hover {
   background: var(--surface-alt);
-  color: #cbd5e1;
+  color: var(--text-primary);
 }
 
 .navItem.active {
   background: rgba(37, 99, 235, 0.15);
-  color: #60a5fa;
+  color: var(--accent-light);
 }
 
 .navIcon {
@@ -185,7 +185,7 @@
   min-width: 30px;
   border-radius: 50%;
   background: rgba(37, 99, 235, 0.2);
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 11px;
   font-weight: 700;
   display: flex;

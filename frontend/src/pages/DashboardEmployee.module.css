@@ -247,7 +247,7 @@
 
 .statSub {
   font-size: 0.75rem;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 /* ── Section ── */
@@ -292,7 +292,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 .tableRow {
@@ -331,5 +331,5 @@
   padding: 2rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #334155;
+  color: var(--text-muted);
 }

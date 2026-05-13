@@ -36,7 +36,7 @@
   border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
-  color: #60a5fa;
+  color: var(--accent-light);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -75,7 +75,7 @@
 .filterActive {
   background: rgba(37, 99, 235, 0.15);
   border-color: rgba(37, 99, 235, 0.35);
-  color: #60a5fa;
+  color: var(--accent-light);
 }
 
 .list {
@@ -117,7 +117,7 @@
 }
 
 .typeOvertime { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-.typeLeave    { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
+.typeLeave    { background: rgba(59, 130, 246, 0.12); color: var(--accent-light); }
 .typeSystem   { background: rgba(100, 116, 139, 0.12); color: var(--text-muted); }
 
 .itemBody {
@@ -142,7 +142,7 @@
 
 .itemMeta {
   font-size: 0.72rem;
-  color: #334155;
+  color: var(--text-muted);
   margin-top: 0.15rem;
 }
 
@@ -178,5 +178,5 @@
   padding: 3rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #334155;
+  color: var(--text-muted);
 }
