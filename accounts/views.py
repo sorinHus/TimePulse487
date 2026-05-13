@@ -66,12 +66,22 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         return User.objects.all().select_related('department')
 
-class UserDetailView(generics.RetrieveUpdateAPIView):
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAdminUser]
 
     def get_queryset(self):
         return User.objects.all().select_related('department')
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.pk == request.user.pk:
+            return Response(
+                {'detail': 'You cannot delete your own account.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class DepartmentListView(generics.ListAPIView):
     serializer_class = DepartmentSerializer

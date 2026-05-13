@@ -589,3 +589,80 @@
 }
 .btnBulkOut:hover:not(:disabled) { background: rgba(239, 68, 68, 0.22); }
 .btnBulkOut:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Delete user modal ── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalBox {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.modalBody {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.modalBody strong {
+  color: #e2e8f0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.btnCancel {
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+  background: transparent;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btnCancel:hover { color: #94a3b8; border-color: rgba(100, 116, 139, 0.4); }
+
+.btnDeleteConfirm {
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  border: none;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnDeleteConfirm:hover { background: rgba(239, 68, 68, 0.28); }

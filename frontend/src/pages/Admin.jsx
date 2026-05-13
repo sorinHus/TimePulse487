@@ -31,6 +31,7 @@ export default function Admin() {
   const [applyMsg, setApplyMsg] = useState("");
   const [bulkMsg, setBulkMsg] = useState("");
   const [bulkLoading, setBulkLoading] = useState("");
+  const [deleteModal, setDeleteModal] = useState({ open: false, user: null });
 
   const fetchUsers = async () => {
     try {
@@ -132,6 +133,16 @@ export default function Admin() {
       await api.delete(`/leaves/seniority-rules/${id}/`);
       await fetchSeniorityRules();
     } catch { /* silent */ }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/users/${deleteModal.user.id}/`);
+      setDeleteModal({ open: false, user: null });
+      await fetchUsers();
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Delete failed.");
+    }
   };
 
   const handleBulkClockIn = async () => {
@@ -328,6 +339,13 @@ export default function Admin() {
                     >
                       {u.is_active ? "Active" : "Inactive"}
                     </button>
+                    <button
+                      className={styles.btnDelete}
+                      onClick={() => setDeleteModal({ open: true, user: u })}
+                      title="Delete user"
+                    >
+                      ✕
+                    </button>
                   </span>
                 </div>
               ))
@@ -467,6 +485,31 @@ export default function Admin() {
             {applyMsg && <span className={styles.applyMsg}>{applyMsg}</span>}
           </div>
 
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteModal.open && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <h3 className={styles.modalTitle}>Delete user</h3>
+            <p className={styles.modalBody}>
+              Are you sure you want to permanently delete{" "}
+              <strong>{deleteModal.user?.full_name || deleteModal.user?.username}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnCancel}
+                onClick={() => setDeleteModal({ open: false, user: null })}
+              >
+                Cancel
+              </button>
+              <button className={styles.btnDeleteConfirm} onClick={handleDeleteConfirm}>
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
