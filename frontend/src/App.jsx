@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Layout from './components/Layout'
@@ -14,6 +15,18 @@ import Team from './pages/Team'
 import Notifications from './pages/Notifications'
 import MobileApp from './pages/MobileApp'
 
+function MobileRedirect() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    if (isMobile && pathname !== '/m') {
+      navigate('/m', { replace: true })
+    }
+  }, [navigate, pathname])
+  return null
+}
+
 function DashboardRoute() {
   const { user } = useAuth()
   if (user?.effective_role === 'director') return <DashboardManager />
@@ -26,6 +39,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <MobileRedirect />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/m" element={<MobileApp />} />
