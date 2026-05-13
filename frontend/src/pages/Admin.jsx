@@ -32,6 +32,7 @@ export default function Admin() {
   const [bulkMsg, setBulkMsg] = useState("");
   const [bulkLoading, setBulkLoading] = useState("");
   const [deleteModal, setDeleteModal] = useState({ open: false, user: null });
+  const [deactivateModal, setDeactivateModal] = useState({ open: false, user: null, reason: "" });
 
   const fetchUsers = async () => {
     try {
@@ -101,11 +102,22 @@ export default function Admin() {
     }
   };
 
-  const toggleActive = async (user) => {
+  const handleActivate = async (user) => {
     try {
-      await api.patch(`/users/${user.id}/`, { is_active: !user.is_active });
+      await api.post(`/users/${user.id}/activate/`);
       await fetchUsers();
     } catch { /* silent */ }
+  };
+
+  const handleDeactivateConfirm = async () => {
+    if (!deactivateModal.reason.trim()) return;
+    try {
+      await api.post(`/users/${deactivateModal.user.id}/deactivate/`, { reason: deactivateModal.reason.trim() });
+      setDeactivateModal({ open: false, user: null, reason: "" });
+      await fetchUsers();
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Deactivation failed.");
+    }
   };
 
   const f = (key) => (e) => setForm((v) => ({ ...v, [key]: e.target.value }));
@@ -332,13 +344,23 @@ export default function Admin() {
                   <span className={styles.muted}>{u.position || "—"}</span>
                   <span className={styles.muted}>{u.email || "—"}</span>
                   <span className={styles.statusCell}>
-                    <button
-                      className={`${styles.toggleBtn} ${u.is_active ? styles.toggleActive : styles.toggleInactive}`}
-                      onClick={() => toggleActive(u)}
-                      title={u.is_active ? "Deactivate user" : "Activate user"}
-                    >
-                      {u.is_active ? "Active" : "Inactive"}
-                    </button>
+                    {u.is_active ? (
+                      <button
+                        className={styles.btnDeactivate}
+                        onClick={() => setDeactivateModal({ open: true, user: u, reason: "" })}
+                        title="Deactivate user"
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        className={styles.btnActivate}
+                        onClick={() => handleActivate(u)}
+                        title={u.deactivation_reason ? `Reason: ${u.deactivation_reason}` : "Activate user"}
+                      >
+                        Activate
+                      </button>
+                    )}
                     <button
                       className={styles.btnDelete}
                       onClick={() => setDeleteModal({ open: true, user: u })}
@@ -485,6 +507,45 @@ export default function Admin() {
             {applyMsg && <span className={styles.applyMsg}>{applyMsg}</span>}
           </div>
 
+        </div>
+      )}
+
+      {/* Deactivate modal */}
+      {deactivateModal.open && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <h3 className={styles.modalTitle}>Deactivate user</h3>
+            <p className={styles.modalBody}>
+              Deactivating <strong>{deactivateModal.user?.full_name || deactivateModal.user?.username}</strong>.
+              Please provide a reason.
+            </p>
+            <textarea
+              className={styles.modalTextarea}
+              rows={3}
+              placeholder="Reason for deactivation… *"
+              value={deactivateModal.reason}
+              onChange={(e) => setDeactivateModal((m) => ({ ...m, reason: e.target.value }))}
+              autoFocus
+            />
+            {!deactivateModal.reason.trim() && (
+              <p className={styles.formError}>Reason is required.</p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnCancel}
+                onClick={() => setDeactivateModal({ open: false, user: null, reason: "" })}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.btnDeleteConfirm}
+                onClick={handleDeactivateConfirm}
+                disabled={!deactivateModal.reason.trim()}
+              >
+                Deactivate
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

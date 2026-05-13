@@ -43,6 +43,8 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
+    deactivation_reason = models.TextField(blank=True, default='')
+
     # Rol temporar (înlocuitor)
     temporary_role = models.CharField(
         max_length=20, choices=ROLE_CHOICES,

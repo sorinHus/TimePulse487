@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'full_name', 'role', 'effective_role', 'department', 'department_name',
-            'phone', 'position', 'hire_date', 'avatar', 'is_active',
+            'phone', 'position', 'hire_date', 'avatar', 'is_active', 'deactivation_reason',
             'temporary_role', 'temporary_role_start', 'temporary_role_end',
             'is_substituting', 'substituting_for', 'substituting_for_name',
         ]

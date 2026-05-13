@@ -83,6 +83,43 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class DeactivateUserView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.pk == request.user.pk:
+            return Response({'detail': 'You cannot deactivate your own account.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reason = request.data.get('reason', '').strip()
+        if not reason:
+            return Response({'detail': 'A reason is required for deactivation.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.is_active = False
+        user.deactivation_reason = reason
+        user.save(update_fields=['is_active', 'deactivation_reason'])
+        return Response({'detail': 'User deactivated.', 'deactivation_reason': reason})
+
+
+class ActivateUserView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        user.is_active = True
+        user.deactivation_reason = ''
+        user.save(update_fields=['is_active', 'deactivation_reason'])
+        return Response({'detail': 'User activated.'})
+
+
 class DepartmentListView(generics.ListAPIView):
     serializer_class = DepartmentSerializer
     permission_classes = [permissions.IsAuthenticated]
