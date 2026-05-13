@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Layout from './components/Layout'
@@ -36,6 +36,15 @@ function DashboardRoute() {
 }
 
 function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -43,7 +52,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/m" element={<MobileApp />} />
-          <Route element={<Layout />}>
+          <Route element={<Layout theme={theme} onToggleTheme={toggleTheme} />}>
             <Route path="/dashboard" element={<DashboardRoute />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/leaves" element={<Leaves />} />

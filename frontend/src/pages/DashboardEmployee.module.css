@@ -24,21 +24,21 @@
   font-family: 'Georgia', serif;
   font-size: 1.6rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   margin: 0 0 0.2rem;
   letter-spacing: -0.4px;
 }
 
 .pageSubtitle {
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--text-faint);
   margin: 0;
 }
 
 /* ── Check-in card ── */
 
 .checkinCard {
-  background: #161f2e;
+  background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
@@ -96,7 +96,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #64748b;
+  color: var(--text-dim);
 }
 
 .checkinTimes {
@@ -115,14 +115,14 @@
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: var(--text-faint);
   font-weight: 600;
 }
 
 .timeValue {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.3px;
 }
@@ -215,7 +215,7 @@
 }
 
 .statCard {
-  background: #161f2e;
+  background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   padding: 1.1rem 1.25rem;
@@ -233,13 +233,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #475569;
+  color: var(--text-faint);
 }
 
 .statValue {
   font-size: 1.55rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
   line-height: 1.1;
@@ -263,14 +263,14 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #475569;
+  color: var(--text-faint);
   margin: 0;
 }
 
 /* ── Table ── */
 
 .table {
-  background: #161f2e;
+  background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   overflow: hidden;
@@ -297,7 +297,7 @@
 
 .tableRow {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 

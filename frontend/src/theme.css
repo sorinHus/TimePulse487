@@ -1,0 +1,37 @@
+/* Dark mode — default */
+:root {
+  --bg-main:      #0f1623;
+  --bg-card:      #161f2e;
+  --bg-input:     #1a2035;
+  --bg-hover:     #1e293b;
+  --border:       rgba(255, 255, 255, 0.06);
+  --border-2:     #1e2d45;
+  --text-primary: #f1f5f9;
+  --text-muted:   #94a3b8;
+  --text-dim:     #64748b;
+  --text-faint:   #475569;
+  --accent:       #2563eb;
+  --accent-light: #60a5fa;
+  --shadow:       rgba(0, 0, 0, 0.4);
+}
+
+/* Light mode */
+html[data-theme="light"] {
+  --bg-main:      #f0f4f8;
+  --bg-card:      #ffffff;
+  --bg-input:     #f8fafc;
+  --bg-hover:     #e2e8f0;
+  --border:       #e2e8f0;
+  --border-2:     #cbd5e1;
+  --text-primary: #0f172a;
+  --text-muted:   #475569;
+  --text-dim:     #64748b;
+  --text-faint:   #94a3b8;
+  --accent:       #2563eb;
+  --accent-light: #2563eb;
+  --shadow:       rgba(0, 0, 0, 0.1);
+}
+
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}

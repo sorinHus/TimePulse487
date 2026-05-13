@@ -34,7 +34,7 @@
   font-family: 'Georgia', serif;
   font-size: 1.6rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   margin: 0;
   letter-spacing: -0.4px;
 }
@@ -48,7 +48,7 @@
 
 .dateText {
   font-size: 0.8rem;
-  color: #475569;
+  color: var(--text-faint);
 }
 
 /* ── KPI grid ── */
@@ -60,7 +60,7 @@
 }
 
 .kpiCard {
-  background: #161f2e;
+  background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   padding: 1rem 1.2rem 1.1rem;
@@ -84,7 +84,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #475569;
+  color: var(--text-faint);
 }
 
 .kpiBar {
@@ -98,7 +98,7 @@
 .kpiValue {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
   line-height: 1;
@@ -123,7 +123,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: var(--text-faint);
   margin: 0;
 }
 
@@ -134,8 +134,8 @@
 }
 
 .deptCard {
-  background: #161f2e;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.85rem 1rem;
   display: flex;
@@ -161,14 +161,14 @@
 
 .deptCount {
   font-size: 0.72rem;
-  color: #475569;
+  color: var(--text-faint);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .deptBar {
   height: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -186,7 +186,7 @@
 .tabs {
   display: flex;
   gap: 0.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -196,7 +196,7 @@
   padding: 0.55rem 0.9rem;
   border: none;
   background: transparent;
-  color: #475569;
+  color: var(--text-faint);
   font-size: 0.85rem;
   font-weight: 500;
   font-family: inherit;
@@ -207,7 +207,7 @@
   white-space: nowrap;
 }
 
-.tab:hover { color: #94a3b8; }
+.tab:hover { color: var(--text-muted); }
 
 .tab.tabActive {
   color: #60a5fa;
@@ -231,7 +231,7 @@
 /* ── Panel ── */
 
 .panel {
-  background: #161f2e;
+  background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   overflow: hidden;
@@ -251,7 +251,7 @@
   gap: 0.5rem;
   align-items: center;
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -309,7 +309,7 @@
 }
 
 .empName {
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -317,7 +317,7 @@
 }
 
 .muted {
-  color: #64748b;
+  color: var(--text-dim);
   font-size: 0.82rem;
 }
 
@@ -335,7 +335,7 @@
 .badgeGreen { background: rgba(34, 197, 94, 0.12);  color: #4ade80; }
 .badgeRed   { background: rgba(239, 68, 68, 0.12);  color: #fca5a5; }
 .badgeAmber { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-.badgeGray  { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badgeGray  { background: rgba(100, 116, 139, 0.1); color: var(--text-dim); }
 
 .leaveChip {
   display: inline-block;
@@ -358,7 +358,7 @@
 
 .role_admin    { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
 .role_manager  { background: rgba(14, 165, 233, 0.12); color: #38bdf8; }
-.role_employee { background: rgba(100, 116, 139, 0.1); color: #94a3b8; }
+.role_employee { background: rgba(100, 116, 139, 0.1); color: var(--text-muted); }
 
 /* ── Empty ── */
 

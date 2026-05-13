@@ -2,8 +2,8 @@
 
 .container {
   min-height: 100svh;
-  background: #0f1117;
-  color: #f1f5f9;
+  background: var(--bg-main);
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   display: flex;
   flex-direction: column;
@@ -13,8 +13,8 @@
 
 /* ── Header ─────────────────────────────────────────────── */
 .header {
-  background: #1a2035;
-  border-bottom: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-2);
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -39,14 +39,14 @@
 
 .headerSub {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-dim);
   margin-top: 1px;
 }
 
 .logoutBtn {
   background: none;
-  border: 1px solid #1e2d45;
-  color: #64748b;
+  border: 1px solid var(--border-2);
+  color: var(--text-dim);
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 13px;
@@ -75,8 +75,8 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: #1a2035;
-  border-top: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-2);
   display: flex;
   z-index: 10;
 }
@@ -90,7 +90,7 @@
   padding: 10px 0 12px;
   background: none;
   border: none;
-  color: #475569;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -104,7 +104,7 @@
 /* ── Login ───────────────────────────────────────────────── */
 .loginWrap {
   min-height: 100svh;
-  background: #0f1117;
+  background: var(--bg-main);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -127,8 +127,8 @@
 .loginCard {
   width: 100%;
   max-width: 380px;
-  background: #1a2035;
-  border: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border: 1px solid var(--border-2);
   border-radius: 16px;
   padding: 28px 24px;
   display: flex;
@@ -139,7 +139,7 @@
 .loginTitle {
   font-size: 20px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -151,7 +151,7 @@
 
 .installHint {
   font-size: 12px;
-  color: #475569;
+  color: var(--text-faint);
   text-align: center;
   max-width: 280px;
   line-height: 1.6;
@@ -161,10 +161,10 @@
 .input {
   width: 100%;
   padding: 13px 14px;
-  background: #0f1117;
-  border: 1px solid #1e2d45;
+  background: var(--bg-main);
+  border: 1px solid var(--border-2);
   border-radius: 10px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-size: 16px;
   box-sizing: border-box;
   font-family: inherit;
@@ -198,7 +198,7 @@
 /* ── Date label ──────────────────────────────────────────── */
 .dateLabel {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-dim);
   font-weight: 500;
   text-align: center;
 }
@@ -216,8 +216,8 @@
 
 /* ── Clock card ──────────────────────────────────────────── */
 .clockCard {
-  background: #1a2035;
-  border: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border: 1px solid var(--border-2);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -242,7 +242,7 @@
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .pulse {
@@ -280,7 +280,7 @@
 
 .clockTimeLabel {
   font-size: 11px;
-  color: #475569;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -289,14 +289,14 @@
 .clockTimeValue {
   font-size: 22px;
   font-weight: 800;
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .clockTimeSep {
   width: 1px;
   height: 36px;
-  background: #1e2d45;
+  background: var(--border-2);
   flex-shrink: 0;
 }
 
@@ -339,8 +339,8 @@
 .balanceCard {
   flex: 1;
   min-width: 100px;
-  background: #1a2035;
-  border: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border: 1px solid var(--border-2);
   border-radius: 12px;
   padding: 14px 12px;
   text-align: center;
@@ -348,7 +348,7 @@
 
 .balanceName {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-dim);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -364,14 +364,14 @@
 
 .balanceSub {
   font-size: 11px;
-  color: #475569;
+  color: var(--text-faint);
   margin-top: 3px;
 }
 
 /* ── Leave request form ──────────────────────────────────── */
 .formCard {
-  background: #1a2035;
-  border: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border: 1px solid var(--border-2);
   border-radius: 14px;
   padding: 18px;
   display: flex;
@@ -382,13 +382,13 @@
 .formTitle {
   font-size: 15px;
   font-weight: 700;
-  color: #e2e8f0;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .formLabel {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-dim);
   font-weight: 600;
   margin-bottom: -4px;
 }
@@ -414,9 +414,9 @@
   flex: 1;
   padding: 14px;
   background: none;
-  border: 1px solid #1e2d45;
+  border: 1px solid var(--border-2);
   border-radius: 12px;
-  color: #64748b;
+  color: var(--text-dim);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -435,14 +435,14 @@
 .listTitle {
   font-size: 12px;
   font-weight: 700;
-  color: #475569;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .requestCard {
-  background: #1a2035;
-  border: 1px solid #1e2d45;
+  background: var(--bg-card);
+  border: 1px solid var(--border-2);
   border-radius: 10px;
   padding: 12px 14px;
   display: flex;
@@ -460,12 +460,12 @@
 .requestType {
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .requestDates {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-dim);
 }
 
 .reqBadge {

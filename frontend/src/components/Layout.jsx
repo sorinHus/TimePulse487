@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import { getUnreadCount } from "../api/attendance";
 import styles from "./Layout.module.css";
 
-export default function Layout() {
+export default function Layout({ theme, onToggleTheme }) {
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
@@ -34,6 +34,21 @@ export default function Layout() {
         <header className={styles.topbar}>
           <div className={styles.topbarLeft} />
           <div className={styles.topbarRight}>
+            <button
+              className={styles.themeBtn}
+              onClick={onToggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                  <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                  <path d="M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0-5a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm8.66-13.5a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0zM6.05 17.95a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0zM21 11h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zM3 11h1a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2zm15.66 5.66a1 1 0 0 1 1.41 0l.71.71a1 1 0 0 1-1.41 1.41l-.71-.71a1 1 0 0 1 0-1.41zM4.34 7.05a1 1 0 0 1 1.41 0l.71.71A1 1 0 0 1 5.05 9.17l-.71-.71a1 1 0 0 1 0-1.41z"/>
+                </svg>
+              )}
+            </button>
             <span className={styles.dateBadge}>
               {new Date().toLocaleDateString("en-GB", {
                 weekday: "short",
