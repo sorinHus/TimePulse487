@@ -144,7 +144,7 @@ export default function Attendance() {
   const totalDays = history.length;
   const totalHours = history.reduce((sum, d) => sum + parseFloat(d.total_hours || 0), 0);
   const completeDays = history.filter((d) => d.status === "complete").length;
-  const incompleteDays = history.filter((d) => d.status === "in_progress" || (d.status !== "complete" && d.total_hours > 0)).length;
+  const incompleteDays = history.filter((d) => d.status === "in_progress" || d.status === "incomplete").length;
 
   return (
     <div className={styles.page}>
@@ -370,12 +370,14 @@ export default function Attendance() {
                     </span>
                     <span>
                       <span className={`${styles.badge} ${
-                        row.status === "complete" ? styles.badgeGreen :
+                        row.status === "complete"   ? styles.badgeGreen :
                         row.status === "in_progress" ? styles.badgeAmber :
+                        row.status === "incomplete" ? styles.badgeRed :
                         styles.badgeGray
                       }`}>
-                        {row.status === "complete" ? "Complete" :
-                         row.status === "in_progress" ? "In progress" : "Absent"}
+                        {row.status === "complete"    ? "Complete" :
+                         row.status === "in_progress" ? "In progress" :
+                         row.status === "incomplete"  ? "Incomplete" : "Absent"}
                       </span>
                     </span>
                   </div>

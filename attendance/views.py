@@ -35,8 +35,10 @@ def build_day_summary(date, sessions, user=None):
 
     if total_hours >= WORKDAY_HOURS:
         day_status = 'complete'
-    elif total_hours > 0:
+    elif open_s > 0:
         day_status = 'in_progress'
+    elif total_hours > 0:
+        day_status = 'incomplete'
     else:
         day_status = 'absent'
 
