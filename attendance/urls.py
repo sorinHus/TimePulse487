@@ -7,6 +7,7 @@ from .views import (
     OvertimeRequestView, OvertimeRequestListView, OvertimeReviewView,
     NotificationListView, NotificationMarkReadView,
     NotificationMarkAllReadView, UnreadNotificationCountView,
+    BulkClockInView, BulkClockOutView,
 )
 
 urlpatterns = [
@@ -28,6 +29,10 @@ urlpatterns = [
     path('attendance/overtime/', OvertimeRequestView.as_view(), name='overtime_request'),
     path('attendance/overtime/list/', OvertimeRequestListView.as_view(), name='overtime_list'),
     path('attendance/overtime/<int:pk>/review/', OvertimeReviewView.as_view(), name='overtime_review'),
+
+    # Admin bulk actions
+    path('attendance/admin/bulk-clock-in/', BulkClockInView.as_view(), name='bulk_clock_in'),
+    path('attendance/admin/bulk-clock-out/', BulkClockOutView.as_view(), name='bulk_clock_out'),
 
     # Notificări
     path('notifications/', NotificationListView.as_view(), name='notifications'),

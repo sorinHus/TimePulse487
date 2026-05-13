@@ -29,6 +29,8 @@ export default function Admin() {
   const [seniorityForm, setSeniorityForm] = useState({ min_years: "", extra_days: "" });
   const [seniorityError, setSeniorityError] = useState("");
   const [applyMsg, setApplyMsg] = useState("");
+  const [bulkMsg, setBulkMsg] = useState("");
+  const [bulkLoading, setBulkLoading] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -132,6 +134,32 @@ export default function Admin() {
     } catch { /* silent */ }
   };
 
+  const handleBulkClockIn = async () => {
+    setBulkMsg("");
+    setBulkLoading("in");
+    try {
+      const res = await api.post("/attendance/admin/bulk-clock-in/");
+      setBulkMsg({ type: "success", text: `${res.data.detail} ${res.data.users?.length ? `(${res.data.users.join(", ")})` : ""}` });
+    } catch (e) {
+      setBulkMsg({ type: "error", text: e?.response?.data?.detail || "Error." });
+    } finally {
+      setBulkLoading("");
+    }
+  };
+
+  const handleBulkClockOut = async () => {
+    setBulkMsg("");
+    setBulkLoading("out");
+    try {
+      const res = await api.post("/attendance/admin/bulk-clock-out/");
+      setBulkMsg({ type: "success", text: res.data.detail });
+    } catch (e) {
+      setBulkMsg({ type: "error", text: e?.response?.data?.detail || "Error." });
+    } finally {
+      setBulkLoading("");
+    }
+  };
+
   const handleApplySeniority = async () => {
     setApplyMsg("");
     try {
@@ -175,6 +203,12 @@ export default function Admin() {
           onClick={() => setActiveTab("seniority")}
         >
           Seniority Rules
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "attendance" ? styles.tabActive : ""}`}
+          onClick={() => { setActiveTab("attendance"); setBulkMsg(""); }}
+        >
+          Attendance Tools
         </button>
       </div>
 
@@ -304,6 +338,57 @@ export default function Admin() {
             )}
           </div>
         </>
+      )}
+
+      {/* ── Attendance Tools Tab ── */}
+      {activeTab === "attendance" && (
+        <div className={styles.attendanceTools}>
+          <div className={styles.seniorityInfo}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <circle cx="8" cy="8" r="7" stroke="#60a5fa" strokeWidth="1.4"/>
+              <path d="M8 7v4M8 5.5v.5" stroke="#60a5fa" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            Bulk attendance actions for today. Clock-in skips users on approved leave or who already have a session. Clock-out closes all open sessions across all days.
+          </div>
+
+          <div className={styles.bulkActions}>
+            <div className={styles.bulkCard}>
+              <div className={styles.bulkCardTitle}>Bulk Clock-In</div>
+              <p className={styles.bulkCardDesc}>
+                Opens a session for all active users present today (no approved leave, no existing session).
+              </p>
+              <button
+                className={styles.btnBulkIn}
+                onClick={handleBulkClockIn}
+                disabled={bulkLoading === "in"}
+              >
+                {bulkLoading === "in" ? <span className={styles.spinner} /> : null}
+                Clock In All Present
+              </button>
+            </div>
+
+            <div className={styles.bulkCard}>
+              <div className={styles.bulkCardTitle}>Bulk Clock-Out</div>
+              <p className={styles.bulkCardDesc}>
+                Closes all currently open sessions and calculates work hours.
+              </p>
+              <button
+                className={styles.btnBulkOut}
+                onClick={handleBulkClockOut}
+                disabled={bulkLoading === "out"}
+              >
+                {bulkLoading === "out" ? <span className={styles.spinner} /> : null}
+                Clock Out All Open
+              </button>
+            </div>
+          </div>
+
+          {bulkMsg && (
+            <div className={bulkMsg.type === "error" ? styles.formError : styles.successBanner}>
+              {bulkMsg.text}
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── Seniority Rules Tab ── */}

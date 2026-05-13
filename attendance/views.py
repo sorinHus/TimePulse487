@@ -472,3 +472,81 @@ class UnreadNotificationCountView(APIView):
     def get(self, request):
         count = Notification.objects.filter(user=request.user, is_read=False).count()
         return Response({'count': count})
+
+
+# --- Admin bulk actions ---
+
+class BulkClockInView(APIView):
+    """
+    POST /api/attendance/admin/bulk-clock-in/
+    Opens a session for every active user who:
+      - has no approved leave today
+      - has no session (open or complete) today
+    Admin only.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+
+        from django.contrib.auth import get_user_model
+        from leaves.models import LeaveRequest
+        User = get_user_model()
+
+        today = timezone.localdate()
+        now = timezone.now()
+
+        on_leave_ids = set(
+            LeaveRequest.objects.filter(
+                status='approved',
+                start_date__lte=today,
+                end_date__gte=today,
+            ).values_list('user_id', flat=True)
+        )
+
+        already_today_ids = set(
+            AttendanceSession.objects.filter(date=today).values_list('user_id', flat=True)
+        )
+
+        eligible = User.objects.filter(is_active=True).exclude(
+            id__in=on_leave_ids | already_today_ids
+        )
+
+        created = []
+        for user in eligible:
+            AttendanceSession.objects.create(user=user, date=today, clock_in=now)
+            created.append(user.get_full_name() or user.username)
+
+        return Response({
+            'clocked_in': len(created),
+            'users': created,
+            'detail': f'{len(created)} session(s) opened.',
+        })
+
+
+class BulkClockOutView(APIView):
+    """
+    POST /api/attendance/admin/bulk-clock-out/
+    Closes all currently open sessions (any date).
+    Admin only.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+
+        now = timezone.now()
+        open_sessions = AttendanceSession.objects.filter(status='open')
+        count = open_sessions.count()
+
+        for session in open_sessions:
+            session.clock_out = now
+            session.save()
+            session.calculate_hours()
+
+        return Response({
+            'clocked_out': count,
+            'detail': f'{count} session(s) closed.',
+        })

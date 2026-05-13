@@ -508,3 +508,84 @@
   font-size: 0.82rem;
   color: #4ade80;
 }
+
+/* ── Attendance Tools Tab ── */
+
+.attendanceTools {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bulkActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 560px) {
+  .bulkActions { grid-template-columns: 1fr; }
+}
+
+.bulkCard {
+  background: #161f2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bulkCardTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.bulkCardDesc {
+  font-size: 0.8rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btnBulkIn {
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+  transition: background 0.15s;
+}
+.btnBulkIn:hover:not(:disabled) { background: rgba(34, 197, 94, 0.22); }
+.btnBulkIn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btnBulkOut {
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+  transition: background 0.15s;
+}
+.btnBulkOut:hover:not(:disabled) { background: rgba(239, 68, 68, 0.22); }
+.btnBulkOut:disabled { opacity: 0.45; cursor: not-allowed; }
