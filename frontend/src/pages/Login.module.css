@@ -74,7 +74,7 @@
   width: 100%;
   max-width: 400px;
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2rem;
   animation: fadeIn 0.4s ease 0.1s both;
@@ -125,7 +125,7 @@
   box-sizing: border-box;
   padding: 0.65rem 0.9rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   background: var(--bg-main);
   color: var(--text-primary);
   font-size: 0.95rem;

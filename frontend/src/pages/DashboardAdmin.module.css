@@ -61,7 +61,7 @@
 
 .kpiCard {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem 1.2rem 1.1rem;
   display: flex;
@@ -232,7 +232,7 @@
 
 .panel {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -252,19 +252,19 @@
   align-items: center;
   font-size: 0.875rem;
   color: var(--text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-row);
 }
 
 .tableRow:last-child { border-bottom: none; }
 .tableRow:not(.tableHead):not(.tableHeadLeave):not(.tableHeadEmp):hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--row-hover);
 }
 
 .tableHead,
 .tableHeadLeave,
 .tableHeadEmp {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-alt) !important;
+  border-bottom: 1px solid var(--border-row) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
   text-transform: uppercase;

@@ -39,7 +39,7 @@
 
 .todayCard {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.5rem;
   display: flex;
@@ -135,7 +135,7 @@
 .timeSep {
   width: 1px;
   height: 30px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border-2);
 }
 
 .todayRight {
@@ -214,7 +214,7 @@
 
 .summaryCard {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.9rem 1.1rem;
   display: flex;
@@ -285,7 +285,7 @@
 
 .monthBtn:hover:not(:disabled) {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-hover);
 }
 
 .monthBtn:disabled {
@@ -305,7 +305,7 @@
 
 .table {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -313,8 +313,8 @@
 }
 
 .tableHead {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-alt) !important;
+  border-bottom: 1px solid var(--border-row) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
   text-transform: uppercase;
@@ -330,13 +330,13 @@
   align-items: center;
   font-size: 0.875rem;
   color: var(--text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-row);
 }
 
 .tableRow:last-child { border-bottom: none; }
 
 .tableRow:not(.tableHead):hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--row-hover);
 }
 
 .rowToday {
@@ -418,7 +418,7 @@
 }
 
 .rowClickable:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
+  background: var(--row-hover) !important;
 }
 
 /* ── Session expanded rows ── */
@@ -431,8 +431,8 @@
   align-items: center;
   font-size: 0.8rem;
   color: var(--text-dim);
-  background: rgba(255, 255, 255, 0.015);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border-row);
 }
 
 .sessionIndex {

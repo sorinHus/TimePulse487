@@ -86,6 +86,13 @@ A full-stack HR management SaaS application for employee attendance tracking, le
 - **Clock tab** — large clock-in / clock-out buttons, today's status, live pulse indicator, on-leave banner
 - **Leave tab** — balance cards, new leave request form with working-days preview, pending/approved requests list
 - Reuses existing JWT session; separate login screen if not authenticated
+- Desktop browsers visiting the root URL are unaffected; mobile browsers auto-redirect to `/m`
+
+### Light / Dark Mode
+- Toggle button in topbar (sun/moon icon)
+- Preference persisted in `localStorage`
+- CSS custom properties (`--bg-main`, `--bg-card`, `--text-primary`, …) via `theme.css`
+- All pages and components switch instantly without reload
 
 ---
 
@@ -266,7 +273,7 @@ TimePulse4/
 | B18 | Admin: Delete user / Deactivate with reason / Bulk clock actions | ✅ Done |
 | B19 | Attendance: clock-in blocked during approved leave | ✅ Done |
 | B20 | Mobile app at `/m` (PWA-ready, clock + leave) | ✅ Done |
-| — | Light / dark mode toggle | ⏳ Planned |
+| B21 | Light / dark mode toggle (CSS variables, localStorage) | ✅ Done |
 
 ---
 

@@ -122,7 +122,7 @@
 
 .navBtn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-hover);
 }
 
 .monthLabel {
@@ -138,7 +138,7 @@
 
 .calendarWrap {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -169,8 +169,8 @@
 .cell {
   min-height: 90px;
   padding: 0.45rem 0.4rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1px solid var(--border-row);
+  border-bottom: 1px solid var(--border-row);
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -186,7 +186,7 @@
 .cellWeekend { background: rgba(0, 0, 0, 0.1); }
 .cellToday   { background: rgba(37, 99, 235, 0.08); }
 .cellHasData { cursor: pointer; }
-.cellHasData:hover { background: rgba(255, 255, 255, 0.02); }
+.cellHasData:hover { background: var(--row-hover); }
 
 .cellSelected {
   background: rgba(37, 99, 235, 0.12) !important;
@@ -275,7 +275,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-row);
 }
 
 .detailTitle {
@@ -297,7 +297,7 @@
   height: 26px;
   border-radius: 6px;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-alt);
   color: var(--text-dim);
   font-size: 0.75rem;
   cursor: pointer;
@@ -323,12 +323,12 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-row);
   transition: background 0.12s;
 }
 
 .detailRow:last-child { border-bottom: none; }
-.detailRow:hover { background: rgba(255, 255, 255, 0.02); }
+.detailRow:hover { background: var(--row-hover); }
 
 .detailAvatar {
   width: 30px;

@@ -50,7 +50,7 @@
 .reportCard {
   flex: 1;
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.5rem;
   display: flex;
@@ -113,7 +113,7 @@
 .monthInput {
   padding: 0.45rem 0.75rem;
   border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   background: var(--bg-main);
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -141,7 +141,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-row);
 }
 
 .formatBadge {
@@ -210,8 +210,8 @@
   gap: 0.6rem;
   padding: 0.85rem 1rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
 }
 
 .infoText {

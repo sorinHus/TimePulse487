@@ -39,7 +39,7 @@
 
 .checkinCard {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   display: flex;
@@ -130,7 +130,7 @@
 .timeDivider {
   width: 1px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border-2);
 }
 
 .checkinRight {
@@ -216,7 +216,7 @@
 
 .statCard {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.1rem 1.25rem;
   display: flex;
@@ -271,7 +271,7 @@
 
 .table {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -286,8 +286,8 @@
 }
 
 .tableHead {
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border-row);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -298,7 +298,7 @@
 .tableRow {
   font-size: 0.875rem;
   color: var(--text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-row);
 }
 
 .tableRow:last-child {
@@ -306,7 +306,7 @@
 }
 
 .tableRow:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--row-hover);
 }
 
 .badge {

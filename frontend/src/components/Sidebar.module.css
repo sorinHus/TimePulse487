@@ -26,7 +26,7 @@
   align-items: center;
   gap: 10px;
   padding: 1.25rem 1rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-row);
   flex-shrink: 0;
 }
 
@@ -75,7 +75,7 @@
 
 .toggleBtn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-hover);
   border-color: transparent;
 }
 
@@ -131,7 +131,7 @@
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-alt);
   color: #cbd5e1;
 }
 
@@ -162,7 +162,7 @@
 /* ── User area ── */
 
 .userArea {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-row);
   padding: 0.75rem 0.5rem;
   display: flex;
   flex-direction: column;
