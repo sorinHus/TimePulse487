@@ -503,3 +503,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── Expiry chips on balance cards ── */
+
+.chipExpired {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+.chipWarning {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}

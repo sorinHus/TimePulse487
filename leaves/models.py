@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -34,6 +35,7 @@ class LeaveBalance(models.Model):
     year = models.PositiveIntegerField(default=timezone.now().year)
     total_days = models.PositiveIntegerField(default=21)
     used_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    expired_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
 
     class Meta:
         verbose_name = 'Leave Balance'
@@ -45,7 +47,15 @@ class LeaveBalance(models.Model):
 
     @property
     def remaining_days(self):
-        return self.total_days - self.used_days
+        return max(Decimal('0'), self.total_days - self.used_days - self.expired_days)
+
+    @property
+    def expires_at(self):
+        """Annual Leave expires on July 1 of year+2 (18 months after Dec 31 of year)."""
+        if self.leave_type.name == 'Annual Leave':
+            from datetime import date
+            return date(self.year + 2, 7, 1)
+        return None
 
 
 class LeaveRequest(models.Model):

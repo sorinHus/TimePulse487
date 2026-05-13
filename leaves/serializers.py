@@ -12,10 +12,18 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
     leave_type_name = serializers.CharField(source='leave_type.name', read_only=True)
     leave_type_color = serializers.CharField(source='leave_type.color', read_only=True)
     remaining_days = serializers.ReadOnlyField()
+    expires_at = serializers.SerializerMethodField()
 
     class Meta:
         model = LeaveBalance
-        fields = ['id', 'leave_type', 'leave_type_name', 'leave_type_color', 'year', 'total_days', 'used_days', 'remaining_days']
+        fields = [
+            'id', 'leave_type', 'leave_type_name', 'leave_type_color',
+            'year', 'total_days', 'used_days', 'expired_days', 'remaining_days', 'expires_at',
+        ]
+
+    def get_expires_at(self, obj):
+        d = obj.expires_at
+        return str(d) if d else None
 
 
 class LeaveRequestSerializer(serializers.ModelSerializer):

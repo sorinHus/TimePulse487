@@ -176,10 +176,29 @@ export default function Leaves() {
           {balances.map((bal, i) => {
             const type = leaveTypes.find((t) => t.id === bal.leave_type || t.id === bal.leave_type_id);
             const color = type?.color || "#2563eb";
-            const used = (type?.max_days || bal.total_days || 0) - (bal.remaining_days ?? bal.balance ?? 0);
-            const total = type?.max_days || bal.total_days || 1;
-            const remaining = bal.remaining_days ?? bal.balance ?? 0;
-            const pct = Math.min(100, Math.round((used / total) * 100));
+            const total = bal.total_days || 1;
+            const remaining = Number(bal.remaining_days ?? 0);
+            const expired = Number(bal.expired_days ?? 0);
+            const used = total - remaining - expired;
+            const pct = Math.min(100, Math.round(((used + expired) / total) * 100));
+
+            let expiryChip = null;
+            if (bal.expires_at) {
+              const expiryDate = new Date(bal.expires_at);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const daysUntilExpiry = Math.round((expiryDate - today) / 86400000);
+              if (expired > 0) {
+                expiryChip = (
+                  <span className={styles.chipExpired}>{expired} expired</span>
+                );
+              } else if (remaining > 0 && daysUntilExpiry <= 60 && daysUntilExpiry > 0) {
+                expiryChip = (
+                  <span className={styles.chipWarning}>Expires in {daysUntilExpiry}d</span>
+                );
+              }
+            }
+
             return (
               <div key={i} className={styles.balanceCard}>
                 <div className={styles.balanceTop}>
@@ -193,9 +212,10 @@ export default function Leaves() {
                   />
                 </div>
                 <div className={styles.balanceMeta}>
-                  <span>{used} used</span>
+                  <span>{used} used{expired > 0 ? ` · ${expired} expired` : ""}</span>
                   <span>{total} total</span>
                 </div>
+                {expiryChip && <div>{expiryChip}</div>}
               </div>
             );
           })}
