@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
-import { registerSickLeave } from "../api/leaves";
+import { registerSickLeave, getTeamSchedule, reviewSchedule } from "../api/leaves";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Team.module.css";
 
@@ -35,6 +35,42 @@ export default function Team() {
   const [filterDept, setFilterDept] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [view, setView] = useState("grid");
+
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const PLAN_YEAR = new Date().getFullYear();
+
+  // Modal plan
+  const [planModal, setPlanModal] = useState(null); // { member, schedule }
+  const [planLoading, setPlanLoading] = useState(false);
+  const [rejectNote, setRejectNote] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
+
+  async function openPlanModal(member) {
+    setPlanModal({ member, schedule: null });
+    setRejectNote("");
+    setShowRejectForm(false);
+    try {
+      const s = await getTeamSchedule(PLAN_YEAR, member.id);
+      setPlanModal({ member, schedule: s });
+    } catch {
+      setPlanModal({ member, schedule: null });
+    }
+  }
+
+  async function handlePlanReview(action) {
+    if (!planModal?.schedule?.id) return;
+    if (action === "reject" && !rejectNote.trim()) return;
+    setPlanLoading(true);
+    try {
+      const s = await reviewSchedule(planModal.schedule.id, action, rejectNote.trim());
+      setPlanModal((m) => ({ ...m, schedule: s }));
+      setShowRejectForm(false);
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Action failed.");
+    } finally {
+      setPlanLoading(false);
+    }
+  }
 
   // Modal sick leave
   const [sickModal, setSickModal] = useState(null); // { member } sau null
@@ -237,15 +273,18 @@ export default function Team() {
                   )}
                 </div>
                 {m.email && <div className={styles.cardEmail}>{m.email}</div>}
-                {canRegisterSick && m.id && (
-                  <button
-                    className={styles.sickBtn}
-                    onClick={() => openSickModal(m)}
-                    title="Register sick leave"
-                  >
-                    + Sick Leave
-                  </button>
-                )}
+                <div className={styles.cardBtns}>
+                  {m.id && (
+                    <button className={styles.planBtn} onClick={() => openPlanModal(m)}>
+                      View Plan
+                    </button>
+                  )}
+                  {canRegisterSick && m.id && (
+                    <button className={styles.sickBtn} onClick={() => openSickModal(m)}>
+                      + Sick Leave
+                    </button>
+                  )}
+                </div>
               </div>
             );
           }) : (
@@ -292,24 +331,135 @@ export default function Team() {
                     {m.is_active === false ? "Inactive" : "Active"}
                   </span>
                 </span>
-                {canRegisterSick && (
-                  <span>
-                    {m.id && (
-                      <button
-                        className={styles.sickBtnSmall}
-                        onClick={() => openSickModal(m)}
-                        title="Register sick leave"
-                      >
-                        + Sick Leave
-                      </button>
-                    )}
-                  </span>
-                )}
+                <span className={styles.listActions}>
+                  {m.id && (
+                    <button className={styles.planBtnSmall} onClick={() => openPlanModal(m)}>
+                      Plan
+                    </button>
+                  )}
+                  {canRegisterSick && m.id && (
+                    <button className={styles.sickBtnSmall} onClick={() => openSickModal(m)}>
+                      + Sick Leave
+                    </button>
+                  )}
+                </span>
               </div>
             );
           }) : (
             <div className={styles.empty}>No team members found.</div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal Annual Plan ───────────────────────────────────────────── */}
+      {planModal && (
+        <div className={styles.modalOverlay} onClick={() => setPlanModal(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2 className={styles.modalTitle}>Annual Leave Plan — {PLAN_YEAR}</h2>
+                <p className={styles.modalSub}>{planModal.member.full_name || planModal.member.username}</p>
+              </div>
+              <button className={styles.modalClose} onClick={() => setPlanModal(null)}>✕</button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {!planModal.schedule ? (
+                <p className={styles.planEmptyMsg}>Loading…</p>
+              ) : !planModal.schedule.id ? (
+                <p className={styles.planEmptyMsg}>No annual leave plan submitted yet for {PLAN_YEAR}.</p>
+              ) : (
+                <>
+                  {/* Status */}
+                  <div className={styles.planStatusRow}>
+                    <span className={`${styles.planStatusBadge} ${
+                      planModal.schedule.status === "approved"  ? styles.planBadgeGreen :
+                      planModal.schedule.status === "submitted" ? styles.planBadgeAmber :
+                      planModal.schedule.status === "rejected"  ? styles.planBadgeRed :
+                      styles.planBadgeGray
+                    }`}>
+                      {planModal.schedule.status}
+                    </span>
+                    <span className={styles.planDaysInfo}>
+                      {Number(planModal.schedule.total_planned_days)} / {planModal.schedule.annual_leave_days} days planned
+                    </span>
+                  </div>
+
+                  {/* Carryover */}
+                  {Number(planModal.schedule.carryover_days) > 0 && (
+                    <div className={styles.planCarryover}>
+                      {planModal.schedule.carryover_days} day(s) remaining from {PLAN_YEAR - 1}
+                      {planModal.schedule.carryover_expires_at && ` — expires ${planModal.schedule.carryover_expires_at}`}
+                    </div>
+                  )}
+
+                  {/* Month grid read-only */}
+                  <div className={styles.planMonthGrid}>
+                    {MONTHS.map((m, i) => {
+                      const val = Number(planModal.schedule.monthly_plan?.[String(i+1)] ?? 0);
+                      return (
+                        <div key={i} className={styles.planMonthItem}>
+                          <span className={styles.planMonthName}>{m}</span>
+                          <span className={`${styles.planMonthDays} ${val > 0 ? styles.planMonthDaysFilled : ""}`}>{val}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Review note */}
+                  {planModal.schedule.review_note && (
+                    <p className={styles.planReviewNote}>
+                      Note: {planModal.schedule.review_note}
+                    </p>
+                  )}
+
+                  {/* Approve / Reject buttons (only for submitted) */}
+                  {planModal.schedule.status === "submitted" && (
+                    <div className={styles.planReviewActions}>
+                      {!showRejectForm ? (
+                        <>
+                          <button
+                            className={styles.planApproveBtn}
+                            onClick={() => handlePlanReview("approve")}
+                            disabled={planLoading}
+                          >
+                            {planLoading ? "…" : "Approve"}
+                          </button>
+                          <button
+                            className={styles.planRejectBtn}
+                            onClick={() => setShowRejectForm(true)}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      ) : (
+                        <div className={styles.rejectForm}>
+                          <textarea
+                            className={styles.formInput}
+                            rows={3}
+                            placeholder="Reason for rejection… *"
+                            value={rejectNote}
+                            onChange={(e) => setRejectNote(e.target.value)}
+                            autoFocus
+                          />
+                          <div className={styles.rejectFormBtns}>
+                            <button className={styles.cancelBtn} onClick={() => setShowRejectForm(false)}>Cancel</button>
+                            <button
+                              className={styles.planRejectBtn}
+                              onClick={() => handlePlanReview("reject")}
+                              disabled={!rejectNote.trim() || planLoading}
+                            >
+                              {planLoading ? "…" : "Confirm reject"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

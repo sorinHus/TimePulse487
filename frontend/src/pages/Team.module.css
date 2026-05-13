@@ -343,8 +343,52 @@
 
 /* ── Sick Leave button ── */
 
-.sickBtn {
+.cardBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   margin-top: 0.5rem;
+  width: 100%;
+}
+
+.listActions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.planBtn {
+  width: 100%;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(96,165,250,0.25);
+  background: rgba(37,99,235,0.08);
+  color: #60a5fa;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.planBtn:hover { background: rgba(37,99,235,0.16); }
+
+.planBtnSmall {
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(96,165,250,0.25);
+  background: rgba(37,99,235,0.08);
+  color: #60a5fa;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.planBtnSmall:hover { background: rgba(37,99,235,0.16); }
+
+.sickBtn {
+  margin-top: 0;
   padding: 0.35rem 0.85rem;
   border-radius: 8px;
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -677,4 +721,142 @@
 .overlapItemDetail {
   font-size: 0.75rem;
   color: #475569;
+}
+
+/* ── Annual Plan Modal ─────────────────────────────────────── */
+.planEmptyMsg {
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.planStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.planStatusBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+}
+
+.planBadgeGreen  { background: rgba(34,197,94,0.15);  color: #4ade80; }
+.planBadgeAmber  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.planBadgeRed    { background: rgba(239,68,68,0.12);  color: #f87171; }
+.planBadgeGray   { background: rgba(100,116,139,0.12); color: #94a3b8; }
+
+.planDaysInfo {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.planCarryover {
+  font-size: 0.82rem;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.planMonthGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.planMonthItem {
+  background: rgba(30,41,59,0.5);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.planMonthName {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.planMonthDays {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.planMonthDaysFilled {
+  color: #60a5fa;
+}
+
+.planReviewNote {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  background: rgba(30,41,59,0.5);
+  border-left: 3px solid rgba(99,102,241,0.5);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  margin: 0.5rem 0;
+}
+
+.planReviewActions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.planApproveBtn {
+  flex: 1;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(34,197,94,0.15);
+  color: #4ade80;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.planApproveBtn:hover:not(:disabled) { background: rgba(34,197,94,0.25); }
+.planApproveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.planRejectBtn {
+  flex: 1;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.planRejectBtn:hover:not(:disabled) { background: rgba(239,68,68,0.22); }
+.planRejectBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rejectForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.rejectFormBtns {
+  display: flex;
+  gap: 0.6rem;
 }

@@ -139,6 +139,39 @@ class LeaveRequest(models.Model):
         self.save(update_fields=['total_days'])
         return days
 
+class LeaveSchedule(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='leave_schedules'
+    )
+    year = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    monthly_plan = models.JSONField(default=dict)  # {"1": 5.0, "2": 3.0, ...}
+    total_planned_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    review_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reviewed_schedules'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'year']
+        ordering = ['-year']
+        verbose_name = 'Leave Schedule'
+        verbose_name_plural = 'Leave Schedules'
+
+    def __str__(self):
+        return f'{self.user.username} - {self.year} ({self.status})'
+
+
 class SeniorityRule(models.Model):
     """Reguli zile extra concediu după vechime — configurabile de admin."""
     min_years = models.PositiveIntegerField(

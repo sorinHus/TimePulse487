@@ -6,6 +6,8 @@ from .views import (
     SickLeaveRegisterView,
     SeniorityRuleListCreateView, SeniorityRuleDetailView,
     ApplySeniorityToBalancesView,
+    LeaveScheduleView, LeaveScheduleSubmitView,
+    LeaveScheduleReviewView, LeaveScheduleTeamView,
 )
 
 urlpatterns = [
@@ -19,4 +21,9 @@ urlpatterns = [
     path('leaves/seniority-rules/', SeniorityRuleListCreateView.as_view(), name='seniority_rules'),
     path('leaves/seniority-rules/<int:pk>/', SeniorityRuleDetailView.as_view(), name='seniority_rule_detail'),
     path('leaves/seniority-rules/apply/', ApplySeniorityToBalancesView.as_view(), name='seniority_apply'),
+    # B17 — Annual Leave Schedule
+    path('leaves/schedule/', LeaveScheduleView.as_view(), name='leave_schedule'),
+    path('leaves/schedule/team/', LeaveScheduleTeamView.as_view(), name='leave_schedule_team'),
+    path('leaves/schedule/<int:pk>/submit/', LeaveScheduleSubmitView.as_view(), name='leave_schedule_submit'),
+    path('leaves/schedule/<int:pk>/review/', LeaveScheduleReviewView.as_view(), name='leave_schedule_review'),
 ]

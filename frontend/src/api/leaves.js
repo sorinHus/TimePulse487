@@ -15,3 +15,17 @@ export const getWorkingDays = (start, end) =>
   api.get(`/leaves/working-days/?start=${start}&end=${end}`).then(r => r.data)
 export const registerSickLeave = (data) =>
   api.post('/leaves/sick-leave/register/', data).then((r) => r.data);
+
+// B17 — Annual Leave Schedule
+export const getSchedule = (year) =>
+  api.get(`/leaves/schedule/?year=${year}`).then(r => r.data)
+export const saveSchedule = (year, monthly_plan) =>
+  api.put(`/leaves/schedule/?year=${year}`, { monthly_plan }).then(r => r.data)
+export const submitSchedule = (id) =>
+  api.post(`/leaves/schedule/${id}/submit/`).then(r => r.data)
+export const reviewSchedule = (id, action, review_note = '') =>
+  api.post(`/leaves/schedule/${id}/review/`, { action, review_note }).then(r => r.data)
+export const getTeamSchedule = (year, user_id = null) => {
+  const params = `year=${year}${user_id ? `&user_id=${user_id}` : ''}`
+  return api.get(`/leaves/schedule/team/?${params}`).then(r => r.data)
+}

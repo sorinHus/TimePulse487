@@ -4,10 +4,12 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from datetime import date, timedelta
-from .models import LeaveType, LeaveBalance, LeaveRequest
+from decimal import Decimal
+from .models import LeaveType, LeaveBalance, LeaveRequest, LeaveSchedule, SeniorityRule
 from .serializers import (
     LeaveTypeSerializer, LeaveBalanceSerializer,
-    LeaveRequestSerializer, SickLeaveRegisterSerializer
+    LeaveRequestSerializer, SickLeaveRegisterSerializer,
+    LeaveScheduleSerializer,
 )
 
 User = get_user_model()
@@ -467,6 +469,197 @@ class SickLeaveRegisterView(APIView):
             'overlaps_resolved': overlap_results,
             'message': f'Sick leave registered successfully. {len(overlap_results)} overlap(s) resolved.',
         }, status=status.HTTP_201_CREATED)
+
+# ── B17: Annual Leave Schedule ───────────────────────────────────────────────
+
+def get_annual_leave_days_for_year(user, year):
+    """Annual leave entitlement for a year — seniority calculated as of Dec 31 of that year."""
+    try:
+        annual_leave_type = LeaveType.objects.get(name='Annual Leave', is_active=True)
+        base = annual_leave_type.max_days_per_year
+    except LeaveType.DoesNotExist:
+        base = 21
+    extra = 0
+    if user.hire_date:
+        dec31 = date(year, 12, 31)
+        years_worked = (dec31 - user.hire_date).days // 365
+        rules = SeniorityRule.objects.filter(min_years__lte=years_worked).order_by('-min_years')
+        if rules.exists():
+            extra = rules.first().extra_days
+    return base + extra
+
+
+def _schedule_empty(user, year):
+    from .serializers import _carryover_data
+    carryover, carryover_exp = _carryover_data(user, year)
+    return {
+        'id': None,
+        'user': user.pk,
+        'username': user.username,
+        'full_name': user.get_full_name() or user.username,
+        'year': year,
+        'status': None,
+        'monthly_plan': {},
+        'total_planned_days': 0,
+        'annual_leave_days': get_annual_leave_days_for_year(user, year),
+        'carryover_days': carryover,
+        'carryover_expires_at': carryover_exp,
+        'review_note': '',
+        'reviewed_by': None,
+        'reviewed_by_name': None,
+        'reviewed_at': None,
+        'created_at': None,
+        'updated_at': None,
+    }
+
+
+class LeaveScheduleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        year = int(request.query_params.get('year', timezone.now().year))
+        try:
+            schedule = LeaveSchedule.objects.get(user=request.user, year=year)
+            return Response(LeaveScheduleSerializer(schedule).data)
+        except LeaveSchedule.DoesNotExist:
+            return Response(_schedule_empty(request.user, year))
+
+    def put(self, request):
+        year = int(request.query_params.get('year', timezone.now().year))
+        monthly_plan = request.data.get('monthly_plan', {})
+
+        total = sum(float(v) for v in monthly_plan.values() if v)
+        max_days = get_annual_leave_days_for_year(request.user, year)
+        if total > max_days:
+            return Response(
+                {'detail': f'Total planned days ({total:.0f}) exceeds your entitlement ({max_days} days).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        schedule, created = LeaveSchedule.objects.get_or_create(
+            user=request.user, year=year,
+            defaults={'monthly_plan': monthly_plan, 'total_planned_days': Decimal(str(round(total, 1)))}
+        )
+        if not created:
+            if schedule.status == 'approved':
+                return Response({'detail': 'Approved schedules cannot be edited.'}, status=status.HTTP_400_BAD_REQUEST)
+            schedule.monthly_plan = monthly_plan
+            schedule.total_planned_days = Decimal(str(round(total, 1)))
+            schedule.status = 'draft'
+            schedule.save(update_fields=['monthly_plan', 'total_planned_days', 'status', 'updated_at'])
+
+        return Response(LeaveScheduleSerializer(schedule).data)
+
+
+class LeaveScheduleSubmitView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            schedule = LeaveSchedule.objects.get(pk=pk, user=request.user)
+        except LeaveSchedule.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if schedule.status not in ['draft', 'rejected']:
+            return Response({'detail': 'Only draft or rejected schedules can be submitted.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not schedule.monthly_plan or schedule.total_planned_days <= 0:
+            return Response({'detail': 'Plan is empty. Add at least one month before submitting.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        schedule.status = 'submitted'
+        schedule.save(update_fields=['status', 'updated_at'])
+
+        from attendance.models import Notification
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        managers = User.objects.filter(
+            role__in=['manager', 'admin', 'director']
+        )
+        if request.user.department:
+            managers = managers.filter(department=request.user.department) | User.objects.filter(role='admin')
+        for mgr in managers.distinct():
+            Notification.objects.create(
+                user=mgr,
+                title='Annual leave schedule submitted',
+                message=f'{request.user.get_full_name()} submitted their annual leave plan for {schedule.year}.',
+                type='leave'
+            )
+
+        return Response(LeaveScheduleSerializer(schedule).data)
+
+
+class LeaveScheduleReviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        if request.user.effective_role not in ['admin', 'manager', 'director']:
+            return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            schedule = LeaveSchedule.objects.get(pk=pk)
+        except LeaveSchedule.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')
+        if action not in ['approve', 'reject']:
+            return Response({'detail': 'Action must be approve or reject.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        review_note = request.data.get('review_note', '').strip()
+        if action == 'reject' and not review_note:
+            return Response({'detail': 'A reason is required for rejection.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        schedule.status = 'approved' if action == 'approve' else 'rejected'
+        schedule.reviewed_by = request.user
+        schedule.reviewed_at = timezone.now()
+        schedule.review_note = review_note
+        schedule.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'review_note', 'updated_at'])
+
+        from attendance.models import Notification
+        Notification.objects.create(
+            user=schedule.user,
+            title=f'Annual leave schedule {schedule.status}',
+            message=(
+                f'Your annual leave plan for {schedule.year} has been {schedule.status} '
+                f'by {request.user.get_full_name()}.'
+                + (f' Note: {review_note}' if review_note else '')
+            ),
+            type='leave'
+        )
+
+        return Response(LeaveScheduleSerializer(schedule).data)
+
+
+class LeaveScheduleTeamView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.effective_role not in ['admin', 'manager', 'director']:
+            return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        year = int(request.query_params.get('year', timezone.now().year))
+        user_id = request.query_params.get('user_id')
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        if user_id:
+            try:
+                target = User.objects.get(pk=user_id)
+            except User.DoesNotExist:
+                return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                schedule = LeaveSchedule.objects.get(user=target, year=year)
+                return Response(LeaveScheduleSerializer(schedule).data)
+            except LeaveSchedule.DoesNotExist:
+                return Response(_schedule_empty(target, year))
+
+        if request.user.effective_role == 'manager':
+            schedules = LeaveSchedule.objects.filter(
+                user__department=request.user.department, year=year
+            ).select_related('user', 'reviewed_by')
+        else:
+            schedules = LeaveSchedule.objects.filter(year=year).select_related('user', 'reviewed_by')
+
+        return Response(LeaveScheduleSerializer(schedules, many=True).data)
+
 
 # ── B12: Seniority Rules ─────────────────────────────────────────────────────
 

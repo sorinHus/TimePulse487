@@ -8,6 +8,9 @@ import {
   approveLeaveRequest,
   rejectLeaveRequest,
   getWorkingDays,
+  getSchedule,
+  saveSchedule,
+  submitSchedule,
 } from "../api/leaves";
 import { getColleagues } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
@@ -47,6 +50,14 @@ export default function Leaves() {
   const [workingDays, setWorkingDays] = useState(null);
   const [colleagues, setColleagues] = useState([]);
   const [rejectModal, setRejectModal] = useState({ open: false, id: null, note: "" });
+
+  const PLAN_YEAR = new Date().getFullYear();
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [schedule, setSchedule] = useState(null);
+  const [planEdit, setPlanEdit] = useState(false);
+  const [monthlyInput, setMonthlyInput] = useState(Array(12).fill(0));
+  const [planError, setPlanError] = useState("");
+  const [planSaving, setPlanSaving] = useState(false);
   
   const [form, setForm] = useState({
     leave_type: "",
@@ -55,6 +66,16 @@ export default function Leaves() {
     reason: "",
     substitute: "",
   });
+
+  const fetchSchedule = async () => {
+    try {
+      const s = await getSchedule(PLAN_YEAR);
+      setSchedule(s);
+      if (s?.monthly_plan) {
+        setMonthlyInput(Array.from({length: 12}, (_, i) => Number(s.monthly_plan[String(i+1)] ?? 0)));
+      }
+    } catch { setSchedule(null); }
+  };
 
   const fetchAll = async () => {
     try {
@@ -75,6 +96,7 @@ export default function Leaves() {
 
   useEffect(() => {
     fetchAll();
+    fetchSchedule();
   }, []);
 
   useEffect(() => {
@@ -150,6 +172,35 @@ export default function Leaves() {
     }
   };
 
+  const planTotal = monthlyInput.reduce((s, v) => s + Number(v || 0), 0);
+  const planMax = schedule?.annual_leave_days ?? 21;
+
+  const handlePlanSave = async () => {
+    setPlanError("");
+    setPlanSaving(true);
+    try {
+      const monthly_plan = {};
+      monthlyInput.forEach((v, i) => { monthly_plan[String(i + 1)] = Number(v || 0); });
+      const s = await saveSchedule(PLAN_YEAR, monthly_plan);
+      setSchedule(s);
+      setPlanEdit(false);
+    } catch (e) {
+      setPlanError(e?.response?.data?.detail || "Save failed.");
+    } finally {
+      setPlanSaving(false);
+    }
+  };
+
+  const handlePlanSubmit = async () => {
+    setPlanError("");
+    try {
+      const s = await submitSchedule(schedule.id);
+      setSchedule(s);
+    } catch (e) {
+      setPlanError(e?.response?.data?.detail || "Submit failed.");
+    }
+  };
+
   const selectedType = leaveTypes.find((t) => String(t.id) === String(form.leave_type));
   return (
     <div className={styles.page}>
@@ -221,6 +272,111 @@ export default function Leaves() {
           })}
         </div>
       )}
+
+      {/* Annual Plan */}
+      <div className={styles.planSection}>
+        <div className={styles.planHeader}>
+          <div>
+            <span className={styles.planTitle}>Annual Leave Plan — {PLAN_YEAR}</span>
+            {schedule?.status && (
+              <span className={`${styles.planBadge} ${
+                schedule.status === "approved"  ? styles.planBadgeGreen :
+                schedule.status === "submitted" ? styles.planBadgeAmber :
+                schedule.status === "rejected"  ? styles.planBadgeRed :
+                styles.planBadgeGray
+              }`}>
+                {schedule.status === "approved"  ? "Approved" :
+                 schedule.status === "submitted" ? "Awaiting approval" :
+                 schedule.status === "rejected"  ? "Rejected" : "Draft"}
+              </span>
+            )}
+          </div>
+          <div className={styles.planActions}>
+            {(!schedule?.status || schedule.status === "draft" || schedule.status === "rejected") && !planEdit && (
+              <button className={styles.planBtnEdit} onClick={() => setPlanEdit(true)}>
+                {schedule?.id ? "Edit plan" : "Create plan"}
+              </button>
+            )}
+            {planEdit && (
+              <>
+                <button className={styles.planBtnCancel} onClick={() => { setPlanEdit(false); setPlanError(""); }}>Cancel</button>
+                <button className={styles.planBtnSave} onClick={handlePlanSave} disabled={planSaving}>
+                  {planSaving ? "Saving…" : "Save"}
+                </button>
+              </>
+            )}
+            {!planEdit && schedule?.id && schedule.status === "draft" && (
+              <button className={styles.planBtnSubmit} onClick={handlePlanSubmit}>Submit for approval</button>
+            )}
+            {!planEdit && schedule?.id && schedule.status === "rejected" && (
+              <button className={styles.planBtnSubmit} onClick={handlePlanSubmit}>Resubmit</button>
+            )}
+          </div>
+        </div>
+
+        {/* Carryover banner */}
+        {Number(schedule?.carryover_days) > 0 && (
+          <div className={styles.carryoverBanner}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <circle cx="8" cy="8" r="7" stroke="#fbbf24" strokeWidth="1.4"/>
+              <path d="M8 5v3.5L10 10" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            You have <strong>{schedule.carryover_days} day{schedule.carryover_days !== 1 ? "s" : ""}</strong> remaining from {PLAN_YEAR - 1}
+            {schedule.carryover_expires_at && (
+              <> — expires <strong>{schedule.carryover_expires_at}</strong></>
+            )}
+          </div>
+        )}
+
+        {/* Rejected note */}
+        {schedule?.status === "rejected" && schedule.review_note && (
+          <div className={styles.planRejectedNote}>
+            Rejected by {schedule.reviewed_by_name}: {schedule.review_note}
+          </div>
+        )}
+
+        {/* Month grid */}
+        <div className={styles.planGrid}>
+          {MONTHS.map((m, i) => (
+            <div key={i} className={styles.planMonthCell}>
+              <span className={styles.planMonthLabel}>{m}</span>
+              {planEdit ? (
+                <input
+                  type="number"
+                  min="0"
+                  max={planMax}
+                  step="0.5"
+                  className={styles.planMonthInput}
+                  value={monthlyInput[i]}
+                  onChange={(e) => {
+                    const v = Math.max(0, Number(e.target.value));
+                    setMonthlyInput(prev => { const n = [...prev]; n[i] = v; return n; });
+                  }}
+                />
+              ) : (
+                <span className={`${styles.planMonthValue} ${Number(schedule?.monthly_plan?.[String(i+1)]) > 0 ? styles.planMonthFilled : ""}`}>
+                  {Number(schedule?.monthly_plan?.[String(i+1)] ?? 0)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Progress */}
+        <div className={styles.planProgress}>
+          <div className={styles.planProgressBar}>
+            <div
+              className={`${styles.planProgressFill} ${planTotal > planMax ? styles.planProgressOver : ""}`}
+              style={{ width: `${Math.min(100, Math.round((planTotal / planMax) * 100))}%` }}
+            />
+          </div>
+          <span className={`${styles.planProgressLabel} ${planTotal > planMax ? styles.planProgressOver : ""}`}>
+            {planEdit ? planTotal : Number(schedule?.total_planned_days ?? 0)} / {planMax} days planned
+          </span>
+        </div>
+
+        {planError && <div className={styles.formError}>{planError}</div>}
+      </div>
 
       {/* New request form */}
       {showForm && (

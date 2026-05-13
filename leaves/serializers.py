@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import LeaveType, LeaveBalance, LeaveRequest
+from .models import LeaveType, LeaveBalance, LeaveRequest, LeaveSchedule
 
 
 class LeaveTypeSerializer(serializers.ModelSerializer):
@@ -71,6 +71,56 @@ class SickLeaveRegisterSerializer(serializers.Serializer):
         if data['start_date'] > data['end_date']:
             raise serializers.ValidationError({'end_date': 'End date must be after start date.'})
         return data
+
+def _carryover_data(user, year):
+    try:
+        prev = LeaveBalance.objects.get(user=user, leave_type__name='Annual Leave', year=year - 1)
+        expires = prev.expires_at
+        return float(prev.remaining_days), str(expires) if expires else None
+    except LeaveBalance.DoesNotExist:
+        return 0, None
+
+
+class LeaveScheduleSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    full_name = serializers.SerializerMethodField()
+    reviewed_by_name = serializers.SerializerMethodField()
+    annual_leave_days = serializers.SerializerMethodField()
+    carryover_days = serializers.SerializerMethodField()
+    carryover_expires_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveSchedule
+        fields = [
+            'id', 'user', 'username', 'full_name', 'year', 'status',
+            'monthly_plan', 'total_planned_days',
+            'annual_leave_days', 'carryover_days', 'carryover_expires_at',
+            'review_note', 'reviewed_by', 'reviewed_by_name', 'reviewed_at',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'user', 'status', 'total_planned_days',
+            'reviewed_by', 'reviewed_at', 'created_at', 'updated_at',
+        ]
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+    def get_reviewed_by_name(self, obj):
+        return obj.reviewed_by.get_full_name() if obj.reviewed_by else None
+
+    def get_annual_leave_days(self, obj):
+        from .views import get_annual_leave_days_for_year
+        return get_annual_leave_days_for_year(obj.user, obj.year)
+
+    def get_carryover_days(self, obj):
+        days, _ = _carryover_data(obj.user, obj.year)
+        return days
+
+    def get_carryover_expires_at(self, obj):
+        _, expires = _carryover_data(obj.user, obj.year)
+        return expires
+
 
 class SeniorityRuleSerializer(serializers.ModelSerializer):
     class Meta:
