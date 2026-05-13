@@ -139,6 +139,7 @@ export default function Attendance() {
   const hasOpenSession = todaySummary?.has_open_session;
   const isDayComplete = todaySummary?.status === "complete";
   const openSession = todaySummary?.sessions?.find((s) => s.status === "open");
+  const onLeave = todaySummary?.on_leave ?? null;
 
   // Sumarul lunii din history
   const totalDays = history.length;
@@ -161,6 +162,15 @@ export default function Attendance() {
       {nightWarning && (
         <div className={styles.nightWarning}>
           ⚠ Se apropie intervalul de noapte (22:00–06:00)
+        </div>
+      )}
+
+      {/* Leave banner */}
+      {onLeave && (
+        <div className={styles.leaveBanner}>
+          You are on <strong>{onLeave.leave_type}</strong> from{" "}
+          <strong>{onLeave.start_date}</strong> to{" "}
+          <strong>{onLeave.end_date}</strong>. Clock-in is disabled during approved leave.
         </div>
       )}
 
@@ -248,13 +258,13 @@ export default function Attendance() {
         <div className={styles.todayRight}>
           {error && <p className={styles.errorMsg}>{error}</p>}
           {!hasOpenSession && (
-            <button className={styles.btnIn} onClick={handleClockIn} disabled={loadingAction}>
+            <button className={styles.btnIn} onClick={handleClockIn} disabled={loadingAction || !!onLeave}>
               {loadingAction && <span className={styles.spinner} />}
               Clock In
             </button>
           )}
           {hasOpenSession && (
-            <button className={styles.btnOut} onClick={handleClockOut} disabled={loadingAction}>
+            <button className={styles.btnOut} onClick={handleClockOut} disabled={loadingAction || !!onLeave}>
               {loadingAction && <span className={styles.spinner} />}
               Clock Out
             </button>

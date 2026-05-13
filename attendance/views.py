@@ -169,6 +169,16 @@ class TeamAttendanceView(generics.ListAPIView):
 
 # --- New views (clock-in/clock-out cu sesiuni multiple) ---
 
+def get_active_leave(user, date):
+    from leaves.models import LeaveRequest
+    return LeaveRequest.objects.filter(
+        user=user,
+        status='approved',
+        start_date__lte=date,
+        end_date__gte=date,
+    ).select_related('leave_type').first()
+
+
 class ClockInView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -178,6 +188,16 @@ class ClockInView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         today = timezone.localdate()
+
+        active_leave = get_active_leave(request.user, today)
+        if active_leave:
+            return Response(
+                {'detail': f'You are on {active_leave.leave_type.name} from '
+                           f'{active_leave.start_date} to {active_leave.end_date}. '
+                           f'Clock-in is not allowed during approved leave.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         open_session = AttendanceSession.objects.filter(
             user=request.user, status='open', date=today
         ).first()
@@ -231,7 +251,19 @@ class TodaySessionsView(APIView):
         today = timezone.localdate()
         sessions = AttendanceSession.objects.filter(user=request.user, date=today)
         summary = build_day_summary(today, sessions, user=request.user)
-        return Response(DaySummarySerializer(summary).data)
+        data = DaySummarySerializer(summary).data
+
+        active_leave = get_active_leave(request.user, today)
+        if active_leave:
+            data['on_leave'] = {
+                'leave_type': active_leave.leave_type.name,
+                'start_date': str(active_leave.start_date),
+                'end_date': str(active_leave.end_date),
+            }
+        else:
+            data['on_leave'] = None
+
+        return Response(data)
 
 
 class SessionHistoryView(APIView):
