@@ -4,7 +4,8 @@
       "Bash(git clone *)",
       "Bash(ls \"C:\\\\Users\\\\sorin\\\\OneDrive\\\\Documente\\\\TimePulse487\")",
       "Read(//c/Users/sorin/OneDrive/Documente/TimePulse487/**)",
-      "Bash(grep -n \"#0f1623\\\\|#161f2e\\\\|#1a2035\\\\|#1e293b\\\\|#f1f5f9\\\\|#94a3b8\\\\|background:\\\\s*#\\\\|color:\\\\s*#[0-9a-fA-F]\\\\{3,6\\\\}\" \"D:\\\\TimePulse4\\\\frontend\\\\src\\\\components\\\\Layout.module.css\" \"D:\\\\TimePulse4\\\\frontend\\\\src\\\\pages\\\\DashboardAdmin.module.css\")"
+      "Bash(grep -n \"#0f1623\\\\|#161f2e\\\\|#1a2035\\\\|#1e293b\\\\|#f1f5f9\\\\|#94a3b8\\\\|background:\\\\s*#\\\\|color:\\\\s*#[0-9a-fA-F]\\\\{3,6\\\\}\" \"D:\\\\TimePulse4\\\\frontend\\\\src\\\\components\\\\Layout.module.css\" \"D:\\\\TimePulse4\\\\frontend\\\\src\\\\pages\\\\DashboardAdmin.module.css\")",
+      "Bash(npm run *)"
     ]
   }
 }

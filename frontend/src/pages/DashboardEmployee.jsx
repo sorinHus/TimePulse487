@@ -82,6 +82,7 @@ export default function DashboardEmployee() {
   const hasOpenSession = todaySummary?.has_open_session;
   const isDayComplete = todaySummary?.status === "complete";
   const openSession = todaySummary?.sessions?.find((s) => s.status === "open");
+  const onLeave = todaySummary?.on_leave ?? null;
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -105,6 +106,15 @@ export default function DashboardEmployee() {
           </p>
         </div>
       </div>
+
+      {/* Leave banner */}
+      {onLeave && (
+        <div className={styles.leaveBanner}>
+          You are on <strong>{onLeave.leave_type}</strong> from{" "}
+          <strong>{onLeave.start_date}</strong> to{" "}
+          <strong>{onLeave.end_date}</strong>. Clock-in is disabled during approved leave.
+        </div>
+      )}
 
       {/* Clock-in card */}
       <div className={`${styles.checkinCard} ${hasOpenSession ? styles.checkinActive : ""} ${isDayComplete ? styles.checkinDone : ""}`}>
@@ -158,7 +168,7 @@ export default function DashboardEmployee() {
         <div className={styles.checkinRight}>
           {error && <p className={styles.checkinError}>{error}</p>}
           {!hasOpenSession && (
-            <button className={styles.btnCheckIn} onClick={handleClockIn} disabled={loadingAction}>
+            <button className={styles.btnCheckIn} onClick={handleClockIn} disabled={loadingAction || !!onLeave}>
               {loadingAction ? <span className={styles.spinner} /> : null}
               Clock In
             </button>
