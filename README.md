@@ -233,7 +233,6 @@ TimePulse4/
 
 | Username | Password | Role |
 |---|---|---|
-| `sorin487` | Admin2026! | Admin / Superuser |
 | `director.general` | Director2026! | Manager |
 | `maria.pop` | Manager2026! | Manager |
 | `nicoleta.barbu` | Manager2026! | Manager |
