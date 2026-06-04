@@ -235,8 +235,7 @@ TimePulse4/
 |---|---|---|
 | `director.general` | Director2026! | Manager |
 | `maria.pop` | Manager2026! | Manager |
-| `nicoleta.barbu` | Manager2026! | Manager |
-| *(any employee)* | Angajat2026! | Employee |
+| `rodica.chivu` | Angajat2026! | Employee |
 
 ---
 
