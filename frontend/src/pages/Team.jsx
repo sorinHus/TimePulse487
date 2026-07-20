@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../api/axios";
 import { registerSickLeave, getTeamSchedule, reviewSchedule } from "../api/leaves";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ const EMPTY_SICK = {
 };
 
 export default function Team() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.effective_role === "admin";
   const isManager = user?.effective_role === "manager";
@@ -36,7 +38,7 @@ export default function Team() {
   const [filterRole, setFilterRole] = useState("");
   const [view, setView] = useState("grid");
 
-  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const MONTHS = t("common.monthsShort", { returnObjects: true });
   const PLAN_YEAR = new Date().getFullYear();
 
   // Modal plan
@@ -66,7 +68,7 @@ export default function Team() {
       setPlanModal((m) => ({ ...m, schedule: s }));
       setShowRejectForm(false);
     } catch (e) {
-      alert(e?.response?.data?.detail || "Action failed.");
+      alert(e?.response?.data?.detail || t("team.reviewActionFailed"));
     } finally {
       setPlanLoading(false);
     }
@@ -135,11 +137,11 @@ export default function Team() {
 
   async function handleSickSubmit() {
     if (!sickForm.start_date || !sickForm.end_date) {
-      setSickError("Start date and end date are required.");
+      setSickError(t("team.sick.startEndRequired"));
       return;
     }
     if (sickForm.start_date > sickForm.end_date) {
-      setSickError("End date must be after start date.");
+      setSickError(t("team.sick.endAfterStart"));
       return;
     }
     setSickLoading(true);
@@ -155,7 +157,7 @@ export default function Team() {
       const result = await registerSickLeave(payload);
       setSickSuccess(result);
     } catch (err) {
-      const msg = err?.response?.data?.detail || JSON.stringify(err?.response?.data) || "An error occurred.";
+      const msg = err?.response?.data?.detail || JSON.stringify(err?.response?.data) || t("team.sick.genericError");
       setSickError(msg);
     } finally {
       setSickLoading(false);
@@ -169,17 +171,17 @@ export default function Team() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Team</h1>
+          <h1 className={styles.title}>{t("team.title")}</h1>
           <p className={styles.subtitle}>
-            {activeCount} active member{activeCount !== 1 ? "s" : ""}
-            {departments.length > 0 && ` · ${departments.length} departments`}
+            {t("team.activeMembers", { count: activeCount })}
+            {departments.length > 0 && t("team.departmentsCount", { count: departments.length })}
           </p>
         </div>
         <div className={styles.viewToggle}>
           <button
             className={`${styles.viewBtn} ${view === "grid" ? styles.viewBtnActive : ""}`}
             onClick={() => setView("grid")}
-            title="Grid view"
+            title={t("team.gridView")}
           >
             <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
               <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
@@ -191,7 +193,7 @@ export default function Team() {
           <button
             className={`${styles.viewBtn} ${view === "list" ? styles.viewBtnActive : ""}`}
             onClick={() => setView("list")}
-            title="List view"
+            title={t("team.listView")}
           >
             <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
               <path d="M1 4h14M1 8h14M1 12h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -209,7 +211,7 @@ export default function Team() {
           </svg>
           <input
             className={styles.searchInput}
-            placeholder="Search by name or position…"
+            placeholder={t("team.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -220,7 +222,7 @@ export default function Team() {
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
           >
-            <option value="">All departments</option>
+            <option value="">{t("team.allDepartments")}</option>
             {departments.map((d) => (
               <option key={d.id} value={d.name}>{d.name}</option>
             ))}
@@ -232,10 +234,10 @@ export default function Team() {
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
           >
-            <option value="">All roles</option>
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="employee">Employee</option>
+            <option value="">{t("team.allRoles")}</option>
+            <option value="admin">{t("common.roles.admin")}</option>
+            <option value="manager">{t("common.roles.manager")}</option>
+            <option value="employee">{t("common.roles.employee")}</option>
           </select>
         )}
       </div>
@@ -243,9 +245,9 @@ export default function Team() {
       {/* Results count */}
       {(search || filterDept || filterRole) && (
         <p className={styles.resultCount}>
-          {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+          {t("team.resultsCount", { count: filtered.length })}
           <button className={styles.clearBtn} onClick={() => { setSearch(""); setFilterDept(""); setFilterRole(""); }}>
-            Clear filters
+            {t("team.clearFilters")}
           </button>
         </p>
       )}
@@ -265,7 +267,7 @@ export default function Team() {
                 <div className={styles.cardMeta}>
                   {m.role && (
                     <span className={styles.rolePill} style={{ background: roleStyle.bg, color: roleStyle.color }}>
-                      {m.role}
+                      {t(`common.roles.${m.role}`)}
                     </span>
                   )}
                   {m.department_name && (
@@ -276,19 +278,19 @@ export default function Team() {
                 <div className={styles.cardBtns}>
                   {m.id && (
                     <button className={styles.planBtn} onClick={() => openPlanModal(m)}>
-                      View Plan
+                      {t("team.viewPlan")}
                     </button>
                   )}
                   {canRegisterSick && m.id && (
                     <button className={styles.sickBtn} onClick={() => openSickModal(m)}>
-                      + Sick Leave
+                      {t("team.sickLeave")}
                     </button>
                   )}
                 </div>
               </div>
             );
           }) : (
-            <div className={styles.empty}>No team members found.</div>
+            <div className={styles.empty}>{t("team.noMembers")}</div>
           )}
         </div>
       )}
@@ -297,12 +299,12 @@ export default function Team() {
       {view === "list" && (
         <div className={styles.table}>
           <div className={`${styles.tableRow} ${styles.tableHead}`}>
-            <span>Member</span>
-            <span>Role</span>
-            <span>Department</span>
-            <span>Position</span>
-            <span>Email</span>
-            <span>Status</span>
+            <span>{t("team.table.member")}</span>
+            <span>{t("team.table.role")}</span>
+            <span>{t("team.table.department")}</span>
+            <span>{t("team.table.position")}</span>
+            <span>{t("team.table.email")}</span>
+            <span>{t("team.table.status")}</span>
             {canRegisterSick && <span></span>}
           </div>
           {filtered.length > 0 ? filtered.map((m, i) => {
@@ -320,7 +322,7 @@ export default function Team() {
                 </span>
                 <span>
                   <span className={styles.rolePill} style={{ background: roleStyle.bg, color: roleStyle.color }}>
-                    {m.role || "--"}
+                    {m.role ? t(`common.roles.${m.role}`) : "--"}
                   </span>
                 </span>
                 <span className={styles.muted}>{m.department_name || "—"}</span>
@@ -328,25 +330,25 @@ export default function Team() {
                 <span className={styles.muted}>{m.email || "—"}</span>
                 <span>
                   <span className={`${styles.statusBadge} ${m.is_active === false ? styles.statusInactive : styles.statusActive}`}>
-                    {m.is_active === false ? "Inactive" : "Active"}
+                    {m.is_active === false ? t("common.status.inactive") : t("common.status.active")}
                   </span>
                 </span>
                 <span className={styles.listActions}>
                   {m.id && (
                     <button className={styles.planBtnSmall} onClick={() => openPlanModal(m)}>
-                      Plan
+                      {t("team.planShort")}
                     </button>
                   )}
                   {canRegisterSick && m.id && (
                     <button className={styles.sickBtnSmall} onClick={() => openSickModal(m)}>
-                      + Sick Leave
+                      {t("team.sickLeave")}
                     </button>
                   )}
                 </span>
               </div>
             );
           }) : (
-            <div className={styles.empty}>No team members found.</div>
+            <div className={styles.empty}>{t("team.noMembers")}</div>
           )}
         </div>
       )}
@@ -357,7 +359,7 @@ export default function Team() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div>
-                <h2 className={styles.modalTitle}>Annual Leave Plan — {PLAN_YEAR}</h2>
+                <h2 className={styles.modalTitle}>{t("team.plan.title", { year: PLAN_YEAR })}</h2>
                 <p className={styles.modalSub}>{planModal.member.full_name || planModal.member.username}</p>
               </div>
               <button className={styles.modalClose} onClick={() => setPlanModal(null)}>✕</button>
@@ -365,9 +367,9 @@ export default function Team() {
 
             <div className={styles.modalBody}>
               {!planModal.schedule ? (
-                <p className={styles.planEmptyMsg}>Loading…</p>
+                <p className={styles.planEmptyMsg}>{t("team.plan.loading")}</p>
               ) : !planModal.schedule.id ? (
-                <p className={styles.planEmptyMsg}>No annual leave plan submitted yet for {PLAN_YEAR}.</p>
+                <p className={styles.planEmptyMsg}>{t("team.plan.noPlan", { year: PLAN_YEAR })}</p>
               ) : (
                 <>
                   {/* Status */}
@@ -378,18 +380,21 @@ export default function Team() {
                       planModal.schedule.status === "rejected"  ? styles.planBadgeRed :
                       styles.planBadgeGray
                     }`}>
-                      {planModal.schedule.status}
+                      {t(`common.status.${planModal.schedule.status}`)}
                     </span>
                     <span className={styles.planDaysInfo}>
-                      {Number(planModal.schedule.total_planned_days)} / {planModal.schedule.annual_leave_days} days planned
+                      {t("team.plan.plannedOfMax", { planned: Number(planModal.schedule.total_planned_days), max: planModal.schedule.annual_leave_days })}
                     </span>
                   </div>
 
                   {/* Carryover */}
                   {Number(planModal.schedule.carryover_days) > 0 && (
                     <div className={styles.planCarryover}>
-                      {planModal.schedule.carryover_days} day(s) remaining from {PLAN_YEAR - 1}
-                      {planModal.schedule.carryover_expires_at && ` — expires ${planModal.schedule.carryover_expires_at}`}
+                      {t("team.plan.carryover", {
+                        dayCount: `${planModal.schedule.carryover_days} ${planModal.schedule.carryover_days === 1 ? t("common.day") : t("common.days")}`,
+                        year: PLAN_YEAR - 1,
+                      })}
+                      {planModal.schedule.carryover_expires_at && t("team.plan.carryoverExpires", { date: planModal.schedule.carryover_expires_at })}
                     </div>
                   )}
 
@@ -409,7 +414,7 @@ export default function Team() {
                   {/* Review note */}
                   {planModal.schedule.review_note && (
                     <p className={styles.planReviewNote}>
-                      Note: {planModal.schedule.review_note}
+                      {t("team.plan.note", { note: planModal.schedule.review_note })}
                     </p>
                   )}
 
@@ -423,13 +428,13 @@ export default function Team() {
                             onClick={() => handlePlanReview("approve")}
                             disabled={planLoading}
                           >
-                            {planLoading ? "…" : "Approve"}
+                            {planLoading ? "…" : t("team.plan.approve")}
                           </button>
                           <button
                             className={styles.planRejectBtn}
                             onClick={() => setShowRejectForm(true)}
                           >
-                            Reject
+                            {t("team.plan.reject")}
                           </button>
                         </>
                       ) : (
@@ -437,19 +442,19 @@ export default function Team() {
                           <textarea
                             className={styles.formInput}
                             rows={3}
-                            placeholder="Reason for rejection… *"
+                            placeholder={t("team.plan.rejectPlaceholder")}
                             value={rejectNote}
                             onChange={(e) => setRejectNote(e.target.value)}
                             autoFocus
                           />
                           <div className={styles.rejectFormBtns}>
-                            <button className={styles.cancelBtn} onClick={() => setShowRejectForm(false)}>Cancel</button>
+                            <button className={styles.cancelBtn} onClick={() => setShowRejectForm(false)}>{t("common.cancel")}</button>
                             <button
                               className={styles.planRejectBtn}
                               onClick={() => handlePlanReview("reject")}
                               disabled={!rejectNote.trim() || planLoading}
                             >
-                              {planLoading ? "…" : "Confirm reject"}
+                              {planLoading ? "…" : t("team.plan.confirmReject")}
                             </button>
                           </div>
                         </div>
@@ -471,7 +476,7 @@ export default function Team() {
             {/* Header modal */}
             <div className={styles.modalHeader}>
               <div>
-                <h2 className={styles.modalTitle}>Register Sick Leave</h2>
+                <h2 className={styles.modalTitle}>{t("team.sick.title")}</h2>
                 <p className={styles.modalSub}>
                   {sickModal.member.full_name || sickModal.member.username}
                 </p>
@@ -485,7 +490,7 @@ export default function Team() {
                 <div className={styles.modalBody}>
                   <div className={styles.formRow}>
                     <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Start Date *</label>
+                      <label className={styles.formLabel}>{t("team.sick.startDate")}</label>
                       <input
                         type="date"
                         className={styles.formInput}
@@ -494,7 +499,7 @@ export default function Team() {
                       />
                     </div>
                     <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>End Date *</label>
+                      <label className={styles.formLabel}>{t("team.sick.endDate")}</label>
                       <input
                         type="date"
                         className={styles.formInput}
@@ -505,18 +510,18 @@ export default function Team() {
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Medical Document <span className={styles.optional}>(optional)</span></label>
+                    <label className={styles.formLabel}>{t("team.sick.medicalDocument")} <span className={styles.optional}>{t("team.sick.optional")}</span></label>
                     <input
                       type="text"
                       className={styles.formInput}
-                      placeholder="Document number or reference…"
+                      placeholder={t("team.sick.medicalDocPlaceholder")}
                       value={sickForm.medical_document}
                       onChange={(e) => setSickForm(f => ({ ...f, medical_document: e.target.value }))}
                     />
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>If overlapping leaves exist</label>
+                    <label className={styles.formLabel}>{t("team.sick.overlapLabel")}</label>
                     <div className={styles.overlapOptions}>
                       <label className={`${styles.overlapOption} ${sickForm.overlap_action === 'return' ? styles.overlapOptionActive : ''}`}>
                         <input
@@ -527,8 +532,8 @@ export default function Team() {
                           onChange={() => setSickForm(f => ({ ...f, overlap_action: 'return' }))}
                         />
                         <div>
-                          <span className={styles.overlapTitle}>Return days</span>
-                          <span className={styles.overlapDesc}>Overlapping days are returned to the employee's balance</span>
+                          <span className={styles.overlapTitle}>{t("team.sick.returnTitle")}</span>
+                          <span className={styles.overlapDesc}>{t("team.sick.returnDesc")}</span>
                         </div>
                       </label>
                       <label className={`${styles.overlapOption} ${sickForm.overlap_action === 'extend' ? styles.overlapOptionActive : ''}`}>
@@ -540,8 +545,8 @@ export default function Team() {
                           onChange={() => setSickForm(f => ({ ...f, overlap_action: 'extend' }))}
                         />
                         <div>
-                          <span className={styles.overlapTitle}>Extend leave</span>
-                          <span className={styles.overlapDesc}>Leave is extended after sick leave ends, skipping weekends & holidays</span>
+                          <span className={styles.overlapTitle}>{t("team.sick.extendTitle")}</span>
+                          <span className={styles.overlapDesc}>{t("team.sick.extendDesc")}</span>
                         </div>
                       </label>
                     </div>
@@ -552,7 +557,7 @@ export default function Team() {
                       <circle cx="8" cy="8" r="7" stroke="#4ade80" strokeWidth="1.4"/>
                       <path d="M5 8l2 2 4-4" stroke="#4ade80" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    Sick leave is auto-approved — no manager action required
+                    {t("team.sick.autoApproveNote")}
                   </div>
 
                   {sickError && <div className={styles.errorMsg}>{sickError}</div>}
@@ -560,10 +565,10 @@ export default function Team() {
 
                 <div className={styles.modalFooter}>
                   <button className={styles.cancelBtn} onClick={closeSickModal} disabled={sickLoading}>
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button className={styles.submitBtn} onClick={handleSickSubmit} disabled={sickLoading}>
-                    {sickLoading ? "Registering…" : "Register Sick Leave"}
+                    {sickLoading ? t("team.sick.registering") : t("team.sick.register")}
                   </button>
                 </div>
               </>
@@ -577,21 +582,21 @@ export default function Team() {
                       <path d="M7 12l3.5 3.5L17 8.5" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <p className={styles.successTitle}>Sick leave registered</p>
+                  <p className={styles.successTitle}>{t("team.sick.registeredTitle")}</p>
                   <p className={styles.successDays}>
-                    {sickSuccess.sick_leave?.total_days} working day{sickSuccess.sick_leave?.total_days !== 1 ? "s" : ""}
+                    {sickSuccess.sick_leave?.total_days} {sickSuccess.sick_leave?.total_days === 1 ? t("common.workingDay") : t("common.workingDays")}
                     {" "}· {sickSuccess.sick_leave?.start_date} → {sickSuccess.sick_leave?.end_date}
                   </p>
                   {sickSuccess.overlaps_resolved?.length > 0 && (
                     <div className={styles.overlapSummary}>
-                      <p className={styles.overlapSummaryTitle}>Overlaps resolved ({sickSuccess.overlaps_resolved.length})</p>
+                      <p className={styles.overlapSummaryTitle}>{t("team.sick.overlapsResolved", { count: sickSuccess.overlaps_resolved.length })}</p>
                       {sickSuccess.overlaps_resolved.map((o, i) => (
                         <div key={i} className={styles.overlapItem}>
                           <span className={styles.overlapItemType}>{o.leave_type}</span>
                           <span className={styles.overlapItemDetail}>
                             {o.action === 'return'
-                              ? `${o.days_returned} day(s) returned · ${o.original_period}`
-                              : `Extended to ${o.new_end_date} · ${o.days_shifted} day(s) shifted`
+                              ? t("team.sick.daysReturned", { count: o.days_returned, period: o.original_period })
+                              : t("team.sick.extendedTo", { date: o.new_end_date, count: o.days_shifted })
                             }
                           </span>
                         </div>
@@ -600,7 +605,7 @@ export default function Team() {
                   )}
                 </div>
                 <div className={styles.modalFooter}>
-                  <button className={styles.submitBtn} onClick={closeSickModal}>Done</button>
+                  <button className={styles.submitBtn} onClick={closeSickModal}>{t("team.sick.done")}</button>
                 </div>
               </div>
             )}

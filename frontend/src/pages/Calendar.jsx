@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { getTeamCalendar } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import styles from "./Calendar.module.css";
-
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function getMonthGrid(year, month) {
   const firstDay = new Date(year, month, 1);
@@ -31,13 +30,14 @@ function getInitials(fullName) {
 
 // Bar per angajat în celulă cu tooltip la hover
 function EntryChip({ entry }) {
+  const { t } = useTranslation();
   const color = entry.status === "leave"
     ? (entry.color || "#f59e0b")
     : "#ef4444";
 
   const tooltipText = entry.status === "leave"
-    ? `${entry.full_name} · ${entry.leave_type || "Leave"}`
-    : `${entry.full_name} · Absent`;
+    ? `${entry.full_name} · ${entry.leave_type || t("leaves.leaveFallback")}`
+    : `${entry.full_name} · ${t("common.status.absent")}`;
 
   return (
     <div
@@ -54,6 +54,12 @@ function EntryChip({ entry }) {
 }
 
 export default function Calendar() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
+  const DAYS = [
+    t("calendar.days.mon"), t("calendar.days.tue"), t("calendar.days.wed"),
+    t("calendar.days.thu"), t("calendar.days.fri"), t("calendar.days.sat"), t("calendar.days.sun"),
+  ];
   const { user } = useAuth();
   const today = new Date();
   const [year, setYear]     = useState(today.getFullYear());
@@ -121,7 +127,7 @@ export default function Calendar() {
     setSelected(selected?.day === day ? null : { day, entries });
   };
 
-  const monthLabel = new Date(year, month).toLocaleDateString("en-GB", {
+  const monthLabel = new Date(year, month).toLocaleDateString(locale, {
     month: "long", year: "numeric",
   });
 
@@ -141,11 +147,11 @@ export default function Calendar() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Team Calendar</h1>
-          <p className={styles.subtitle}>Monthly leave & absence overview</p>
+          <h1 className={styles.title}>{t("calendar.title")}</h1>
+          <p className={styles.subtitle}>{t("calendar.subtitle")}</p>
         </div>
         <div className={styles.legend}>
-          {Object.entries({ present: "Present", leave: "On leave", absent: "Absent" }).map(([key, label]) => (
+          {Object.entries({ present: t("calendar.legend.present"), leave: t("calendar.legend.onLeave"), absent: t("calendar.legend.absent") }).map(([key, label]) => (
             <span key={key} className={styles.legendItem}>
               <span className={styles.legendDot} style={{ background: STATUS_COLOR[key] }} />
               {label}
@@ -163,7 +169,7 @@ export default function Calendar() {
             value={filterDept}
             onChange={e => { setFilterDept(e.target.value); setSelected(null); }}
           >
-            <option value="">All departments</option>
+            <option value="">{t("calendar.allDepartments")}</option>
             {departments.map(d => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
@@ -181,15 +187,15 @@ export default function Calendar() {
       {/* Calendar grid */}
       <div className={styles.calendarWrap}>
         <div className={styles.dayHeaders}>
-          {DAYS.map(d => (
-            <div key={d} className={`${styles.dayHeader} ${d === "Sat" || d === "Sun" ? styles.weekend : ""}`}>
+          {DAYS.map((d, i) => (
+            <div key={d} className={`${styles.dayHeader} ${i >= 5 ? styles.weekend : ""}`}>
               {d}
             </div>
           ))}
         </div>
 
         {loading ? (
-          <div className={styles.loadingMsg}>Loading…</div>
+          <div className={styles.loadingMsg}>{t("calendar.loading")}</div>
         ) : (
           <div className={styles.grid}>
             {cells.map((day, i) => {
@@ -225,7 +231,7 @@ export default function Calendar() {
                         ))}
                         {allEntries.length > MAX_VISIBLE && (
                           <div className={styles.chipMore}>
-                            +{allEntries.length - MAX_VISIBLE} more
+                            {t("calendar.moreCount", { count: allEntries.length - MAX_VISIBLE })}
                           </div>
                         )}
                       </div>
@@ -243,12 +249,12 @@ export default function Calendar() {
         <div className={styles.detailPanel}>
           <div className={styles.detailHeader}>
             <h2 className={styles.detailTitle}>
-              {new Date(year, month, selected.day).toLocaleDateString("en-GB", {
+              {new Date(year, month, selected.day).toLocaleDateString(locale, {
                 weekday: "long", day: "numeric", month: "long",
               })}
             </h2>
             <span className={styles.detailCount}>
-              {selected.entries.length} member{selected.entries.length !== 1 ? "s" : ""}
+              {t("calendar.memberCount", { count: selected.entries.length })}
             </span>
             <button className={styles.detailClose} onClick={() => setSelected(null)}>✕</button>
           </div>
@@ -274,6 +280,7 @@ export default function Calendar() {
 }
 
 function DetailRow({ entry }) {
+  const { t } = useTranslation();
   const color = entry.status === "leave"
     ? (entry.color || "#f59e0b")
     : "#ef4444";
@@ -293,7 +300,7 @@ function DetailRow({ entry }) {
         className={styles.detailStatus}
         style={{ background: `${color}22`, color }}
       >
-        {entry.status === "leave" ? (entry.leave_type || "Leave") : "Absent"}
+        {entry.status === "leave" ? (entry.leave_type || t("leaves.leaveFallback")) : t("common.status.absent")}
       </span>
     </div>
   );

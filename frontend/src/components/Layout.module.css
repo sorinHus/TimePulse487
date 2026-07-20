@@ -47,6 +47,38 @@
   letter-spacing: 0.02em;
 }
 
+/* ── Language switcher ── */
+
+.langGroup {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.langOption {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 5px 8px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.langOption:hover {
+  color: var(--text-primary);
+  background: var(--border);
+}
+
+.langActive {
+  color: var(--text-primary);
+  background: var(--border);
+}
+
 /* ── Theme toggle ── */
 
 .themeBtn {

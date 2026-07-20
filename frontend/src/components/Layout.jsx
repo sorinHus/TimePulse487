@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "./Sidebar";
 import { getUnreadCount } from "../api/attendance";
+import { setLanguage } from "../i18n/config";
 import styles from "./Layout.module.css";
 
 export default function Layout({ theme, onToggleTheme }) {
+  const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
+  const currentLang = i18n.language === "en" ? "en" : "ro";
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -34,10 +38,28 @@ export default function Layout({ theme, onToggleTheme }) {
         <header className={styles.topbar}>
           <div className={styles.topbarLeft} />
           <div className={styles.topbarRight}>
+            <div className={styles.langGroup} role="group" aria-label="RO / EN">
+              <button
+                type="button"
+                className={`${styles.langOption} ${currentLang === "ro" ? styles.langActive : ""}`}
+                onClick={() => setLanguage("ro")}
+                aria-pressed={currentLang === "ro"}
+              >
+                RO
+              </button>
+              <button
+                type="button"
+                className={`${styles.langOption} ${currentLang === "en" ? styles.langActive : ""}`}
+                onClick={() => setLanguage("en")}
+                aria-pressed={currentLang === "en"}
+              >
+                EN
+              </button>
+            </div>
             <button
               className={styles.themeBtn}
               onClick={onToggleTheme}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? t("layout.switchToLight") : t("layout.switchToDark")}
             >
               {theme === 'dark' ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
@@ -50,7 +72,7 @@ export default function Layout({ theme, onToggleTheme }) {
               )}
             </button>
             <span className={styles.dateBadge}>
-              {new Date().toLocaleDateString("en-GB", {
+              {new Date().toLocaleDateString(currentLang === "ro" ? "ro-RO" : "en-GB", {
                 weekday: "short",
                 day: "numeric",
                 month: "short",
@@ -60,7 +82,7 @@ export default function Layout({ theme, onToggleTheme }) {
             <button
               className={styles.notifBtn}
               onClick={() => navigate("/notifications")}
-              aria-label="Notifications"
+              aria-label={t("layout.notifications")}
             >
               <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
                 <path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6z"

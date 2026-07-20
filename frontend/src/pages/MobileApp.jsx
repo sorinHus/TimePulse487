@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { login, logout, getMe } from '../api/auth'
 import { clockIn, clockOut, getTodaySessions } from '../api/attendance'
 import {
@@ -22,8 +23,8 @@ function fmtH(dec) {
   return `${Math.floor(n)}h ${Math.round((n - Math.floor(n)) * 60)}m`
 }
 
-function todayLabel() {
-  return new Date().toLocaleDateString('en-GB', {
+function todayLabel(locale) {
+  return new Date().toLocaleDateString(locale, {
     weekday: 'long', day: 'numeric', month: 'long',
   })
 }
@@ -32,6 +33,7 @@ function todayLabel() {
    LOGIN
 ════════════════════════════════════════════════════════════ */
 function LoginScreen({ onLogin }) {
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [err, setErr]           = useState('')
@@ -43,7 +45,7 @@ function LoginScreen({ onLogin }) {
       const user = await login(username, password)
       onLogin(user)
     } catch {
-      setErr('Incorrect username or password.')
+      setErr(t('mobileApp.invalidCredentials'))
     }
     setLoading(false)
   }
@@ -55,25 +57,25 @@ function LoginScreen({ onLogin }) {
         <span>TimePulse</span>
       </div>
       <div className={s.loginCard}>
-        <div className={s.loginTitle}>Sign in</div>
+        <div className={s.loginTitle}>{t('mobileApp.signIn')}</div>
         <input
-          className={s.input} type="text" placeholder="Username"
+          className={s.input} type="text" placeholder={t('mobileApp.username')}
           value={username} onChange={e => setUsername(e.target.value)}
           autoCapitalize="none" autoCorrect="off"
         />
         <input
-          className={s.input} type="password" placeholder="Password"
+          className={s.input} type="password" placeholder={t('mobileApp.password')}
           value={password} onChange={e => setPassword(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handle()}
         />
         {err && <div className={s.loginErr}>{err}</div>}
         <button className={`${s.bigBtn} ${s.btnIn}`} onClick={handle} disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? t('mobileApp.signingIn') : t('mobileApp.signIn')}
         </button>
       </div>
       <div className={s.installHint}>
-        Android: Chrome menu → "Add to Home screen"<br />
-        iPhone: Share → "Add to Home Screen"
+        {t('mobileApp.installHintAndroid')}<br />
+        {t('mobileApp.installHintIos')}
       </div>
     </div>
   )
@@ -83,6 +85,8 @@ function LoginScreen({ onLogin }) {
    CLOCK TAB
 ════════════════════════════════════════════════════════════ */
 function ClockTab() {
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language === 'ro' ? 'ro-RO' : 'en-GB'
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [err, setErr]         = useState('')
@@ -98,14 +102,14 @@ function ClockTab() {
   const handleIn = async () => {
     setErr(''); setLoading(true)
     try { await clockIn(); load() }
-    catch (e) { setErr(e?.response?.data?.detail || 'Clock-in failed.') }
+    catch (e) { setErr(e?.response?.data?.detail || t('mobileApp.clockInFailed')) }
     setLoading(false)
   }
 
   const handleOut = async () => {
     setErr(''); setLoading(true)
     try { await clockOut(); load() }
-    catch (e) { setErr(e?.response?.data?.detail || 'Clock-out failed.') }
+    catch (e) { setErr(e?.response?.data?.detail || t('mobileApp.clockOutFailed')) }
     setLoading(false)
   }
 
@@ -117,11 +121,11 @@ function ClockTab() {
 
   return (
     <div className={s.tab}>
-      <div className={s.dateLabel}>{todayLabel()}</div>
+      <div className={s.dateLabel}>{todayLabel(locale)}</div>
 
       {onLeave && (
         <div className={s.leaveBanner}>
-          On <strong>{onLeave.leave_type}</strong> · {onLeave.start_date} → {onLeave.end_date}
+          {t('mobileApp.onLeave')} <strong>{onLeave.leave_type}</strong> · {onLeave.start_date} → {onLeave.end_date}
         </div>
       )}
 
@@ -129,26 +133,26 @@ function ClockTab() {
         <div className={s.clockStatus}>
           <span className={`${s.pulse} ${hasOpen ? s.pulseOn : ''}`} />
           {isComplete
-            ? 'Shift complete'
+            ? t('mobileApp.shiftComplete')
             : hasOpen
-            ? 'Currently working'
+            ? t('mobileApp.currentlyWorking')
             : onLeave
-            ? 'On leave'
-            : 'Not clocked in'}
+            ? t('mobileApp.onLeave')
+            : t('mobileApp.notClockedIn')}
         </div>
         <div className={s.clockTimes}>
           <div className={s.clockTimeBlock}>
-            <span className={s.clockTimeLabel}>In</span>
+            <span className={s.clockTimeLabel}>{t('mobileApp.in')}</span>
             <span className={s.clockTimeValue}>{fmt(openSess?.clock_in ?? summary?.sessions?.[0]?.clock_in)}</span>
           </div>
           <div className={s.clockTimeSep} />
           <div className={s.clockTimeBlock}>
-            <span className={s.clockTimeLabel}>Out</span>
+            <span className={s.clockTimeLabel}>{t('mobileApp.out')}</span>
             <span className={s.clockTimeValue}>{hasOpen ? '--:--' : fmt(lastOut?.clock_out)}</span>
           </div>
           <div className={s.clockTimeSep} />
           <div className={s.clockTimeBlock}>
-            <span className={s.clockTimeLabel}>Total</span>
+            <span className={s.clockTimeLabel}>{t('mobileApp.total')}</span>
             <span className={s.clockTimeValue}>{fmtH(summary?.total_hours)}</span>
           </div>
         </div>
@@ -158,15 +162,15 @@ function ClockTab() {
 
       {!hasOpen && !isComplete && !onLeave && (
         <button className={`${s.bigBtn} ${s.btnIn}`} onClick={handleIn} disabled={loading}>
-          {loading ? '…' : 'Clock In'}
+          {loading ? '…' : t('mobileApp.clockIn')}
         </button>
       )}
       {hasOpen && (
         <button className={`${s.bigBtn} ${s.btnOut}`} onClick={handleOut} disabled={loading}>
-          {loading ? '…' : 'Clock Out'}
+          {loading ? '…' : t('mobileApp.clockOut')}
         </button>
       )}
-      {isComplete && <div className={s.doneMsg}>✓ Done for today</div>}
+      {isComplete && <div className={s.doneMsg}>{t('mobileApp.doneForToday')}</div>}
     </div>
   )
 }
@@ -175,6 +179,7 @@ function ClockTab() {
    LEAVE TAB
 ════════════════════════════════════════════════════════════ */
 function LeaveTab() {
+  const { t } = useTranslation()
   const year = new Date().getFullYear()
 
   const [balances, setBalances]   = useState([])
@@ -212,7 +217,7 @@ function LeaveTab() {
 
   const handleSubmit = async () => {
     if (!form.leave_type || !form.start_date || !form.end_date) {
-      setErr('All fields are required.'); return
+      setErr(t('mobileApp.allFieldsRequired')); return
     }
     setSaving(true); setErr('')
     try {
@@ -222,13 +227,13 @@ function LeaveTab() {
         end_date:   form.end_date,
         reason:     form.reason,
       })
-      setOk('Request submitted!')
+      setOk(t('mobileApp.requestSubmitted'))
       setShowForm(false)
       setForm({ leave_type: '', start_date: '', end_date: '', reason: '' })
       load()
       setTimeout(() => setOk(''), 3000)
     } catch (e) {
-      setErr(e?.response?.data?.detail ?? JSON.stringify(e?.response?.data) ?? 'Failed.')
+      setErr(e?.response?.data?.detail ?? JSON.stringify(e?.response?.data) ?? t('mobileApp.requestFailed'))
     }
     setSaving(false)
   }
@@ -241,7 +246,7 @@ function LeaveTab() {
           <div key={b.id} className={s.balanceCard}>
             <div className={s.balanceName}>{b.leave_type_name}</div>
             <div className={s.balanceNum}>{b.remaining_days ?? '--'}</div>
-            <div className={s.balanceSub}>days left</div>
+            <div className={s.balanceSub}>{t('mobileApp.daysLeft')}</div>
           </div>
         ))}
       </div>
@@ -250,48 +255,48 @@ function LeaveTab() {
 
       {!showForm && (
         <button className={`${s.bigBtn} ${s.btnIn}`} onClick={() => setShowForm(true)}>
-          + New Leave Request
+          {t('mobileApp.newLeaveRequest')}
         </button>
       )}
 
       {showForm && (
         <div className={s.formCard}>
-          <div className={s.formTitle}>New Leave Request</div>
+          <div className={s.formTitle}>{t('mobileApp.newLeaveRequestTitle')}</div>
 
-          <label className={s.formLabel}>Type *</label>
+          <label className={s.formLabel}>{t('mobileApp.type')}</label>
           <select className={s.input} value={form.leave_type}
             onChange={e => setForm(f => ({ ...f, leave_type: e.target.value }))}>
-            <option value="">Select type…</option>
-            {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            <option value="">{t('mobileApp.selectType')}</option>
+            {types.map(lt => <option key={lt.id} value={lt.id}>{lt.name}</option>)}
           </select>
 
-          <label className={s.formLabel}>Start date *</label>
+          <label className={s.formLabel}>{t('mobileApp.startDate')}</label>
           <input className={s.input} type="date" value={form.start_date}
             onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} />
 
-          <label className={s.formLabel}>End date *</label>
+          <label className={s.formLabel}>{t('mobileApp.endDate')}</label>
           <input className={s.input} type="date" value={form.end_date}
             onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
 
           {workDays !== null && (
             <div className={s.workDaysInfo}>
-              {workDays} working day{workDays !== 1 ? 's' : ''}
+              {workDays} {workDays === 1 ? t('common.workingDay') : t('common.workingDays')}
             </div>
           )}
 
-          <label className={s.formLabel}>Reason (optional)</label>
+          <label className={s.formLabel}>{t('mobileApp.reasonOptional')}</label>
           <textarea className={s.input} rows={2} value={form.reason}
-            placeholder="Optional note…"
+            placeholder={t('mobileApp.reasonPlaceholder')}
             onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} />
 
           {err && <div className={s.errMsg}>{err}</div>}
 
           <div className={s.formBtns}>
             <button className={s.cancelBtn} onClick={() => { setShowForm(false); setErr('') }}>
-              Cancel
+              {t('mobileApp.cancel')}
             </button>
             <button className={`${s.bigBtn} ${s.btnIn}`} onClick={handleSubmit} disabled={saving}>
-              {saving ? '…' : 'Submit'}
+              {saving ? '…' : t('mobileApp.submit')}
             </button>
           </div>
         </div>
@@ -300,7 +305,7 @@ function LeaveTab() {
       {/* My requests */}
       {requests.length > 0 && (
         <div className={s.requestsList}>
-          <div className={s.listTitle}>My Requests</div>
+          <div className={s.listTitle}>{t('mobileApp.myRequests')}</div>
           {requests.map(r => (
             <div key={r.id} className={s.requestCard}>
               <div className={s.requestTop}>
@@ -310,12 +315,12 @@ function LeaveTab() {
                   r.status === 'rejected' ? s.reqBadgeRed :
                   s.reqBadgeAmber
                 }`}>
-                  {r.status}
+                  {t(`common.status.${r.status}`)}
                 </span>
               </div>
               <div className={s.requestDates}>
                 {r.start_date} → {r.end_date}
-                {r.total_days != null ? ` · ${r.total_days} day${r.total_days !== 1 ? 's' : ''}` : ''}
+                {r.total_days != null ? ` · ${r.total_days} ${r.total_days === 1 ? t('common.day') : t('common.days')}` : ''}
               </div>
             </div>
           ))}
@@ -329,6 +334,7 @@ function LeaveTab() {
    MAIN
 ════════════════════════════════════════════════════════════ */
 export default function MobileApp() {
+  const { t } = useTranslation()
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab]         = useState('clock')
@@ -350,7 +356,7 @@ export default function MobileApp() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#0f1117', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-        Loading…
+        {t('common.loading')}
       </div>
     )
   }
@@ -371,7 +377,7 @@ export default function MobileApp() {
             <div className={s.headerSub}>{name}</div>
           </div>
         </div>
-        <button className={s.logoutBtn} onClick={handleLogout}>Sign out</button>
+        <button className={s.logoutBtn} onClick={handleLogout}>{t('mobileApp.signOut')}</button>
       </div>
 
       <div className={s.content}>
@@ -388,7 +394,7 @@ export default function MobileApp() {
             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
             <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span>Clock</span>
+          <span>{t('mobileApp.tabClock')}</span>
         </button>
         <button
           className={`${s.tabBtn} ${tab === 'leave' ? s.tabBtnActive : ''}`}
@@ -398,7 +404,7 @@ export default function MobileApp() {
             <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="2" />
             <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          <span>Leave</span>
+          <span>{t('mobileApp.tabLeave')}</span>
         </button>
       </div>
     </div>

@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { clockIn, clockOut, getTodaySessions } from "../api/attendance";
 import { getEmployeeDashboard } from "../api/dashboard";
 import styles from "./DashboardEmployee.module.css";
 
-function formatTime(isoString) {
+function formatTime(isoString, locale) {
   if (!isoString) return "--:--";
   const d = new Date(isoString);
   if (isNaN(d)) return "--:--";
-  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatHours(decimal) {
@@ -31,6 +32,8 @@ function StatCard({ label, value, accent, sublabel }) {
 }
 
 export default function DashboardEmployee() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
   const { user } = useAuth();
 
   const [todaySummary, setTodaySummary] = useState(null);
@@ -60,7 +63,7 @@ export default function DashboardEmployee() {
       await clockIn();
       await fetchData();
     } catch (e) {
-      setError(e?.response?.data?.detail || "Clock-in failed.");
+      setError(e?.response?.data?.detail || t("dashboardEmployee.clockInFailed"));
     } finally {
       setLoadingAction(false);
     }
@@ -73,7 +76,7 @@ export default function DashboardEmployee() {
       await clockOut();
       await fetchData();
     } catch (e) {
-      setError(e?.response?.data?.detail || "Clock-out failed.");
+      setError(e?.response?.data?.detail || t("dashboardEmployee.clockOutFailed"));
     } finally {
       setLoadingAction(false);
     }
@@ -86,12 +89,12 @@ export default function DashboardEmployee() {
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
+    if (h < 12) return t("dashboardEmployee.goodMorning");
+    if (h < 18) return t("dashboardEmployee.goodAfternoon");
+    return t("dashboardEmployee.goodEvening");
   };
 
-  const firstName = user?.first_name || user?.username || "there";
+  const firstName = user?.first_name || user?.username || t("dashboardEmployee.there");
 
   return (
     <div className={styles.page}>
@@ -100,7 +103,7 @@ export default function DashboardEmployee() {
         <div>
           <h1 className={styles.pageTitle}>{greeting()}, {firstName}.</h1>
           <p className={styles.pageSubtitle}>
-            {new Date().toLocaleDateString("en-GB", {
+            {new Date().toLocaleDateString(locale, {
               weekday: "long", day: "numeric", month: "long", year: "numeric",
             })}
           </p>
@@ -110,9 +113,7 @@ export default function DashboardEmployee() {
       {/* Leave banner */}
       {onLeave && (
         <div className={styles.leaveBanner}>
-          You are on <strong>{onLeave.leave_type}</strong> from{" "}
-          <strong>{onLeave.start_date}</strong> to{" "}
-          <strong>{onLeave.end_date}</strong>. Clock-in is disabled during approved leave.
+          {t("dashboardEmployee.onLeaveBanner", { type: onLeave.leave_type, start: onLeave.start_date, end: onLeave.end_date })}
         </div>
       )}
 
@@ -122,43 +123,43 @@ export default function DashboardEmployee() {
           <div className={styles.checkinStatus}>
             <span className={`${styles.pulse} ${hasOpenSession ? styles.pulseActive : ""}`} />
             <span className={styles.checkinStatusText}>
-              {isDayComplete ? "Shift complete" : hasOpenSession ? "Currently working" : "Not clocked in"}
+              {isDayComplete ? t("dashboardEmployee.shiftComplete") : hasOpenSession ? t("dashboardEmployee.currentlyWorking") : t("dashboardEmployee.notClockedIn")}
             </span>
           </div>
           <div className={styles.checkinTimes}>
             {openSession ? (
               <>
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>In</span>
-                  <span className={styles.timeValue}>{formatTime(openSession.clock_in)}</span>
+                  <span className={styles.timeLabel}>{t("dashboardEmployee.in")}</span>
+                  <span className={styles.timeValue}>{formatTime(openSession.clock_in, locale)}</span>
                 </div>
                 <div className={styles.timeDivider} />
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>Out</span>
+                  <span className={styles.timeLabel}>{t("dashboardEmployee.out")}</span>
                   <span className={styles.timeValue}>--:--</span>
                 </div>
               </>
             ) : todaySummary?.sessions?.length > 0 ? (
               <>
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>Total</span>
+                  <span className={styles.timeLabel}>{t("dashboardEmployee.total")}</span>
                   <span className={styles.timeValue}>{formatHours(todaySummary.total_hours)}</span>
                 </div>
                 <div className={styles.timeDivider} />
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>Sessions</span>
+                  <span className={styles.timeLabel}>{t("dashboardEmployee.sessions")}</span>
                   <span className={styles.timeValue}>{todaySummary.sessions.length}</span>
                 </div>
               </>
             ) : (
               <>
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>In</span>
+                  <span className={styles.timeLabel}>{t("dashboardEmployee.in")}</span>
                   <span className={styles.timeValue}>--:--</span>
                 </div>
                 <div className={styles.timeDivider} />
                 <div className={styles.timeBlock}>
-                  <span className={styles.timeLabel}>Out</span>
+                  <span className={styles.timeLabel}>{t("dashboardEmployee.out")}</span>
                   <span className={styles.timeValue}>--:--</span>
                 </div>
               </>
@@ -170,17 +171,17 @@ export default function DashboardEmployee() {
           {!hasOpenSession && (
             <button className={styles.btnCheckIn} onClick={handleClockIn} disabled={loadingAction || !!onLeave}>
               {loadingAction ? <span className={styles.spinner} /> : null}
-              Clock In
+              {t("dashboardEmployee.clockIn")}
             </button>
           )}
           {hasOpenSession && (
             <button className={styles.btnCheckOut} onClick={handleClockOut} disabled={loadingAction}>
               {loadingAction ? <span className={styles.spinner} /> : null}
-              Clock Out
+              {t("dashboardEmployee.clockOut")}
             </button>
           )}
           {isDayComplete && !hasOpenSession && (
-            <span className={styles.doneTag}>✓ Done for today</span>
+            <span className={styles.doneTag}>{t("dashboardEmployee.doneForToday")}</span>
           )}
         </div>
       </div>
@@ -188,60 +189,60 @@ export default function DashboardEmployee() {
       {/* Stat cards */}
       <div className={styles.statsGrid}>
         <StatCard
-          label="Hours this month"
+          label={t("dashboardEmployee.stats.hoursThisMonth")}
           value={formatHours(dashboard?.hours_this_month)}
           accent="accentBlue"
         />
         <StatCard
-          label="Annual leave left"
+          label={t("dashboardEmployee.stats.annualLeaveLeft")}
           value={dashboard?.leave_balance?.annual ?? "--"}
-          sublabel="days remaining"
+          sublabel={t("dashboardEmployee.stats.daysRemaining")}
           accent="accentGreen"
         />
         <StatCard
-          label="Sick leave left"
+          label={t("dashboardEmployee.stats.sickLeaveLeft")}
           value={dashboard?.leave_balance?.sick ?? "--"}
-          sublabel="days remaining"
+          sublabel={t("dashboardEmployee.stats.daysRemaining")}
           accent="accentAmber"
         />
         <StatCard
-          label="Pending requests"
+          label={t("dashboardEmployee.stats.pendingRequests")}
           value={dashboard?.pending_leave_requests ?? "--"}
-          sublabel="awaiting approval"
+          sublabel={t("dashboardEmployee.stats.awaitingApproval")}
         />
       </div>
 
       {/* Recent attendance */}
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Recent attendance</h2>
+        <h2 className={styles.sectionTitle}>{t("dashboardEmployee.recentAttendance")}</h2>
         <div className={styles.table}>
           <div className={styles.tableHead}>
-            <span>Date</span>
-            <span>Clock in</span>
-            <span>Clock out</span>
-            <span>Hours</span>
-            <span>Status</span>
+            <span>{t("dashboardEmployee.table.date")}</span>
+            <span>{t("dashboardEmployee.table.clockIn")}</span>
+            <span>{t("dashboardEmployee.table.clockOut")}</span>
+            <span>{t("dashboardEmployee.table.hours")}</span>
+            <span>{t("dashboardEmployee.table.status")}</span>
           </div>
           {dashboard?.recent_attendance?.length > 0 ? (
             dashboard.recent_attendance.map((row, i) => (
               <div key={i} className={styles.tableRow}>
                 <span>
-                  {new Date(row.date + "T00:00:00").toLocaleDateString("en-GB", {
+                  {new Date(row.date + "T00:00:00").toLocaleDateString(locale, {
                     weekday: "short", day: "numeric", month: "short",
                   })}
                 </span>
-                <span>{formatTime(row.check_in)}</span>
-                <span>{formatTime(row.check_out)}</span>
+                <span>{formatTime(row.check_in, locale)}</span>
+                <span>{formatTime(row.check_out, locale)}</span>
                 <span>{formatHours(row.hours_worked)}</span>
                 <span>
                   <span className={`${styles.badge} ${row.check_out ? styles.badgeGreen : styles.badgeAmber}`}>
-                    {row.check_out ? "Complete" : "Incomplete"}
+                    {row.check_out ? t("common.status.complete") : t("common.status.incomplete")}
                   </span>
                 </span>
               </div>
             ))
           ) : (
-            <div className={styles.emptyState}>No attendance records yet.</div>
+            <div className={styles.emptyState}>{t("dashboardEmployee.noRecords")}</div>
           )}
         </div>
       </div>

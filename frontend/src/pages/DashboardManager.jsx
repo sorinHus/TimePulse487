@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { getManagerDashboard } from "../api/dashboard";
 import styles from "./DashboardManager.module.css";
@@ -10,9 +11,9 @@ function formatHours(decimal) {
   return `${h}h ${m}m`;
 }
 
-function formatTime(isoString) {
+function formatTime(isoString, locale) {
   if (!isoString) return "--:--";
-  return new Date(isoString).toLocaleTimeString("en-GB", {
+  return new Date(isoString).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -42,6 +43,8 @@ function StatCard({ label, value, sub, accent, delay }) {
 }
 
 export default function DashboardManager() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState("attendance");
@@ -52,7 +55,7 @@ export default function DashboardManager() {
       .catch(() => {});
   }, []);
 
-  const firstName = user?.first_name || user?.username || "there";
+  const firstName = user?.first_name || user?.username || t("dashboardEmployee.there");
 
   const pendingLeaves = data?.recent_pending_leaves || [];
   const teamAttendance = data?.team_status || [];
@@ -63,9 +66,9 @@ export default function DashboardManager() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Team Overview</h1>
+          <h1 className={styles.title}>{t("dashboardManager.title")}</h1>
           <p className={styles.subtitle}>
-            {new Date().toLocaleDateString("en-GB", {
+            {new Date().toLocaleDateString(locale, {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -79,37 +82,37 @@ export default function DashboardManager() {
           <span className={styles.teamCount}>
             {data?.stats?.total_team ?? "--"}
           </span>
-          <span className={styles.teamLabel}>team members</span>
+          <span className={styles.teamLabel}>{t("dashboardManager.teamMembers")}</span>
         </div>
       </div>
 
       {/* Stats */}
       <div className={styles.statsGrid}>
         <StatCard
-          label="Present today"
+          label={t("dashboardManager.stats.presentToday")}
           value={data?.stats?.present_today}
-          sub={`of ${data?.stats?.total_team ?? "--"} members`}
+          sub={t("dashboardManager.stats.ofMembers", { total: data?.stats?.total_team ?? "--" })}
           accent="accentGreen"
           delay="0ms"
         />
         <StatCard
-          label="On leave"
+          label={t("dashboardManager.stats.onLeave")}
           value={data?.stats?.on_leave_today}
-          sub="approved absences"
+          sub={t("dashboardManager.stats.approvedAbsences")}
           accent="accentAmber"
           delay="50ms"
         />
         <StatCard
-          label="Pending approvals"
+          label={t("dashboardManager.stats.pendingApprovals")}
           value={pendingLeaves.length}
-          sub="leave requests"
+          sub={t("dashboardManager.stats.leaveRequests")}
           accent={pendingLeaves.length > 0 ? "accentRed" : ""}
           delay="100ms"
         />
         <StatCard
-          label="Avg hours / month"
+          label={t("dashboardManager.stats.avgHours")}
           value={formatHours(data?.avg_hours_this_month)}
-          sub="team average"
+          sub={t("dashboardManager.stats.teamAverage")}
           delay="150ms"
         />
     </div>
@@ -120,7 +123,7 @@ export default function DashboardManager() {
           className={`${styles.tab} ${activeTab === "attendance" ? styles.tabActive : ""}`}
           onClick={() => setActiveTab("attendance")}
         >
-          Today's attendance
+          {t("dashboardManager.tabs.attendance")}
           {data?.present_today != null && (
             <span className={styles.tabBadge}>{data.present_today}</span>
           )}
@@ -129,7 +132,7 @@ export default function DashboardManager() {
           className={`${styles.tab} ${activeTab === "leaves" ? styles.tabActive : ""}`}
           onClick={() => setActiveTab("leaves")}
         >
-          Pending leaves
+          {t("dashboardManager.tabs.leaves")}
           {pendingLeaves.length > 0 && (
             <span className={`${styles.tabBadge} ${styles.tabBadgeRed}`}>
               {pendingLeaves.length}
@@ -140,7 +143,7 @@ export default function DashboardManager() {
           className={`${styles.tab} ${activeTab === "team" ? styles.tabActive : ""}`}
           onClick={() => setActiveTab("team")}
         >
-          Team members
+          {t("dashboardManager.tabs.team")}
         </button>
       </div>
 
@@ -151,11 +154,11 @@ export default function DashboardManager() {
         {activeTab === "attendance" && (
           <div className={styles.table}>
             <div className={`${styles.tableRow} ${styles.tableHead}`}>
-              <span>Employee</span>
-              <span>Status</span>
-              <span>Check in</span>
-              <span>Check out</span>
-              <span>Hours</span>
+              <span>{t("dashboardManager.table.employee")}</span>
+              <span>{t("dashboardManager.table.status")}</span>
+              <span>{t("dashboardManager.table.checkIn")}</span>
+              <span>{t("dashboardManager.table.checkOut")}</span>
+              <span>{t("dashboardManager.table.hours")}</span>
             </div>
             {teamAttendance.length > 0 ? (
               teamAttendance.map((row, i) => (
@@ -165,15 +168,15 @@ export default function DashboardManager() {
                   </span>
                   <span className={styles.statusCell}>
                     <StatusDot status={row.status} />
-                    <span className={styles.statusText}>{row.status}</span>
+                    <span className={styles.statusText}>{t(`common.status.${row.status}`)}</span>
                   </span>
-                  <span>{formatTime(row.check_in)}</span>
-                  <span>{formatTime(row.check_out)}</span>
+                  <span>{formatTime(row.check_in, locale)}</span>
+                  <span>{formatTime(row.check_out, locale)}</span>
                   <span>{formatHours(row.hours_worked)}</span>
                 </div>
               ))
             ) : (
-              <div className={styles.empty}>No attendance data for today.</div>
+              <div className={styles.empty}>{t("dashboardManager.noAttendance")}</div>
             )}
           </div>
         )}
@@ -182,12 +185,12 @@ export default function DashboardManager() {
         {activeTab === "leaves" && (
           <div className={styles.table}>
             <div className={`${styles.tableRow} ${styles.tableHead}`}>
-              <span>Employee</span>
-              <span>Type</span>
-              <span>From</span>
-              <span>To</span>
-              <span>Days</span>
-              <span>Actions</span>
+              <span>{t("dashboardManager.table.employee")}</span>
+              <span>{t("dashboardManager.table.type")}</span>
+              <span>{t("dashboardManager.table.from")}</span>
+              <span>{t("dashboardManager.table.to")}</span>
+              <span>{t("dashboardManager.table.days")}</span>
+              <span>{t("dashboardManager.table.actions")}</span>
             </div>
             {pendingLeaves.length > 0 ? (
               pendingLeaves.map((req, i) => (
@@ -225,7 +228,7 @@ export default function DashboardManager() {
                 </div>
               ))
             ) : (
-              <div className={styles.empty}>No pending leave requests.</div>
+              <div className={styles.empty}>{t("dashboardManager.noPendingLeaves")}</div>
             )}
           </div>
         )}
@@ -247,19 +250,19 @@ export default function DashboardManager() {
                           {member.full_name || member.username}
                         </span>
                         <span className={styles.memberPosition}>
-                          {member.detail || member.status}
+                          {member.detail || t(`common.status.${member.status}`)}
                         </span>
                       </div>
                       <span className={`${styles.memberStatus} ${
                         member.status === 'present' ? styles.memberActive : styles.memberInactive
                       }`}>
-                        {member.status}
+                        {t(`common.status.${member.status}`)}
                       </span>
                     </div>
                   );
                 })
               ) : (
-                <div className={styles.empty}>No team members found.</div>
+                <div className={styles.empty}>{t("dashboardManager.noTeamMembers")}</div>
               )}
             </div>
           )}

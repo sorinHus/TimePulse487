@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getLeaveTypes,
   getLeaveBalance,
@@ -23,6 +24,7 @@ function daysBetween(start, end) {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   const map = {
     pending:  styles.badgeAmber,
     approved: styles.badgeGreen,
@@ -31,12 +33,13 @@ function StatusBadge({ status }) {
   };
   return (
     <span className={`${styles.badge} ${map[status] || styles.badgeGray}`}>
-      {status}
+      {t(`common.status.${status}`)}
     </span>
   );
 }
 
 export default function Leaves() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isManager = user?.effective_role === "manager" || user?.role === "admin" || user?.role === "director";
 
@@ -52,7 +55,7 @@ export default function Leaves() {
   const [rejectModal, setRejectModal] = useState({ open: false, id: null, note: "" });
 
   const PLAN_YEAR = new Date().getFullYear();
-  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const MONTHS = t("common.monthsShort", { returnObjects: true });
   const [schedule, setSchedule] = useState(null);
   const [planEdit, setPlanEdit] = useState(false);
   const [monthlyInput, setMonthlyInput] = useState(Array(12).fill(0));
@@ -113,17 +116,17 @@ export default function Leaves() {
     e.preventDefault();
     setFormError("");
     if (!form.leave_type || !form.start_date || !form.end_date) {
-      setFormError("Please fill in all required fields.");
+      setFormError(t("leaves.fillRequiredFields"));
       return;
     }
     if (!form.leave_type || !form.start_date || !form.end_date || !form.substitute) {
-      setFormError("Please fill in all required fields.");
+      setFormError(t("leaves.fillRequiredFields"));
       return;
     }
     setSubmitting(true);
     try {
       await createLeaveRequest(form);
-      setSuccessMsg("Leave request submitted successfully.");
+      setSuccessMsg(t("leaves.submittedSuccess"));
       setShowForm(false);
       setForm({ leave_type: "", start_date: "", end_date: "", reason: "" });
       await fetchAll();
@@ -132,7 +135,7 @@ export default function Leaves() {
       setFormError(
         e?.response?.data?.detail ||
         Object.values(e?.response?.data || {}).flat().join(" ") ||
-        "Submission failed."
+        t("leaves.submissionFailed")
       );
     } finally {
       setSubmitting(false);
@@ -185,7 +188,7 @@ export default function Leaves() {
       setSchedule(s);
       setPlanEdit(false);
     } catch (e) {
-      setPlanError(e?.response?.data?.detail || "Save failed.");
+      setPlanError(e?.response?.data?.detail || t("leaves.saveFailed"));
     } finally {
       setPlanSaving(false);
     }
@@ -197,22 +200,22 @@ export default function Leaves() {
       const s = await submitSchedule(schedule.id);
       setSchedule(s);
     } catch (e) {
-      setPlanError(e?.response?.data?.detail || "Submit failed.");
+      setPlanError(e?.response?.data?.detail || t("leaves.submitFailed"));
     }
   };
 
-  const selectedType = leaveTypes.find((t) => String(t.id) === String(form.leave_type));
+  const selectedType = leaveTypes.find((lt) => String(lt.id) === String(form.leave_type));
   return (
     <div className={styles.page}>
 
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Leave Requests</h1>
-          <p className={styles.subtitle}>Manage your time off</p>
+          <h1 className={styles.title}>{t("leaves.title")}</h1>
+          <p className={styles.subtitle}>{t("leaves.subtitle")}</p>
         </div>
         <button className={styles.btnNew} onClick={() => { setShowForm((v) => !v); setFormError(""); }}>
-          {showForm ? "✕ Cancel" : "+ New request"}
+          {showForm ? t("leaves.cancelNew") : t("leaves.newRequest")}
         </button>
       </div>
 
@@ -225,7 +228,7 @@ export default function Leaves() {
       {balances.length > 0 && (
         <div className={styles.balanceGrid}>
           {balances.map((bal, i) => {
-            const type = leaveTypes.find((t) => t.id === bal.leave_type || t.id === bal.leave_type_id);
+            const type = leaveTypes.find((lt) => lt.id === bal.leave_type || lt.id === bal.leave_type_id);
             const color = type?.color || "#2563eb";
             const total = bal.total_days || 1;
             const remaining = Number(bal.remaining_days ?? 0);
@@ -241,11 +244,11 @@ export default function Leaves() {
               const daysUntilExpiry = Math.round((expiryDate - today) / 86400000);
               if (expired > 0) {
                 expiryChip = (
-                  <span className={styles.chipExpired}>{expired} expired</span>
+                  <span className={styles.chipExpired}>{t("leaves.expiredChip", { count: expired })}</span>
                 );
               } else if (remaining > 0 && daysUntilExpiry <= 60 && daysUntilExpiry > 0) {
                 expiryChip = (
-                  <span className={styles.chipWarning}>Expires in {daysUntilExpiry}d</span>
+                  <span className={styles.chipWarning}>{t("leaves.expiresIn", { days: daysUntilExpiry })}</span>
                 );
               }
             }
@@ -253,8 +256,8 @@ export default function Leaves() {
             return (
               <div key={i} className={styles.balanceCard}>
                 <div className={styles.balanceTop}>
-                  <span className={styles.balanceName}>{type?.name || bal.leave_type_name || "Leave"}</span>
-                  <span className={styles.balanceDays}>{remaining} <small>days left</small></span>
+                  <span className={styles.balanceName}>{type?.name || bal.leave_type_name || t("leaves.leaveFallback")}</span>
+                  <span className={styles.balanceDays}>{remaining} <small>{t("leaves.daysLeft")}</small></span>
                 </div>
                 <div className={styles.balanceBarBg}>
                   <div
@@ -263,8 +266,8 @@ export default function Leaves() {
                   />
                 </div>
                 <div className={styles.balanceMeta}>
-                  <span>{used} used{expired > 0 ? ` · ${expired} expired` : ""}</span>
-                  <span>{total} total</span>
+                  <span>{used} {t("leaves.used")}{expired > 0 ? ` · ${expired} ${t("leaves.expired")}` : ""}</span>
+                  <span>{total} {t("leaves.total")}</span>
                 </div>
                 {expiryChip && <div>{expiryChip}</div>}
               </div>
@@ -277,7 +280,7 @@ export default function Leaves() {
       <div className={styles.planSection}>
         <div className={styles.planHeader}>
           <div>
-            <span className={styles.planTitle}>Annual Leave Plan — {PLAN_YEAR}</span>
+            <span className={styles.planTitle}>{t("leaves.annualPlan", { year: PLAN_YEAR })}</span>
             {schedule?.status && (
               <span className={`${styles.planBadge} ${
                 schedule.status === "approved"  ? styles.planBadgeGreen :
@@ -285,31 +288,29 @@ export default function Leaves() {
                 schedule.status === "rejected"  ? styles.planBadgeRed :
                 styles.planBadgeGray
               }`}>
-                {schedule.status === "approved"  ? "Approved" :
-                 schedule.status === "submitted" ? "Awaiting approval" :
-                 schedule.status === "rejected"  ? "Rejected" : "Draft"}
+                {t(`common.status.${schedule.status}`)}
               </span>
             )}
           </div>
           <div className={styles.planActions}>
             {(!schedule?.status || schedule.status === "draft" || schedule.status === "rejected") && !planEdit && (
               <button className={styles.planBtnEdit} onClick={() => setPlanEdit(true)}>
-                {schedule?.id ? "Edit plan" : "Create plan"}
+                {schedule?.id ? t("leaves.editPlan") : t("leaves.createPlan")}
               </button>
             )}
             {planEdit && (
               <>
-                <button className={styles.planBtnCancel} onClick={() => { setPlanEdit(false); setPlanError(""); }}>Cancel</button>
+                <button className={styles.planBtnCancel} onClick={() => { setPlanEdit(false); setPlanError(""); }}>{t("common.cancel")}</button>
                 <button className={styles.planBtnSave} onClick={handlePlanSave} disabled={planSaving}>
-                  {planSaving ? "Saving…" : "Save"}
+                  {planSaving ? t("common.saving") : t("common.save")}
                 </button>
               </>
             )}
             {!planEdit && schedule?.id && schedule.status === "draft" && (
-              <button className={styles.planBtnSubmit} onClick={handlePlanSubmit}>Submit for approval</button>
+              <button className={styles.planBtnSubmit} onClick={handlePlanSubmit}>{t("leaves.submitForApproval")}</button>
             )}
             {!planEdit && schedule?.id && schedule.status === "rejected" && (
-              <button className={styles.planBtnSubmit} onClick={handlePlanSubmit}>Resubmit</button>
+              <button className={styles.planBtnSubmit} onClick={handlePlanSubmit}>{t("leaves.resubmit")}</button>
             )}
           </div>
         </div>
@@ -321,17 +322,18 @@ export default function Leaves() {
               <circle cx="8" cy="8" r="7" stroke="#fbbf24" strokeWidth="1.4"/>
               <path d="M8 5v3.5L10 10" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
-            You have <strong>{schedule.carryover_days} day{schedule.carryover_days !== 1 ? "s" : ""}</strong> remaining from {PLAN_YEAR - 1}
-            {schedule.carryover_expires_at && (
-              <> — expires <strong>{schedule.carryover_expires_at}</strong></>
-            )}
+            {t("leaves.carryover", {
+              dayCount: `${schedule.carryover_days} ${schedule.carryover_days === 1 ? t("common.day") : t("common.days")}`,
+              year: PLAN_YEAR - 1,
+            })}
+            {schedule.carryover_expires_at && t("leaves.carryoverExpires", { date: schedule.carryover_expires_at })}
           </div>
         )}
 
         {/* Rejected note */}
         {schedule?.status === "rejected" && schedule.review_note && (
           <div className={styles.planRejectedNote}>
-            Rejected by {schedule.reviewed_by_name}: {schedule.review_note}
+            {t("leaves.rejectedBy", { name: schedule.reviewed_by_name, note: schedule.review_note })}
           </div>
         )}
 
@@ -371,7 +373,7 @@ export default function Leaves() {
             />
           </div>
           <span className={`${styles.planProgressLabel} ${planTotal > planMax ? styles.planProgressOver : ""}`}>
-            {planEdit ? planTotal : Number(schedule?.total_planned_days ?? 0)} / {planMax} days planned
+            {t("leaves.plannedOfMax", { planned: planEdit ? planTotal : Number(schedule?.total_planned_days ?? 0), max: planMax })}
           </span>
         </div>
 
@@ -381,32 +383,32 @@ export default function Leaves() {
       {/* New request form */}
       {showForm && (
         <div className={styles.formCard}>
-          <h2 className={styles.formTitle}>New leave request</h2>
+          <h2 className={styles.formTitle}>{t("leaves.newRequestTitle")}</h2>
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <div className={styles.formRow}>
               <div className={styles.field}>
-                <label className={styles.label}>Leave type *</label>
+                <label className={styles.label}>{t("leaves.leaveType")}</label>
                 <select
                   className={styles.select}
                   value={form.leave_type}
                   onChange={(e) => setForm((f) => ({ ...f, leave_type: e.target.value }))}
                   required
                 >
-                  <option value="">Select type…</option>
-                  {leaveTypes.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+                  <option value="">{t("leaves.selectType")}</option>
+                  {leaveTypes.map((lt) => (
+                    <option key={lt.id} value={lt.id}>{lt.name}</option>
                   ))}
                 </select>
               </div>
               <div className={styles.field}>
-                <label className={styles.label}>Substitute *</label>
+                <label className={styles.label}>{t("leaves.substitute")}</label>
                 <select
                   className={styles.select}
                   value={form.substitute}
                   onChange={(e) => setForm((f) => ({ ...f, substitute: e.target.value }))}
                   required
                 >
-                  <option value="">Select substitute…</option>
+                  <option value="">{t("leaves.selectSubstitute")}</option>
                   {colleagues.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.first_name} {c.last_name} — {c.position || c.username}
@@ -417,7 +419,7 @@ export default function Leaves() {
             </div>
             <div className={styles.formRow}>
               <div className={styles.field}>
-                <label className={styles.label}>Start date *</label>
+                <label className={styles.label}>{t("leaves.startDate")}</label>
                 <input
                   type="date"
                   className={styles.input}
@@ -428,7 +430,7 @@ export default function Leaves() {
                 />
               </div>
               <div className={styles.field}>
-                <label className={styles.label}>End date *</label>
+                <label className={styles.label}>{t("leaves.endDate")}</label>
                 <input
                   type="date"
                   className={styles.input}
@@ -443,19 +445,19 @@ export default function Leaves() {
             {form.start_date && form.end_date && (
               <div className={styles.daysPill}>
                 {workingDays !== null
-                  ? `${workingDays} working day${workingDays !== 1 ? "s" : ""}`
-                  : "Calculating…"}
+                  ? `${workingDays} ${workingDays === 1 ? t("common.workingDay") : t("common.workingDays")}`
+                  : t("leaves.calculating")}
                 {selectedType && ` · ${selectedType.name}`}
               </div>
             )}
 
             <div className={styles.field}>
-              <label className={styles.label}>Reason <span className={styles.optional}>(optional)</span></label>
+              <label className={styles.label}>{t("leaves.reason")} <span className={styles.optional}>{t("leaves.optional")}</span></label>
               <textarea
                 className={styles.textarea}
                 value={form.reason}
                 onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                placeholder="Briefly describe the reason for your absence…"
+                placeholder={t("leaves.reasonPlaceholder")}
                 rows={3}
               />
             </div>
@@ -465,7 +467,7 @@ export default function Leaves() {
             <div className={styles.formActions}>
               <button type="submit" className={styles.btnSubmit} disabled={submitting}>
                 {submitting ? <span className={styles.spinner} /> : null}
-                Submit request
+                {t("leaves.submitRequest")}
               </button>
             </div>
           </form>
@@ -475,18 +477,18 @@ export default function Leaves() {
       {/* Requests list */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          {isManager ? "All requests" : "My requests"}
+          {isManager ? t("leaves.allRequests") : t("leaves.myRequests")}
         </h2>
         <div className={styles.table}>
           <div className={`${styles.tableRow} ${styles.tableHead} ${isManager ? styles.rowManager : ""}`}>
-            {isManager && <span>Employee</span>}
-            <span>Type</span>
-            <span>From</span>
-            <span>To</span>
-            <span>Days</span>
-            <span>Substitute</span>
-            <span>Status</span>
-            <span>Actions</span>
+            {isManager && <span>{t("leaves.table.employee")}</span>}
+            <span>{t("leaves.table.type")}</span>
+            <span>{t("leaves.table.from")}</span>
+            <span>{t("leaves.table.to")}</span>
+            <span>{t("leaves.table.days")}</span>
+            <span>{t("leaves.table.substitute")}</span>
+            <span>{t("leaves.table.status")}</span>
+            <span>{t("leaves.table.actions")}</span>
           </div>
           {requests.length > 0 ? (
             requests.map((req, i) => (
@@ -517,22 +519,22 @@ export default function Leaves() {
                     <button
                       className={styles.btnCancel}
                       onClick={() => handleCancel(req.id)}
-                      title="Cancel"
+                      title={t("leaves.cancelAction")}
                     >
-                      Cancel
+                      {t("leaves.cancelAction")}
                     </button>
                   )}
                   {req.status === "pending" && isManager && req.user !== user?.id && (
                     <>
-                      <button className={styles.btnApprove} onClick={() => handleApprove(req.id)} title="Approve">✓</button>
-                      <button className={styles.btnReject} onClick={() => handleReject(req.id)} title="Reject">✕</button>
+                      <button className={styles.btnApprove} onClick={() => handleApprove(req.id)} title={t("leaves.approve")}>✓</button>
+                      <button className={styles.btnReject} onClick={() => handleReject(req.id)} title={t("leaves.reject")}>✕</button>
                     </>
                   )}
                 </span>
               </div>
             ))
           ) : (
-            <div className={styles.empty}>No leave requests found.</div>
+            <div className={styles.empty}>{t("leaves.noRequests")}</div>
           )}
         </div>
       </div>
@@ -540,32 +542,32 @@ export default function Leaves() {
       {rejectModal.open && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
-            <h3 className={styles.modalTitle}>Reject leave request</h3>
-            <p className={styles.modalSubtitle}>Please provide a reason for rejection.</p>
+            <h3 className={styles.modalTitle}>{t("leaves.rejectModalTitle")}</h3>
+            <p className={styles.modalSubtitle}>{t("leaves.rejectModalSubtitle")}</p>
             <textarea
               className={styles.textarea}
               rows={4}
-              placeholder="Reason for rejection… *"
+              placeholder={t("leaves.rejectPlaceholder")}
               value={rejectModal.note}
               onChange={(e) => setRejectModal((m) => ({ ...m, note: e.target.value }))}
               autoFocus
             />
             {!rejectModal.note.trim() && (
-              <p className={styles.formError}>Reason is required.</p>
+              <p className={styles.formError}>{t("leaves.reasonRequired")}</p>
             )}
             <div className={styles.modalActions}>
               <button
                 className={styles.btnCancel}
                 onClick={() => setRejectModal({ open: false, id: null, note: "" })}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 className={styles.btnReject}
                 onClick={handleRejectConfirm}
                 disabled={!rejectModal.note.trim()}
               >
-                Confirm reject
+                {t("leaves.confirmReject")}
               </button>
             </div>
           </div>

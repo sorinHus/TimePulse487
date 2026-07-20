@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { getNotifications, markNotificationRead, markAllRead, deleteNotification } from "../api/attendance";
 import styles from "./Notifications.module.css";
 
-function timeAgo(dateStr) {
+function timeAgo(dateStr, t) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("notifications.justNow");
+  if (mins < 60) return t("notifications.minutesAgo", { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("notifications.hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return t("notifications.daysAgo", { count: days });
 }
 
 const TYPE_ICONS = {
@@ -41,6 +42,7 @@ const TYPE_COLORS = {
 };
 
 export default function Notifications() {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -88,14 +90,14 @@ export default function Notifications() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Notifications</h1>
+          <h1 className={styles.title}>{t("notifications.title")}</h1>
           <p className={styles.subtitle}>
-            {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+            {unreadCount > 0 ? t("notifications.unreadCount", { count: unreadCount }) : t("notifications.allCaughtUp")}
           </p>
         </div>
         {unreadCount > 0 && (
           <button className={styles.markAllBtn} onClick={handleMarkAllRead}>
-            Mark all as read
+            {t("notifications.markAllRead")}
           </button>
         )}
       </div>
@@ -108,7 +110,7 @@ export default function Notifications() {
             className={`${styles.filterBtn} ${filter === f ? styles.filterActive : ""}`}
             onClick={() => setFilter(f)}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {t(`notifications.filters.${f}`)}
           </button>
         ))}
       </div>
@@ -116,9 +118,9 @@ export default function Notifications() {
       {/* List */}
       <div className={styles.list}>
         {loading ? (
-          <div className={styles.empty}>Loading…</div>
+          <div className={styles.empty}>{t("notifications.loading")}</div>
         ) : filtered.length === 0 ? (
-          <div className={styles.empty}>No notifications.</div>
+          <div className={styles.empty}>{t("notifications.noNotifications")}</div>
         ) : (
           filtered.map((n) => (
             <div
@@ -132,13 +134,13 @@ export default function Notifications() {
               <div className={styles.itemBody}>
                 <div className={styles.itemTitle}>{n.title}</div>
                 <div className={styles.itemMessage}>{n.message}</div>
-                <div className={styles.itemMeta}>{timeAgo(n.created_at)}</div>
+                <div className={styles.itemMeta}>{timeAgo(n.created_at, t)}</div>
               </div>
               {!n.is_read && <div className={styles.unreadDot} />}
               <button
                 className={styles.deleteBtn}
                 onClick={(e) => { e.stopPropagation(); handleDelete(n.id); }}
-                aria-label="Delete notification"
+                aria-label={t("notifications.deleteAria")}
               >
                 <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
                   <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

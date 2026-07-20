@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../api/axios";
 import styles from "./Admin.module.css";
 
@@ -16,6 +17,7 @@ const EMPTY_FORM = {
 };
 
 export default function Admin() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -76,7 +78,7 @@ export default function Admin() {
     e.preventDefault();
     setFormError("");
     if (form.password !== form.password2) {
-      setFormError("Passwords do not match.");
+      setFormError(t("admin.errors.passwordMismatch"));
       return;
     }
     setSubmitting(true);
@@ -85,7 +87,7 @@ export default function Admin() {
       if (!payload.department) delete payload.department;
       delete payload.password2;
       await api.post("/auth/register/", payload);
-      setSuccessMsg(`User "${form.username}" created successfully.`);
+      setSuccessMsg(t("admin.userCreatedSuccess", { username: form.username }));
       setShowForm(false);
       setForm(EMPTY_FORM);
       await fetchUsers();
@@ -95,7 +97,7 @@ export default function Admin() {
       setFormError(
         data?.detail ||
         Object.entries(data || {}).map(([k, v]) => `${k}: ${[v].flat().join(", ")}`).join(" · ") ||
-        "Creation failed."
+        t("admin.errors.creationFailed")
       );
     } finally {
       setSubmitting(false);
@@ -116,7 +118,7 @@ export default function Admin() {
       setDeactivateModal({ open: false, user: null, reason: "" });
       await fetchUsers();
     } catch (e) {
-      alert(e?.response?.data?.detail || "Deactivation failed.");
+      alert(e?.response?.data?.detail || t("admin.errors.deactivationFailed"));
     }
   };
 
@@ -125,7 +127,7 @@ export default function Admin() {
   const handleSeniorityAdd = async () => {
     setSeniorityError("");
     if (!seniorityForm.min_years || !seniorityForm.extra_days) {
-      setSeniorityError("Both fields are required.");
+      setSeniorityError(t("admin.errors.bothFieldsRequired"));
       return;
     }
     try {
@@ -136,7 +138,7 @@ export default function Admin() {
       setSeniorityForm({ min_years: "", extra_days: "" });
       await fetchSeniorityRules();
     } catch (e) {
-      setSeniorityError(e?.response?.data?.min_years?.[0] || e?.response?.data?.detail || "Error adding rule.");
+      setSeniorityError(e?.response?.data?.min_years?.[0] || e?.response?.data?.detail || t("admin.errors.addRuleError"));
     }
   };
 
@@ -153,7 +155,7 @@ export default function Admin() {
       setDeleteModal({ open: false, user: null });
       await fetchUsers();
     } catch (e) {
-      alert(e?.response?.data?.detail || "Delete failed.");
+      alert(e?.response?.data?.detail || t("admin.errors.deleteFailed"));
     }
   };
 
@@ -164,7 +166,7 @@ export default function Admin() {
       const res = await api.post("/attendance/admin/bulk-clock-in/");
       setBulkMsg({ type: "success", text: `${res.data.detail} ${res.data.users?.length ? `(${res.data.users.join(", ")})` : ""}` });
     } catch (e) {
-      setBulkMsg({ type: "error", text: e?.response?.data?.detail || "Error." });
+      setBulkMsg({ type: "error", text: e?.response?.data?.detail || t("admin.errors.genericError") });
     } finally {
       setBulkLoading("");
     }
@@ -177,7 +179,7 @@ export default function Admin() {
       const res = await api.post("/attendance/admin/bulk-clock-out/");
       setBulkMsg({ type: "success", text: res.data.detail });
     } catch (e) {
-      setBulkMsg({ type: "error", text: e?.response?.data?.detail || "Error." });
+      setBulkMsg({ type: "error", text: e?.response?.data?.detail || t("admin.errors.genericError") });
     } finally {
       setBulkLoading("");
     }
@@ -187,10 +189,10 @@ export default function Admin() {
     setApplyMsg("");
     try {
       const res = await api.post("/leaves/seniority-rules/apply/");
-      setApplyMsg(res.data?.detail || "Applied.");
+      setApplyMsg(res.data?.detail || t("admin.applied"));
       setTimeout(() => setApplyMsg(""), 4000);
     } catch (e) {
-      setApplyMsg(e?.response?.data?.detail || "Error applying rules.");
+      setApplyMsg(e?.response?.data?.detail || t("admin.errors.applyRulesError"));
     }
   };
 
@@ -200,15 +202,15 @@ export default function Admin() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Administration</h1>
-          <p className={styles.subtitle}>{users.length} accounts total</p>
+          <h1 className={styles.title}>{t("admin.title")}</h1>
+          <p className={styles.subtitle}>{t("admin.accountsTotal", { count: users.length })}</p>
         </div>
         {activeTab === "users" && (
           <button
             className={styles.btnNew}
             onClick={() => { setShowForm((v) => !v); setFormError(""); }}
           >
-            {showForm ? "✕ Cancel" : "+ New user"}
+            {showForm ? t("admin.cancelNew") : t("admin.newUser")}
           </button>
         )}
       </div>
@@ -219,19 +221,19 @@ export default function Admin() {
           className={`${styles.tab} ${activeTab === "users" ? styles.tabActive : ""}`}
           onClick={() => setActiveTab("users")}
         >
-          Users
+          {t("admin.tabs.users")}
         </button>
         <button
           className={`${styles.tab} ${activeTab === "seniority" ? styles.tabActive : ""}`}
           onClick={() => setActiveTab("seniority")}
         >
-          Seniority Rules
+          {t("admin.tabs.seniority")}
         </button>
         <button
           className={`${styles.tab} ${activeTab === "attendance" ? styles.tabActive : ""}`}
           onClick={() => { setActiveTab("attendance"); setBulkMsg(""); }}
         >
-          Attendance Tools
+          {t("admin.tabs.attendance")}
         </button>
       </div>
 
@@ -243,45 +245,45 @@ export default function Admin() {
           {/* New user form */}
           {showForm && (
             <div className={styles.formCard}>
-              <h2 className={styles.formTitle}>Create new user</h2>
+              <h2 className={styles.formTitle}>{t("admin.createUserTitle")}</h2>
               <form onSubmit={handleSubmit} className={styles.form} noValidate>
                 <div className={styles.formGrid}>
                   <div className={styles.field}>
-                    <label className={styles.label}>First name</label>
+                    <label className={styles.label}>{t("admin.form.firstName")}</label>
                     <input className={styles.input} value={form.first_name} onChange={f("first_name")} placeholder="Ion" />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Last name</label>
+                    <label className={styles.label}>{t("admin.form.lastName")}</label>
                     <input className={styles.input} value={form.last_name} onChange={f("last_name")} placeholder="Popescu" />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Username *</label>
+                    <label className={styles.label}>{t("admin.form.username")}</label>
                     <input className={styles.input} value={form.username} onChange={f("username")} placeholder="ion.popescu" required />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Email</label>
+                    <label className={styles.label}>{t("admin.form.email")}</label>
                     <input className={styles.input} type="email" value={form.email} onChange={f("email")} placeholder="ion@example.com" />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Password *</label>
-                    <input className={styles.input} type="password" value={form.password} onChange={f("password")} placeholder="min. 8 characters" required />
+                    <label className={styles.label}>{t("admin.form.password")}</label>
+                    <input className={styles.input} type="password" value={form.password} onChange={f("password")} placeholder={t("admin.form.passwordHint")} required />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Confirm password *</label>
-                    <input className={styles.input} type="password" value={form.password2} onChange={f("password2")} placeholder="repeat password" required />
+                    <label className={styles.label}>{t("admin.form.confirmPassword")}</label>
+                    <input className={styles.input} type="password" value={form.password2} onChange={f("password2")} placeholder={t("admin.form.confirmPasswordHint")} required />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Role *</label>
+                    <label className={styles.label}>{t("admin.form.role")}</label>
                     <select className={styles.select} value={form.role} onChange={f("role")}>
                       {ROLES.map((r) => (
-                        <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                        <option key={r} value={r}>{t(`common.roles.${r}`)}</option>
                       ))}
                     </select>
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Department</label>
+                    <label className={styles.label}>{t("admin.form.department")}</label>
                     <select className={styles.select} value={form.department} onChange={f("department")}>
-                      <option value="">— None —</option>
+                      <option value="">{t("admin.form.noneDept")}</option>
                       {departments.map((d) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                       ))}
@@ -292,7 +294,7 @@ export default function Admin() {
                 <div className={styles.formActions}>
                   <button type="submit" className={styles.btnSubmit} disabled={submitting}>
                     {submitting && <span className={styles.spinner} />}
-                    Create user
+                    {t("admin.createUser")}
                   </button>
                 </div>
               </form>
@@ -307,7 +309,7 @@ export default function Admin() {
             </svg>
             <input
               className={styles.searchInput}
-              placeholder="Search by name, username, role…"
+              placeholder={t("admin.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -316,12 +318,12 @@ export default function Admin() {
           {/* Users table */}
           <div className={styles.table}>
             <div className={`${styles.tableRow} ${styles.tableHead}`}>
-              <span>User</span>
-              <span>Role</span>
-              <span>Department</span>
-              <span>Position</span>
-              <span>Email</span>
-              <span>Status</span>
+              <span>{t("admin.table.user")}</span>
+              <span>{t("admin.table.role")}</span>
+              <span>{t("admin.table.department")}</span>
+              <span>{t("admin.table.position")}</span>
+              <span>{t("admin.table.email")}</span>
+              <span>{t("admin.table.status")}</span>
             </div>
             {filtered.length > 0 ? (
               filtered.map((u, i) => (
@@ -337,7 +339,7 @@ export default function Admin() {
                   </span>
                   <span>
                     <span className={`${styles.roleBadge} ${styles[`role_${u.role}`]}`}>
-                      {u.role}
+                      {t(`common.roles.${u.role}`)}
                     </span>
                   </span>
                   <span className={styles.muted}>{u.department_name || "—"}</span>
@@ -348,23 +350,23 @@ export default function Admin() {
                       <button
                         className={styles.btnDeactivate}
                         onClick={() => setDeactivateModal({ open: true, user: u, reason: "" })}
-                        title="Deactivate user"
+                        title={t("admin.deactivateTitle")}
                       >
-                        Deactivate
+                        {t("admin.deactivate")}
                       </button>
                     ) : (
                       <button
                         className={styles.btnActivate}
                         onClick={() => handleActivate(u)}
-                        title={u.deactivation_reason ? `Reason: ${u.deactivation_reason}` : "Activate user"}
+                        title={u.deactivation_reason ? t("admin.reasonTooltip", { reason: u.deactivation_reason }) : t("admin.activateTitle")}
                       >
-                        Activate
+                        {t("admin.activate")}
                       </button>
                     )}
                     <button
                       className={styles.btnDelete}
                       onClick={() => setDeleteModal({ open: true, user: u })}
-                      title="Delete user"
+                      title={t("admin.deleteTitle")}
                     >
                       ✕
                     </button>
@@ -373,7 +375,7 @@ export default function Admin() {
               ))
             ) : (
               <div className={styles.empty}>
-                {search ? `No users matching "${search}".` : "No users found."}
+                {search ? t("admin.noUsersMatching", { search }) : t("admin.noUsers")}
               </div>
             )}
           </div>
@@ -388,14 +390,14 @@ export default function Admin() {
               <circle cx="8" cy="8" r="7" stroke="#60a5fa" strokeWidth="1.4"/>
               <path d="M8 7v4M8 5.5v.5" stroke="#60a5fa" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
-            Bulk attendance actions for today. Clock-in skips users on approved leave or who already have a session. Clock-out closes all open sessions across all days.
+            {t("admin.bulkInfo")}
           </div>
 
           <div className={styles.bulkActions}>
             <div className={styles.bulkCard}>
-              <div className={styles.bulkCardTitle}>Bulk Clock-In</div>
+              <div className={styles.bulkCardTitle}>{t("admin.bulkIn.title")}</div>
               <p className={styles.bulkCardDesc}>
-                Opens a session for all active users present today (no approved leave, no existing session).
+                {t("admin.bulkIn.desc")}
               </p>
               <button
                 className={styles.btnBulkIn}
@@ -403,14 +405,14 @@ export default function Admin() {
                 disabled={bulkLoading === "in"}
               >
                 {bulkLoading === "in" ? <span className={styles.spinner} /> : null}
-                Clock In All Present
+                {t("admin.bulkIn.button")}
               </button>
             </div>
 
             <div className={styles.bulkCard}>
-              <div className={styles.bulkCardTitle}>Bulk Clock-Out</div>
+              <div className={styles.bulkCardTitle}>{t("admin.bulkOut.title")}</div>
               <p className={styles.bulkCardDesc}>
-                Closes all currently open sessions and calculates work hours.
+                {t("admin.bulkOut.desc")}
               </p>
               <button
                 className={styles.btnBulkOut}
@@ -418,7 +420,7 @@ export default function Admin() {
                 disabled={bulkLoading === "out"}
               >
                 {bulkLoading === "out" ? <span className={styles.spinner} /> : null}
-                Clock Out All Open
+                {t("admin.bulkOut.button")}
               </button>
             </div>
           </div>
@@ -440,61 +442,60 @@ export default function Admin() {
               <circle cx="8" cy="8" r="7" stroke="#60a5fa" strokeWidth="1.4"/>
               <path d="M8 7v4M8 5.5v.5" stroke="#60a5fa" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
-            Extra annual leave days based on seniority (years since hire date). Default values follow Romanian Labor Code.
-            After modifying rules, click <strong>Apply to all balances</strong> to recalculate.
+            {t("admin.seniorityInfo", { applyLabel: t("admin.applyToAll") })}
           </div>
 
           <div className={styles.seniorityTable}>
             <div className={`${styles.seniorityRow} ${styles.seniorityHead}`}>
-              <span>Min. years</span>
-              <span>Extra days</span>
+              <span>{t("admin.seniorityTable.minYears")}</span>
+              <span>{t("admin.seniorityTable.extraDays")}</span>
               <span></span>
             </div>
             {seniorityRules.length > 0 ? seniorityRules.map((rule) => (
               <div key={rule.id} className={styles.seniorityRow}>
-                <span className={styles.seniorityVal}>{rule.min_years}+ years</span>
-                <span className={styles.seniorityExtra}>+{rule.extra_days} day{rule.extra_days !== 1 ? "s" : ""}</span>
+                <span className={styles.seniorityVal}>{t("admin.seniorityTable.years", { count: rule.min_years })}</span>
+                <span className={styles.seniorityExtra}>{t("admin.seniorityTable.extraDaysValue", { count: rule.extra_days })}</span>
                 <span>
                   <button
                     className={styles.btnDelete}
                     onClick={() => handleSeniorityDelete(rule.id)}
-                    title="Delete rule"
+                    title={t("common.delete")}
                   >
                     ✕
                   </button>
                 </span>
               </div>
             )) : (
-              <div className={styles.empty}>No seniority rules configured.</div>
+              <div className={styles.empty}>{t("admin.noSeniorityRules")}</div>
             )}
           </div>
 
           <div className={styles.seniorityAddForm}>
             <div className={styles.seniorityAddRow}>
               <div className={styles.field}>
-                <label className={styles.label}>Min. years *</label>
+                <label className={styles.label}>{t("admin.seniorityForm.minYears")}</label>
                 <input
                   type="number"
                   min="1"
                   className={styles.input}
-                  placeholder="e.g. 5"
+                  placeholder={t("admin.seniorityForm.minYearsPlaceholder")}
                   value={seniorityForm.min_years}
                   onChange={e => setSeniorityForm(f => ({ ...f, min_years: e.target.value }))}
                 />
               </div>
               <div className={styles.field}>
-                <label className={styles.label}>Extra days *</label>
+                <label className={styles.label}>{t("admin.seniorityForm.extraDays")}</label>
                 <input
                   type="number"
                   min="1"
                   className={styles.input}
-                  placeholder="e.g. 1"
+                  placeholder={t("admin.seniorityForm.extraDaysPlaceholder")}
                   value={seniorityForm.extra_days}
                   onChange={e => setSeniorityForm(f => ({ ...f, extra_days: e.target.value }))}
                 />
               </div>
               <button className={styles.btnSubmit} onClick={handleSeniorityAdd} style={{ alignSelf: "flex-end" }}>
-                Add rule
+                {t("admin.seniorityForm.addRule")}
               </button>
             </div>
             {seniorityError && <div className={styles.formError}>{seniorityError}</div>}
@@ -502,7 +503,7 @@ export default function Admin() {
 
           <div className={styles.seniorityApply}>
             <button className={styles.btnApply} onClick={handleApplySeniority}>
-              Apply to all balances
+              {t("admin.applyToAll")}
             </button>
             {applyMsg && <span className={styles.applyMsg}>{applyMsg}</span>}
           </div>
@@ -514,35 +515,34 @@ export default function Admin() {
       {deactivateModal.open && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
-            <h3 className={styles.modalTitle}>Deactivate user</h3>
+            <h3 className={styles.modalTitle}>{t("admin.deactivateTitle")}</h3>
             <p className={styles.modalBody}>
-              Deactivating <strong>{deactivateModal.user?.full_name || deactivateModal.user?.username}</strong>.
-              Please provide a reason.
+              {t("admin.deactivateModal.body", { name: deactivateModal.user?.full_name || deactivateModal.user?.username })}
             </p>
             <textarea
               className={styles.modalTextarea}
               rows={3}
-              placeholder="Reason for deactivation… *"
+              placeholder={t("admin.deactivateModal.placeholder")}
               value={deactivateModal.reason}
               onChange={(e) => setDeactivateModal((m) => ({ ...m, reason: e.target.value }))}
               autoFocus
             />
             {!deactivateModal.reason.trim() && (
-              <p className={styles.formError}>Reason is required.</p>
+              <p className={styles.formError}>{t("admin.deactivateModal.reasonRequired")}</p>
             )}
             <div className={styles.modalActions}>
               <button
                 className={styles.btnCancel}
                 onClick={() => setDeactivateModal({ open: false, user: null, reason: "" })}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 className={styles.btnDeleteConfirm}
                 onClick={handleDeactivateConfirm}
                 disabled={!deactivateModal.reason.trim()}
               >
-                Deactivate
+                {t("admin.deactivate")}
               </button>
             </div>
           </div>
@@ -553,21 +553,19 @@ export default function Admin() {
       {deleteModal.open && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
-            <h3 className={styles.modalTitle}>Delete user</h3>
+            <h3 className={styles.modalTitle}>{t("admin.deleteTitle")}</h3>
             <p className={styles.modalBody}>
-              Are you sure you want to permanently delete{" "}
-              <strong>{deleteModal.user?.full_name || deleteModal.user?.username}</strong>?
-              This action cannot be undone.
+              {t("admin.deleteBody", { name: deleteModal.user?.full_name || deleteModal.user?.username })}
             </p>
             <div className={styles.modalActions}>
               <button
                 className={styles.btnCancel}
                 onClick={() => setDeleteModal({ open: false, user: null })}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button className={styles.btnDeleteConfirm} onClick={handleDeleteConfirm}>
-                Delete
+                {t("admin.deleteConfirm")}
               </button>
             </div>
           </div>

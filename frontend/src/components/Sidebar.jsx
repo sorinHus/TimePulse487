@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { logout } from "../api/auth";
 import { getLeaveRequests } from "../api/leaves";
@@ -7,6 +8,7 @@ import styles from "./Sidebar.module.css";
 
 const NAV_ITEMS = [
   {
+    key: "dashboard",
     label: "Dashboard",
     path: "/dashboard",
     icon: (
@@ -20,6 +22,7 @@ const NAV_ITEMS = [
     roles: ["admin", "manager", "director", "employee"],
   },
   {
+    key: "attendance",
     label: "Attendance",
     path: "/attendance",
     icon: (
@@ -31,6 +34,7 @@ const NAV_ITEMS = [
     roles: ["admin", "manager", "director", "employee"],
   },
   {
+    key: "leaves",
     label: "Leaves",
     path: "/leaves",
     icon: (
@@ -42,6 +46,7 @@ const NAV_ITEMS = [
     roles: ["admin", "manager", "director", "employee"],
   },
   {
+    key: "calendar",
     label: "Calendar",
     path: "/calendar",
     icon: (
@@ -56,6 +61,7 @@ const NAV_ITEMS = [
     roles: ["admin", "manager", "director", "employee"],
   },
   {
+    key: "reports",
     label: "Reports",
     path: "/reports",
     icon: (
@@ -67,6 +73,7 @@ const NAV_ITEMS = [
     roles: ["admin", "manager", "director"],
   },
   {
+    key: "team",
     label: "Team",
     path: "/team",
     icon: (
@@ -80,6 +87,7 @@ const NAV_ITEMS = [
     roles: ["admin", "manager", "director"],
   },
   {
+    key: "admin",
     label: "Admin",
     path: "/admin",
     icon: (
@@ -93,6 +101,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ collapsed, onToggle }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -132,7 +141,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         <button
           className={styles.toggleBtn}
           onClick={onToggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("sidebar.expandSidebar") : t("sidebar.collapseSidebar")}
         >
           <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
             {collapsed ? (
@@ -147,7 +156,7 @@ export default function Sidebar({ collapsed, onToggle }) {
       {/* Nav */}
       <nav className={styles.nav}>
         {!collapsed && (
-          <span className={styles.navSection}>Menu</span>
+          <span className={styles.navSection}>{t("sidebar.menu")}</span>
         )}
         {visibleItems.map((item) => (
           <NavLink
@@ -156,13 +165,13 @@ export default function Sidebar({ collapsed, onToggle }) {
             className={({ isActive }) =>
               `${styles.navItem} ${isActive ? styles.active : ""}`
             }
-            title={collapsed ? item.label : undefined}
+            title={collapsed ? t(`sidebar.nav.${item.key}`) : undefined}
           >
             <span className={styles.navIcon}>{item.icon}</span>
             {!collapsed && (
-              <span className={styles.navLabel}>{item.label}</span>
+              <span className={styles.navLabel}>{t(`sidebar.nav.${item.key}`)}</span>
             )}
-            {item.label === "Leaves" &&
+            {item.key === "leaves" &&
               pendingCount > 0 &&
               (user?.effective_role === "admin" || user?.effective_role === "manager" || user?.effective_role === "director") && (
                 <span className={styles.badge}>{pendingCount}</span>
@@ -182,19 +191,19 @@ export default function Sidebar({ collapsed, onToggle }) {
                   ? `${user.first_name} ${user.last_name}`
                   : user?.username}
               </span>
-              <span className={styles.userRole}>{user?.effective_role}</span>
+              <span className={styles.userRole}>{t(`common.roles.${user?.effective_role}`)}</span>
             </div>
           )}
         </div>
         <button
           className={styles.logoutBtn}
           onClick={handleLogout}
-          title="Sign out"
+          title={t("sidebar.signOut")}
         >
           <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
             <path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h3M13 14l3-4-3-4M16 10H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {!collapsed && <span>Sign out</span>}
+          {!collapsed && <span>{t("sidebar.signOut")}</span>}
         </button>
       </div>
 

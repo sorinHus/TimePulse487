@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { exportAttendanceExcel, exportLeavesPdf, exportPontaj } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -10,6 +11,7 @@ function getCurrentMonth() {
 }
 
 export default function Reports() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isManager = user?.effective_role === "manager";
 
@@ -57,7 +59,7 @@ export default function Reports() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      setErrors(e => ({ ...e, attendance: "Export failed. Please try again." }));
+      setErrors(e => ({ ...e, attendance: t("reports.exportFailed") }));
     } finally {
       setLoadingAttendance(false);
     }
@@ -76,7 +78,7 @@ export default function Reports() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      setErrors(e => ({ ...e, leaves: "Export failed. Please try again." }));
+      setErrors(e => ({ ...e, leaves: t("reports.exportFailed") }));
     } finally {
       setLoadingLeaves(false);
     }
@@ -99,7 +101,7 @@ export default function Reports() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      setErrors(e => ({ ...e, pontaj: "Export failed. Please try again." }));
+      setErrors(e => ({ ...e, pontaj: t("reports.exportFailed") }));
     } finally {
       setLoadingPontaj(false);
     }
@@ -111,8 +113,8 @@ export default function Reports() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Reports</h1>
-          <p className={styles.subtitle}>Export attendance and leave data</p>
+          <h1 className={styles.title}>{t("reports.title")}</h1>
+          <p className={styles.subtitle}>{t("reports.subtitle")}</p>
         </div>
       </div>
 
@@ -129,12 +131,12 @@ export default function Reports() {
               </svg>
             </div>
             <div className={styles.cardBody}>
-              <h3 className={styles.cardTitle}>Attendance Report</h3>
+              <h3 className={styles.cardTitle}>{t("reports.attendance.title")}</h3>
               <p className={styles.cardDesc}>
-                Monthly attendance data including check-in/check-out times and total hours worked per employee.
+                {t("reports.attendance.desc")}
               </p>
               <div className={styles.filterRow}>
-                <label className={styles.filterLabel}>Month</label>
+                <label className={styles.filterLabel}>{t("reports.month")}</label>
                 <input
                   type="month"
                   className={styles.monthInput}
@@ -157,7 +159,7 @@ export default function Reports() {
                     <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
-                {loadingAttendance ? "Exporting…" : "Export Excel"}
+                {loadingAttendance ? t("reports.exporting") : t("reports.exportExcel")}
               </button>
             </div>
           </div>
@@ -173,12 +175,12 @@ export default function Reports() {
               </svg>
             </div>
             <div className={styles.cardBody}>
-              <h3 className={styles.cardTitle}>Leave Requests Report</h3>
+              <h3 className={styles.cardTitle}>{t("reports.leaves.title")}</h3>
               <p className={styles.cardDesc}>
-                Summary of all approved, rejected and pending leave requests for the selected year.
+                {t("reports.leaves.desc")}
               </p>
               <div className={styles.filterRow}>
-                <label className={styles.filterLabel}>Month</label>
+                <label className={styles.filterLabel}>{t("reports.month")}</label>
                 <input
                   type="month"
                   className={styles.monthInput}
@@ -201,7 +203,7 @@ export default function Reports() {
                     <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
-                {loadingLeaves ? "Exporting…" : "Export PDF"}
+                {loadingLeaves ? t("reports.exporting") : t("reports.exportPdf")}
               </button>
             </div>
           </div>
@@ -217,12 +219,12 @@ export default function Reports() {
               </svg>
             </div>
             <div className={styles.cardBody}>
-              <h3 className={styles.cardTitle}>Monthly Attendance Sheet</h3>
+              <h3 className={styles.cardTitle}>{t("reports.pontaj.title")}</h3>
               <p className={styles.cardDesc}>
-                Nexoria Group attendance register — worked days and leave codes (CO, CM, FP etc.) per employee.
+                {t("reports.pontaj.desc")}
               </p>
               <div className={styles.filterRow}>
-                <label className={styles.filterLabel}>Month</label>
+                <label className={styles.filterLabel}>{t("reports.month")}</label>
                 <input
                   type="month"
                   className={styles.monthInput}
@@ -231,27 +233,27 @@ export default function Reports() {
                 />
               </div>
               <div className={styles.filterRow}>
-                <label className={styles.filterLabel}>Type</label>
+                <label className={styles.filterLabel}>{t("reports.type")}</label>
                 <select
                   className={styles.monthInput}
                   value={pontajType}
                   onChange={e => setPontajType(e.target.value)}
                 >
-                  <option value="department">By department</option>
-                  <option value="individual">By employee</option>
+                  <option value="department">{t("reports.pontaj.byDepartment")}</option>
+                  <option value="individual">{t("reports.pontaj.byEmployee")}</option>
                 </select>
               </div>
 
               {/* Selectorul de departament: vizibil doar pentru admin */}
               {pontajType === "department" && !isManager && (
                 <div className={styles.filterRow}>
-                  <label className={styles.filterLabel}>Department</label>
+                  <label className={styles.filterLabel}>{t("reports.department")}</label>
                   <select
                     className={styles.monthInput}
                     value={pontajDept}
                     onChange={e => setPontajDept(e.target.value)}
                   >
-                    <option value="">All departments</option>
+                    <option value="">{t("reports.allDepartments")}</option>
                     {departments.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
@@ -262,10 +264,10 @@ export default function Reports() {
               {/* Daca e manager si type=department, arata departamentul sau (read-only) */}
               {pontajType === "department" && isManager && (
                 <div className={styles.filterRow}>
-                  <label className={styles.filterLabel}>Department</label>
+                  <label className={styles.filterLabel}>{t("reports.department")}</label>
                   <input
                     className={styles.monthInput}
-                    value={departments.find(d => String(d.id) === String(user.department_id))?.name || "Your department"}
+                    value={departments.find(d => String(d.id) === String(user.department_id))?.name || t("reports.pontaj.yourDepartment")}
                     readOnly
                     style={{ opacity: 0.7, cursor: "not-allowed" }}
                   />
@@ -274,13 +276,13 @@ export default function Reports() {
 
               {pontajType === "individual" && (
                 <div className={styles.filterRow}>
-                  <label className={styles.filterLabel}>Employee</label>
+                  <label className={styles.filterLabel}>{t("reports.employee")}</label>
                   <select
                     className={styles.monthInput}
                     value={pontajUser}
                     onChange={e => setPontajUser(e.target.value)}
                   >
-                    <option value="">Select employee…</option>
+                    <option value="">{t("reports.pontaj.selectEmployee")}</option>
                     {users.map(u => (
                       <option key={u.id} value={u.id}>
                         {u.first_name} {u.last_name} — {u.department_name || u.username}
@@ -305,7 +307,7 @@ export default function Reports() {
                     <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
-                {loadingPontaj ? "Generating…" : "Export Excel"}
+                {loadingPontaj ? t("reports.pontaj.generating") : t("reports.exportExcel")}
               </button>
             </div>
           </div>
@@ -320,8 +322,7 @@ export default function Reports() {
           <path d="M10 9v5M10 7v.5" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <p className={styles.infoText}>
-          Reports are generated server-side and downloaded directly to your browser.
-          Only administrators and managers can access this page.
+          {t("reports.infoText")}
         </p>
       </div>
 

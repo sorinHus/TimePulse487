@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { login } from "../api/auth";
 import styles from "./Login.module.css";
 
 export default function Login() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ export default function Login() {
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
-          "Invalid credentials. Please try again."
+          t("login.invalidCredentials")
       );
     } finally {
       setLoading(false);
@@ -40,21 +42,21 @@ export default function Login() {
           <span className={styles.logoIcon}>T</span>
         </div>
         <h1 className={styles.brandName}>TimePulse</h1>
-        <p className={styles.brandTagline}>HR &amp; Attendance Management</p>
+        <p className={styles.brandTagline}>{t("login.tagline")}</p>
       </div>
 
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h2 className={styles.cardTitle}>Sign in</h2>
+          <h2 className={styles.cardTitle}>{t("login.title")}</h2>
           <p className={styles.cardSubtitle}>
-            Enter your credentials to access your workspace
+            {t("login.subtitle")}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form} noValidate>
           <div className={styles.field}>
             <label htmlFor="username" className={styles.label}>
-              Username
+              {t("login.username")}
             </label>
             <input
               id="username"
@@ -62,7 +64,7 @@ export default function Login() {
               className={styles.input}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. ion.popescu"
+              placeholder={t("login.usernamePlaceholder")}
               autoComplete="username"
               autoFocus
               required
@@ -71,7 +73,7 @@ export default function Login() {
 
           <div className={styles.field}>
             <label htmlFor="password" className={styles.label}>
-              Password
+              {t("login.password")}
             </label>
             <div className={styles.passwordWrapper}>
               <input
@@ -88,7 +90,7 @@ export default function Login() {
                 type="button"
                 className={styles.eyeBtn}
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
               >
                 {showPassword ? (
                   <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
@@ -121,17 +123,17 @@ export default function Login() {
             {loading ? (
               <>
                 <span className={styles.spinner} aria-hidden="true" />
-                Signing in…
+                {t("login.signingIn")}
               </>
             ) : (
-              "Sign in"
+              t("login.signIn")
             )}
           </button>
         </form>
       </div>
 
       <p className={styles.footer}>
-        &copy; {new Date().getFullYear()} TimePulse487. All rights reserved.
+        {t("login.footer", { year: new Date().getFullYear() })}
       </p>
     </div>
   );
