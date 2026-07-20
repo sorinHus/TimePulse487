@@ -73,7 +73,7 @@ export default {
     invalidCredentials: 'Utilizator sau parola incorecte. Incearca din nou.',
     signingIn: 'Se autentifica...',
     signIn: 'Intra in cont',
-    footer: '© {{year}} TimePulse487. Toate drepturile rezervate.',
+    footer: '© {{year}} HCM487. Toate drepturile rezervate.',
   },
   dashboardAdmin: {
     eyebrow: 'Consola Admin',

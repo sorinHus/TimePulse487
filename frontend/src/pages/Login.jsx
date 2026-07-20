@@ -39,9 +39,9 @@ export default function Login() {
     <div className={styles.wrapper}>
       <div className={styles.brand}>
         <div className={styles.logoMark}>
-          <span className={styles.logoIcon}>T</span>
+          <span className={styles.logoIcon}>H</span>
         </div>
-        <h1 className={styles.brandName}>TimePulse</h1>
+        <h1 className={styles.brandName}>HCM487</h1>
         <p className={styles.brandTagline}>{t("login.tagline")}</p>
       </div>
 

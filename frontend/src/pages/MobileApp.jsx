@@ -53,8 +53,8 @@ function LoginScreen({ onLogin }) {
   return (
     <div className={s.loginWrap}>
       <div className={s.loginLogo}>
-        <img src="/favicon.svg" alt="TimePulse" width="48" height="48" />
-        <span>TimePulse</span>
+        <img src="/favicon.svg" alt="HCM487" width="48" height="48" />
+        <span>HCM487</span>
       </div>
       <div className={s.loginCard}>
         <div className={s.loginTitle}>{t('mobileApp.signIn')}</div>
@@ -371,9 +371,9 @@ export default function MobileApp() {
     <div className={s.container}>
       <div className={s.header}>
         <div className={s.headerBrand}>
-          <img src="/favicon.svg" alt="TimePulse" width="26" height="26" />
+          <img src="/favicon.svg" alt="HCM487" width="26" height="26" />
           <div>
-            <div className={s.headerTitle}>TimePulse</div>
+            <div className={s.headerTitle}>HCM487</div>
             <div className={s.headerSub}>{name}</div>
           </div>
         </div>

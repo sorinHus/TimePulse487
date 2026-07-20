@@ -1,4 +1,4 @@
-# TimePulse487 — HR Management SaaS
+# HCM487 — HR Management SaaS
 
 > **Status: Active development · Live on Railway + Cloudflare Pages**
 

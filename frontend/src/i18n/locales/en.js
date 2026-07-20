@@ -73,7 +73,7 @@ export default {
     invalidCredentials: 'Invalid credentials. Please try again.',
     signingIn: 'Signing in…',
     signIn: 'Sign in',
-    footer: '© {{year}} TimePulse487. All rights reserved.',
+    footer: '© {{year}} HCM487. All rights reserved.',
   },
   dashboardAdmin: {
     eyebrow: 'Admin Console',
