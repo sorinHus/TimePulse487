@@ -14,6 +14,7 @@ const STATUS_BADGE = {
   rejected: "badgeRed",
 };
 const LEAVE_CODES = ["CO", "CM", "FP", "IC", "CI", "AC", "NE"];
+const CELL_HOUR_OPTIONS = [2, 4, 6, 8, 12];
 const HOURS_PER_LEAVE_DAY = 8;
 
 function computeTotals(cells) {
@@ -112,18 +113,16 @@ export default function Pontaj() {
 
   const handleCellClick = (cell) => {
     if (!canEditCells) return;
-    setEditingCell({ entryId: cell.entry_id, value: cell.leave_code || (cell.hours ?? "") });
+    const current = cell.leave_code || (CELL_HOUR_OPTIONS.includes(cell.hours) ? String(cell.hours) : "");
+    setEditingCell({ entryId: cell.entry_id, value: current });
   };
 
-  const saveEditingCell = async () => {
-    if (!editingCell) return;
-    const raw = String(editingCell.value).trim();
+  const saveCellValue = async (entryId, value) => {
     setEditingCell(null);
-    if (raw === "") return;
-    const numeric = Number(raw.replace(",", "."));
-    const payload = !Number.isNaN(numeric) ? { hours: numeric } : { leave_code: raw.toUpperCase() };
+    if (!value) return;
+    const payload = LEAVE_CODES.includes(value) ? { leave_code: value } : { hours: Number(value) };
     try {
-      await patchPontajEntry(editingCell.entryId, payload);
+      await patchPontajEntry(entryId, payload);
       await fetchSheet();
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
@@ -299,14 +298,21 @@ export default function Pontaj() {
                           title={cell.leave_from_request ? t("pontaj.fromRequestTitle") : undefined}
                         >
                           {isEditing ? (
-                            <input
+                            <select
                               autoFocus
-                              className={styles.cellInput}
-                              value={editingCell.value}
-                              onChange={(e) => setEditingCell((c) => ({ ...c, value: e.target.value }))}
-                              onBlur={saveEditingCell}
-                              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-                            />
+                              className={styles.cellSelect}
+                              defaultValue={editingCell.value}
+                              onChange={(e) => saveCellValue(cell.entry_id, e.target.value)}
+                              onBlur={() => setEditingCell(null)}
+                            >
+                              <option value="">-</option>
+                              {CELL_HOUR_OPTIONS.map((h) => (
+                                <option key={h} value={h}>{h}</option>
+                              ))}
+                              {LEAVE_CODES.map((code) => (
+                                <option key={code} value={code}>{code}</option>
+                              ))}
+                            </select>
                           ) : (
                             display || (isWeekend ? "" : "-")
                           )}

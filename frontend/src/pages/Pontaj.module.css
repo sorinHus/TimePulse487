@@ -327,8 +327,9 @@ thead .totalsCol {
 .swatchRequest { background: rgba(167, 139, 250, 0.5); }
 .swatchManual  { background: rgba(37, 99, 235, 0.35); }
 
-.cellInput {
-  width: 44px;
+.cellSelect {
+  width: 100%;
+  min-width: 46px;
   text-align: center;
   border: 1px solid #2563eb;
   border-radius: 4px;
@@ -337,6 +338,7 @@ thead .totalsCol {
   font-size: 0.78rem;
   font-family: inherit;
   padding: 2px;
+  cursor: pointer;
 }
 
 /* ── Reject Modal ── */
