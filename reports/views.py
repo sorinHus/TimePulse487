@@ -533,6 +533,7 @@ class ManagerDashboardView(APIView):
                 'position': member.position,
                 'employee_number': member.employee_number,
                 'department_name': member.department.name if member.department_id else None,
+                'email': member.email,
                 'status': status_val,
                 'detail': detail,
                 'check_in': session_row['check_in'].isoformat() if session_row and session_row['check_in'] else None,
