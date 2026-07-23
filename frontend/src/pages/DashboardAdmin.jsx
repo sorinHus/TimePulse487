@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getAdminDashboard } from "../api/dashboard";
-import { dateLocale } from "../i18n/config";
+import { dateLocale, translateLeaveType } from "../i18n/config";
 import styles from "./DashboardAdmin.module.css";
 
 function formatHours(decimal) {
@@ -215,7 +215,7 @@ export default function DashboardAdmin() {
                 <div key={i} className={`${styles.tableRow} ${styles.tableRowLeave}`}>
                   <span className={styles.empName}>{req.employee_name || req.employee}</span>
                   <span>
-                    <span className={styles.leaveChip}>{req.leave_type_name || req.leave_type}</span>
+                    <span className={styles.leaveChip}>{translateLeaveType(t, req.leave_type_name || req.leave_type)}</span>
                   </span>
                   <span className={styles.muted}>{req.start_date}</span>
                   <span className={styles.muted}>{req.end_date}</span>

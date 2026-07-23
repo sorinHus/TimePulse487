@@ -6,7 +6,7 @@ import {
   getLeaveBalance, getLeaveTypes, createLeaveRequest,
   getLeaveRequests, getWorkingDays,
 } from '../api/leaves'
-import { dateLocale } from '../i18n/config'
+import { dateLocale, translateLeaveType } from '../i18n/config'
 import s from './MobileApp.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ function ClockTab() {
 
       {onLeave && (
         <div className={s.leaveBanner}>
-          {t('mobileApp.onLeave')} <strong>{onLeave.leave_type}</strong> · {onLeave.start_date} → {onLeave.end_date}
+          {t('mobileApp.onLeave')} <strong>{translateLeaveType(t, onLeave.leave_type)}</strong> · {onLeave.start_date} → {onLeave.end_date}
         </div>
       )}
 
@@ -233,7 +233,7 @@ function LeaveTab() {
       <div className={s.balanceRow}>
         {balances.map(b => (
           <div key={b.id} className={s.balanceCard}>
-            <div className={s.balanceName}>{b.leave_type_name}</div>
+            <div className={s.balanceName}>{translateLeaveType(t, b.leave_type_name)}</div>
             <div className={s.balanceNum}>{b.remaining_days ?? '--'}</div>
             <div className={s.balanceSub}>{t('mobileApp.daysLeft')}</div>
           </div>
@@ -256,7 +256,7 @@ function LeaveTab() {
           <select className={s.input} value={form.leave_type}
             onChange={e => setForm(f => ({ ...f, leave_type: e.target.value }))}>
             <option value="">{t('mobileApp.selectType')}</option>
-            {types.map(lt => <option key={lt.id} value={lt.id}>{lt.name}</option>)}
+            {types.map(lt => <option key={lt.id} value={lt.id}>{translateLeaveType(t, lt.name)}</option>)}
           </select>
 
           <label className={s.formLabel}>{t('mobileApp.startDate')}</label>
@@ -298,7 +298,7 @@ function LeaveTab() {
           {requests.map(r => (
             <div key={r.id} className={s.requestCard}>
               <div className={s.requestTop}>
-                <span className={s.requestType}>{r.leave_type_name}</span>
+                <span className={s.requestType}>{translateLeaveType(t, r.leave_type_name)}</span>
                 <span className={`${s.reqBadge} ${
                   r.status === 'approved' ? s.reqBadgeGreen :
                   r.status === 'rejected' ? s.reqBadgeRed :

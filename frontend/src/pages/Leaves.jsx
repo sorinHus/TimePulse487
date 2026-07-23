@@ -15,6 +15,7 @@ import {
 } from "../api/leaves";
 import { getColleagues } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import { translateLeaveType } from "../i18n/config";
 import styles from "./Leaves.module.css";
 
 function daysBetween(start, end) {
@@ -256,7 +257,7 @@ export default function Leaves() {
             return (
               <div key={i} className={styles.balanceCard}>
                 <div className={styles.balanceTop}>
-                  <span className={styles.balanceName}>{type?.name || bal.leave_type_name || t("leaves.leaveFallback")}</span>
+                  <span className={styles.balanceName}>{translateLeaveType(t, type?.name || bal.leave_type_name) || t("leaves.leaveFallback")}</span>
                   <span className={styles.balanceDays}>{remaining} <small>{t("leaves.daysLeft")}</small></span>
                 </div>
                 <div className={styles.balanceBarBg}>
@@ -396,7 +397,7 @@ export default function Leaves() {
                 >
                   <option value="">{t("leaves.selectType")}</option>
                   {leaveTypes.map((lt) => (
-                    <option key={lt.id} value={lt.id}>{lt.name}</option>
+                    <option key={lt.id} value={lt.id}>{translateLeaveType(t, lt.name)}</option>
                   ))}
                 </select>
               </div>
@@ -447,7 +448,7 @@ export default function Leaves() {
                 {workingDays !== null
                   ? `${workingDays} ${workingDays === 1 ? t("common.workingDay") : t("common.workingDays")}`
                   : t("leaves.calculating")}
-                {selectedType && ` · ${selectedType.name}`}
+                {selectedType && ` · ${translateLeaveType(t, selectedType.name)}`}
               </div>
             )}
 
@@ -500,7 +501,7 @@ export default function Leaves() {
                   <span className={styles.empName}>{req.full_name || req.username}</span>
                 )}
                 <span>
-                  <span className={styles.typeChip}>{req.leave_type_name || req.leave_type}</span>
+                  <span className={styles.typeChip}>{translateLeaveType(t, req.leave_type_name || req.leave_type)}</span>
                 </span>
                 <span className={styles.muted}>{req.start_date}</span>
                 <span className={styles.muted}>{req.end_date}</span>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { getManagerDashboard } from "../api/dashboard";
-import { dateLocale } from "../i18n/config";
+import { dateLocale, translateLeaveType } from "../i18n/config";
 import styles from "./DashboardManager.module.css";
 
 function formatHours(decimal) {
@@ -200,7 +200,7 @@ export default function DashboardManager() {
                     {req.employee_name || req.employee}
                   </span>
                   <span>
-                    <span className={styles.leaveType}>{req.leave_type_name || req.leave_type}</span>
+                    <span className={styles.leaveType}>{translateLeaveType(t, req.leave_type_name || req.leave_type)}</span>
                   </span>
                   <span>{req.start_date}</span>
                   <span>{req.end_date}</span>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { clockIn, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendance";
-import { dateLocale } from "../i18n/config";
+import { dateLocale, translateLeaveType } from "../i18n/config";
 import styles from "./Attendance.module.css";
 
 
@@ -169,7 +169,7 @@ export default function Attendance() {
       {/* Leave banner */}
       {onLeave && (
         <div className={styles.leaveBanner}>
-          {t("attendance.onLeaveBanner", { type: onLeave.leave_type, start: onLeave.start_date, end: onLeave.end_date })}
+          {t("attendance.onLeaveBanner", { type: translateLeaveType(t, onLeave.leave_type), start: onLeave.start_date, end: onLeave.end_date })}
         </div>
       )}
 

@@ -13,6 +13,13 @@ export function dateLocale(lang) {
   return DATE_LOCALES[lang] || DATE_LOCALES.en
 }
 
+// Leave type names are stored in English in the DB (e.g. "Annual Leave");
+// translate them for display, falling back to the raw name if untranslated.
+export function translateLeaveType(t, name) {
+  if (!name) return name
+  return t(`leaves.types.${name}`, { defaultValue: name })
+}
+
 function initialLanguage() {
   const stored = localStorage.getItem(STORAGE_KEY)
   if (SUPPORTED_LANGUAGES.includes(stored)) return stored

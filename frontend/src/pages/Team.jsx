@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import api from "../api/axios";
 import { registerSickLeave, getTeamSchedule, reviewSchedule } from "../api/leaves";
 import { useAuth } from "../context/AuthContext";
+import { translateLeaveType } from "../i18n/config";
 import styles from "./Team.module.css";
 
 function getInitials(u) {
@@ -592,7 +593,7 @@ export default function Team() {
                       <p className={styles.overlapSummaryTitle}>{t("team.sick.overlapsResolved", { count: sickSuccess.overlaps_resolved.length })}</p>
                       {sickSuccess.overlaps_resolved.map((o, i) => (
                         <div key={i} className={styles.overlapItem}>
-                          <span className={styles.overlapItemType}>{o.leave_type}</span>
+                          <span className={styles.overlapItemType}>{translateLeaveType(t, o.leave_type)}</span>
                           <span className={styles.overlapItemDetail}>
                             {o.action === 'return'
                               ? t("team.sick.daysReturned", { count: o.days_returned, period: o.original_period })

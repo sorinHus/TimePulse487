@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getTeamCalendar } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
-import { dateLocale } from "../i18n/config";
+import { dateLocale, translateLeaveType } from "../i18n/config";
 import styles from "./Calendar.module.css";
 
 function getMonthGrid(year, month) {
@@ -37,7 +37,7 @@ function EntryChip({ entry }) {
     : "#ef4444";
 
   const tooltipText = entry.status === "leave"
-    ? `${entry.full_name} · ${entry.leave_type || t("leaves.leaveFallback")}`
+    ? `${entry.full_name} · ${translateLeaveType(t, entry.leave_type) || t("leaves.leaveFallback")}`
     : `${entry.full_name} · ${t("common.status.absent")}`;
 
   return (
@@ -294,14 +294,14 @@ function DetailRow({ entry }) {
       <div className={styles.detailInfo}>
         <span className={styles.detailName}>{entry.full_name || entry.username}</span>
         {entry.leave_type && (
-          <span className={styles.detailMeta}>{entry.leave_type}</span>
+          <span className={styles.detailMeta}>{translateLeaveType(t, entry.leave_type)}</span>
         )}
       </div>
       <span
         className={styles.detailStatus}
         style={{ background: `${color}22`, color }}
       >
-        {entry.status === "leave" ? (entry.leave_type || t("leaves.leaveFallback")) : t("common.status.absent")}
+        {entry.status === "leave" ? (translateLeaveType(t, entry.leave_type) || t("leaves.leaveFallback")) : t("common.status.absent")}
       </span>
     </div>
   );

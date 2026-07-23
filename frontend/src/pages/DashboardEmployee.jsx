@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { clockIn, getTodaySessions } from "../api/attendance";
 import { getEmployeeDashboard } from "../api/dashboard";
-import { dateLocale } from "../i18n/config";
+import { dateLocale, translateLeaveType } from "../i18n/config";
 import styles from "./DashboardEmployee.module.css";
 
 function formatTime(isoString, locale) {
@@ -101,7 +101,7 @@ export default function DashboardEmployee() {
       {/* Leave banner */}
       {onLeave && (
         <div className={styles.leaveBanner}>
-          {t("dashboardEmployee.onLeaveBanner", { type: onLeave.leave_type, start: onLeave.start_date, end: onLeave.end_date })}
+          {t("dashboardEmployee.onLeaveBanner", { type: translateLeaveType(t, onLeave.leave_type), start: onLeave.start_date, end: onLeave.end_date })}
         </div>
       )}
 
