@@ -545,27 +545,12 @@ class EmployeeDashboardView(APIView):
         })
 
 
-def _pontaj_hours_for(user, session):
-    """Ore de pontaj/tichete de masă pentru o zi lucrată.
-
-    Dacă departamentul are un ScheduleType configurat, se folosește valoarea
-    fixă a acestuia (indiferent de orele reale). Altfel, comportamentul
-    rămâne identic cu cel de dinaintea ScheduleType: orele reale, sau 8 dacă
-    lipsesc.
-    """
-    department = user.department
-    if department and department.schedule_type:
-        return float(department.schedule_type.pontaj_hours)
-    return float(session.work_hours) if session.work_hours else 8.0
-
-
 class PontajExportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from datetime import date, timedelta
-        from attendance.models import AttendanceSession
-        from leaves.models import LeaveRequest
+        from datetime import date
+        from .pontaj import build_day_maps, compute_pontaj_cell
 
         year = int(request.query_params.get('year', timezone.now().year))
         month = int(request.query_params.get('month', timezone.now().month))
@@ -594,23 +579,6 @@ class PontajExportView(APIView):
 
         num_days = calendar.monthrange(year, month)[1]
         month_name = calendar.month_name[month]
-
-        LEAVE_CODE_MAP = {
-            'Annual Leave': 'CO',
-            'Sick Leave': 'CM',
-            'Unpaid Leave': 'FP',
-            'Professional Training Leave': 'AC',
-            'Maternity Leave': 'AC',
-            'Paternity Leave': 'AC',
-            'Parental Leave': 'IC',
-            'Child Care Leave': 'IC',
-            'Maternal Risk Leave': 'CM',
-            'Work Accident Leave': 'CM',
-            'Special Events Leave': 'AC',
-            'Adoption Leave': 'AC',
-            'Carer Leave': 'CI',
-            'Family Emergency Leave': 'AC',
-        }
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -707,24 +675,7 @@ class PontajExportView(APIView):
         for idx, u in enumerate(users_list):
             row = data_start_row + idx
 
-            sessions = AttendanceSession.objects.filter(
-                user=u, date__year=year, date__month=month, status='complete'
-            )
-            session_map = {s.date.day: s for s in sessions}
-
-            leaves = LeaveRequest.objects.filter(
-                user=u, status='approved',
-                start_date__lte=date(year, month, num_days),
-                end_date__gte=date(year, month, 1),
-            ).select_related('leave_type')
-
-            leave_day_map = {}
-            for leave in leaves:
-                current = leave.start_date
-                while current <= leave.end_date:
-                    if current.year == year and current.month == month:
-                        leave_day_map[current.day] = LEAVE_CODE_MAP.get(leave.leave_type.name, 'AC')
-                    current += timedelta(days=1)
+            session_map, leave_day_map = build_day_maps(u, year, month, num_days)
 
             cell_nr = ws.cell(row=row, column=1, value=idx + 1)
             cell_nr.font = normal
@@ -751,8 +702,8 @@ class PontajExportView(APIView):
                     cell.fill = weekend_fill
                     continue
 
-                if day in leave_day_map:
-                    code = leave_day_map[day]
+                hours, code = compute_pontaj_cell(u, year, month, day, session_map, leave_day_map)
+                if code:
                     cell.value = code
                     if code == 'CO':
                         cell.fill = leave_co_fill
@@ -772,9 +723,7 @@ class PontajExportView(APIView):
                     else:
                         cell.fill = leave_other_fill
                         totals['T_AC'] += 1
-                elif day in session_map:
-                    s = session_map[day]
-                    hours = _pontaj_hours_for(u, s)
+                elif hours is not None:
                     cell.value = hours
                     cell.fill = present_fill
                     total_ore += hours

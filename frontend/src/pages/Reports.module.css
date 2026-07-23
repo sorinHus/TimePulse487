@@ -153,6 +153,12 @@
   border-radius: 6px;
 }
 
+.footerButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .exportBtn {
   display: flex;
   align-items: center;

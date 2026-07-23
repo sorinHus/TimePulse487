@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { exportAttendanceExcel, exportLeavesPdf, exportPontaj } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +14,7 @@ function getCurrentMonth() {
 export default function Reports() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isManager = user?.effective_role === "manager";
 
   const [attendanceMonth, setAttendanceMonth] = useState(getCurrentMonth());
@@ -20,7 +22,7 @@ export default function Reports() {
   const [pontajMonth, setPontajMonth] = useState(getCurrentMonth());
   const [pontajType, setPontajType] = useState("department");
   const [pontajDept, setPontajDept] = useState(() =>
-    user?.effective_role === "manager" ? String(user.department_id) : ""
+    user?.effective_role === "manager" ? String(user.department) : ""
   );
   const [pontajUser, setPontajUser] = useState("");
   const [departments, setDepartments] = useState([]);
@@ -39,12 +41,12 @@ export default function Reports() {
       .catch(() => {});
   }, []);
 
-  // Daca e manager, forteaza intotdeauna department_id-ul sau
+  // Daca e manager, forteaza intotdeauna departamentul sau
   useEffect(() => {
-    if (isManager && user?.department_id) {
-      setPontajDept(String(user.department_id));
+    if (isManager && user?.department) {
+      setPontajDept(String(user.department));
     }
-  }, [isManager, user?.department_id]);
+  }, [isManager, user?.department]);
 
   const handleExportAttendance = async () => {
     setErrors({});
@@ -267,7 +269,7 @@ export default function Reports() {
                   <label className={styles.filterLabel}>{t("reports.department")}</label>
                   <input
                     className={styles.monthInput}
-                    value={departments.find(d => String(d.id) === String(user.department_id))?.name || t("reports.pontaj.yourDepartment")}
+                    value={departments.find(d => String(d.id) === String(user.department))?.name || t("reports.pontaj.yourDepartment")}
                     readOnly
                     style={{ opacity: 0.7, cursor: "not-allowed" }}
                   />
@@ -296,19 +298,33 @@ export default function Reports() {
             </div>
             <div className={styles.cardFooter}>
               <span className={styles.formatBadge} style={{ background: "#3b82f618", color: "#3b82f6" }}>.xlsx</span>
-              <button
-                className={styles.exportBtn}
-                style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
-                onClick={handleExportPontaj}
-                disabled={loadingPontaj}
-              >
-                {loadingPontaj ? <span className={styles.spinner} /> : (
-                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                    <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+              <div className={styles.footerButtons}>
+                {pontajType === "department" && pontajDept && (
+                  <button
+                    className={styles.exportBtn}
+                    style={{ background: "transparent", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    onClick={() => {
+                      const [year, month] = pontajMonth.split("-");
+                      navigate(`/pontaj?department_id=${pontajDept}&year=${year}&month=${Number(month)}`);
+                    }}
+                  >
+                    {t("reports.pontaj.viewEdit")}
+                  </button>
                 )}
-                {loadingPontaj ? t("reports.pontaj.generating") : t("reports.exportExcel")}
-              </button>
+                <button
+                  className={styles.exportBtn}
+                  style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
+                  onClick={handleExportPontaj}
+                  disabled={loadingPontaj}
+                >
+                  {loadingPontaj ? <span className={styles.spinner} /> : (
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                      <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {loadingPontaj ? t("reports.pontaj.generating") : t("reports.exportExcel")}
+                </button>
+              </div>
             </div>
           </div>
         </div>
