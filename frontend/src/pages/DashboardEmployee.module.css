@@ -158,8 +158,7 @@
   text-align: right;
 }
 
-.btnCheckIn,
-.btnCheckOut {
+.btnCheckIn {
   padding: 0.6rem 1.5rem;
   border-radius: 8px;
   border: none;
@@ -171,33 +170,12 @@
   align-items: center;
   gap: 0.5rem;
   transition: background 0.15s, transform 0.1s;
-}
-
-.btnCheckIn {
   background: #2563eb;
   color: #fff;
 }
 .btnCheckIn:hover:not(:disabled) { background: #1d4ed8; }
-
-.btnCheckOut {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--status-red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-.btnCheckOut:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.22);
-}
-
-.btnCheckIn:active:not(:disabled),
-.btnCheckOut:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.btnCheckIn:disabled,
-.btnCheckOut:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.btnCheckIn:active:not(:disabled) { transform: scale(0.97); }
+.btnCheckIn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .doneTag {
   font-size: 0.85rem;

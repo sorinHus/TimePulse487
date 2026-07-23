@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { login, logout, getMe } from '../api/auth'
-import { clockIn, clockOut, getTodaySessions } from '../api/attendance'
+import { clockIn, getTodaySessions } from '../api/attendance'
 import {
   getLeaveBalance, getLeaveTypes, createLeaveRequest,
   getLeaveRequests, getWorkingDays,
@@ -107,13 +107,6 @@ function ClockTab() {
     setLoading(false)
   }
 
-  const handleOut = async () => {
-    setErr(''); setLoading(true)
-    try { await clockOut(); load() }
-    catch (e) { setErr(e?.response?.data?.detail || t('mobileApp.clockOutFailed')) }
-    setLoading(false)
-  }
-
   const onLeave    = summary?.on_leave ?? null
   const hasOpen    = summary?.has_open_session
   const isComplete = summary?.status === 'complete'
@@ -164,11 +157,6 @@ function ClockTab() {
       {!hasOpen && !isComplete && !onLeave && (
         <button className={`${s.bigBtn} ${s.btnIn}`} onClick={handleIn} disabled={loading}>
           {loading ? '…' : t('mobileApp.clockIn')}
-        </button>
-      )}
-      {hasOpen && (
-        <button className={`${s.bigBtn} ${s.btnOut}`} onClick={handleOut} disabled={loading}>
-          {loading ? '…' : t('mobileApp.clockOut')}
         </button>
       )}
       {isComplete && <div className={s.doneMsg}>{t('mobileApp.doneForToday')}</div>}

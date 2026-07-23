@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { clockIn, clockOut, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendance";
+import { clockIn, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendance";
 import { dateLocale } from "../i18n/config";
 import styles from "./Attendance.module.css";
 
@@ -119,20 +119,6 @@ export default function Attendance() {
       await fetchHistory(monthOffset);
     } catch (e) {
       setError(e?.response?.data?.detail || t("attendance.clockInFailed"));
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-  const handleClockOut = async () => {
-    setError("");
-    setLoadingAction(true);
-    try {
-      await clockOut();
-      await fetchToday();
-      await fetchHistory(monthOffset);
-    } catch (e) {
-      setError(e?.response?.data?.detail || t("attendance.clockOutFailed"));
     } finally {
       setLoadingAction(false);
     }
@@ -274,12 +260,6 @@ export default function Attendance() {
             <button className={styles.btnIn} onClick={handleClockIn} disabled={loadingAction || !!onLeave}>
               {loadingAction && <span className={styles.spinner} />}
               {t("attendance.btnClockIn")}
-            </button>
-          )}
-          {hasOpenSession && (
-            <button className={styles.btnOut} onClick={handleClockOut} disabled={loadingAction || !!onLeave}>
-              {loadingAction && <span className={styles.spinner} />}
-              {t("attendance.btnClockOut")}
             </button>
           )}
           {isDayComplete && !hasOpenSession && (

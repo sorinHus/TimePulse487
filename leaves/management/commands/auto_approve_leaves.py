@@ -52,7 +52,14 @@ class Command(BaseCommand):
                         f'You will substitute {leave.user.get_full_name()} '
                         f'from {leave.start_date} to {leave.end_date}.'
                     ),
-                    type='system'
+                    type='system',
+                    code='substitute_assigned',
+                    params={
+                        'substituted_name': leave.user.get_full_name(),
+                        'role': leave.user.effective_role,
+                        'start_date': str(leave.start_date),
+                        'end_date': str(leave.end_date),
+                    },
                 )
 
             # Notificare angajat
@@ -64,7 +71,14 @@ class Command(BaseCommand):
                     f'({leave.start_date} - {leave.end_date}, {leave.total_days} days) '
                     f'has been automatically approved as the start date has arrived.'
                 ),
-                type='leave'
+                type='leave',
+                code='leave_auto_approved',
+                params={
+                    'leave_type': leave.leave_type.name,
+                    'start_date': str(leave.start_date),
+                    'end_date': str(leave.end_date),
+                    'total_days': leave.total_days,
+                },
             )
 
             # Notificare manager
@@ -85,7 +99,14 @@ class Command(BaseCommand):
                             f'{leave.user.get_full_name()}\'s {leave.leave_type.name} '
                             f'({leave.start_date} - {leave.end_date}) was auto-approved.'
                         ),
-                        type='leave'
+                        type='leave',
+                        code='leave_auto_approved_manager',
+                        params={
+                            'employee_name': leave.user.get_full_name(),
+                            'leave_type': leave.leave_type.name,
+                            'start_date': str(leave.start_date),
+                            'end_date': str(leave.end_date),
+                        },
                     )
             except Exception:
                 pass

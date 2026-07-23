@@ -6,7 +6,8 @@ from .models import PontajSheet
 
 
 class PontajSheetSerializer(serializers.ModelSerializer):
-    department_name = serializers.CharField(source='department.name', read_only=True)
+    department_name = serializers.SerializerMethodField()
+    owner_name = serializers.SerializerMethodField()
     generated_by_name = serializers.CharField(source='generated_by.get_full_name', read_only=True, default=None)
     reviewed_by_name = serializers.CharField(source='reviewed_by.get_full_name', read_only=True, default=None)
     num_days = serializers.SerializerMethodField()
@@ -16,10 +17,16 @@ class PontajSheetSerializer(serializers.ModelSerializer):
     class Meta:
         model = PontajSheet
         fields = [
-            'id', 'department', 'department_name', 'year', 'month', 'status',
+            'id', 'department', 'department_name', 'user', 'owner_name', 'year', 'month', 'status',
             'generated_by_name', 'generated_at', 'reviewed_by_name', 'reviewed_at',
             'rejection_note', 'num_days', 'holidays', 'rows',
         ]
+
+    def get_department_name(self, obj):
+        return obj.department.name if obj.department_id else None
+
+    def get_owner_name(self, obj):
+        return obj.user.get_full_name() if obj.user_id else None
 
     def get_num_days(self, obj):
         import calendar

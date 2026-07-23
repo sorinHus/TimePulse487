@@ -123,7 +123,14 @@ class LeaveApproveRejectView(APIView):
                         f'({leave.user.effective_role}) from {leave.start_date} to {leave.end_date}. '
                         f'You will have {leave.user.effective_role} permissions during this period.'
                     ),
-                    type='system'
+                    type='system',
+                    code='substitute_assigned',
+                    params={
+                        'substituted_name': leave.user.get_full_name(),
+                        'role': leave.user.effective_role,
+                        'start_date': str(leave.start_date),
+                        'end_date': str(leave.end_date),
+                    },
                 )
 
         elif action == 'reject':
@@ -425,7 +432,16 @@ class SickLeaveRegisterView(APIView):
                 f'{request.user.get_full_name()} registered a sick leave for you: '
                 f'{start_date} - {end_date} ({total_days} working days).{overlap_msg}'
             ),
-            type='leave'
+            type='leave',
+            code='sick_leave_registered',
+            params={
+                'context': (f'overlap_{overlap_action}' if overlap_results else ''),
+                'actor_name': request.user.get_full_name(),
+                'start_date': str(start_date),
+                'end_date': str(end_date),
+                'total_days': total_days,
+                'overlap_count': len(overlap_results),
+            },
         )
 
         # Notificare informativă pentru managerul direct (dacă cel care înregistrează e admin)
@@ -443,7 +459,14 @@ class SickLeaveRegisterView(APIView):
                             f'{employee.get_full_name()} has been registered on sick leave '
                             f'from {start_date} to {end_date} ({total_days} working days).'
                         ),
-                        type='leave'
+                        type='leave',
+                        code='sick_leave_registered_team',
+                        params={
+                            'employee_name': employee.get_full_name(),
+                            'start_date': str(start_date),
+                            'end_date': str(end_date),
+                            'total_days': total_days,
+                        },
                     )
             except Exception:
                 pass
@@ -459,7 +482,14 @@ class SickLeaveRegisterView(APIView):
                             f'Manager {request.user.get_full_name()} registered sick leave for '
                             f'{employee.get_full_name()}: {start_date} - {end_date}.'
                         ),
-                        type='leave'
+                        type='leave',
+                        code='sick_leave_registered_director',
+                        params={
+                            'manager_name': request.user.get_full_name(),
+                            'employee_name': employee.get_full_name(),
+                            'start_date': str(start_date),
+                            'end_date': str(end_date),
+                        },
                     )
             except Exception:
                 pass
@@ -581,7 +611,12 @@ class LeaveScheduleSubmitView(APIView):
                 user=mgr,
                 title='Annual leave schedule submitted',
                 message=f'{request.user.get_full_name()} submitted their annual leave plan for {schedule.year}.',
-                type='leave'
+                type='leave',
+                code='leave_schedule_submitted',
+                params={
+                    'actor_name': request.user.get_full_name(),
+                    'year': schedule.year,
+                },
             )
 
         return Response(LeaveScheduleSerializer(schedule).data)
@@ -621,7 +656,14 @@ class LeaveScheduleReviewView(APIView):
                 f'by {request.user.get_full_name()}.'
                 + (f' Note: {review_note}' if review_note else '')
             ),
-            type='leave'
+            type='leave',
+            code='leave_schedule_reviewed',
+            params={
+                'context': schedule.status + ('_note' if review_note else ''),
+                'year': schedule.year,
+                'actor_name': request.user.get_full_name(),
+                'note': review_note,
+            },
         )
 
         return Response(LeaveScheduleSerializer(schedule).data)

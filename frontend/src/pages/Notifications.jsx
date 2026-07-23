@@ -42,6 +42,15 @@ const TYPE_COLORS = {
   system: styles.typeSystem,
 };
 
+function renderNotification(n, t) {
+  if (!n.code) return { title: n.title, message: n.message };
+  const params = n.params || {};
+  return {
+    title: t(`notifications.templates.${n.code}.title`, { ...params, defaultValue: n.title }),
+    message: t(`notifications.templates.${n.code}.message`, { ...params, defaultValue: n.message }),
+  };
+}
+
 export default function Notifications() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -129,7 +138,9 @@ export default function Notifications() {
         ) : filtered.length === 0 ? (
           <div className={styles.empty}>{t("notifications.noNotifications")}</div>
         ) : (
-          filtered.map((n) => (
+          filtered.map((n) => {
+            const rendered = renderNotification(n, t);
+            return (
             <div
               key={n.id}
               className={`${styles.item} ${!n.is_read ? styles.unread : ""}`}
@@ -139,8 +150,8 @@ export default function Notifications() {
                 {TYPE_ICONS[n.type] || TYPE_ICONS.system}
               </div>
               <div className={styles.itemBody}>
-                <div className={styles.itemTitle}>{n.title}</div>
-                <div className={styles.itemMessage}>{n.message}</div>
+                <div className={styles.itemTitle}>{rendered.title}</div>
+                <div className={styles.itemMessage}>{rendered.message}</div>
                 <div className={styles.itemMeta}>{timeAgo(n.created_at, t)}</div>
               </div>
               {!n.is_read && <div className={styles.unreadDot} />}
@@ -154,7 +165,8 @@ export default function Notifications() {
                 </svg>
               </button>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

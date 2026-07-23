@@ -113,6 +113,30 @@ def get_or_create_sheet(department, year, month):
     return sheet
 
 
+def get_or_create_personal_sheet(user, year, month):
+    """Varianta individuala a get_or_create_sheet — pentru cineva fara
+    departament (ex. directorul general), care isi genereaza si isi aproba
+    singur pontajul, fara flux de revizuire."""
+    sheet, created = PontajSheet.objects.get_or_create(
+        user=user, department=None, year=year, month=month
+    )
+    if not created:
+        return sheet
+
+    num_days = calendar.monthrange(year, month)[1]
+    session_map, leave_day_map = build_day_maps(user, year, month, num_days)
+    entries = []
+    for day in range(1, num_days + 1):
+        hours, leave_code = compute_pontaj_cell(user, year, month, day, session_map, leave_day_map)
+        entries.append(PontajEntry(
+            sheet=sheet, user=user, day=day,
+            hours=hours, leave_code=leave_code,
+            leave_from_request=bool(leave_code),
+        ))
+    PontajEntry.objects.bulk_create(entries)
+    return sheet
+
+
 def sync_leave_requests(sheet):
     """Recalculează concediile aprobate pentru fiecare angajat din sheet și le
     aplică peste intrările existente — o cerere aprobată are mereu prioritate,

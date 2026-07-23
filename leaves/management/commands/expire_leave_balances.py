@@ -45,7 +45,13 @@ class Command(BaseCommand):
                         f'have expired as of {expiry_date}. '
                         f'Unused leave must be taken within 18 months of the year end.'
                     ),
-                    type='leave'
+                    type='leave',
+                    code='leave_balance_expired',
+                    params={
+                        'days': f'{float(remaining):.0f}',
+                        'year': balance.year,
+                        'expiry_date': str(expiry_date),
+                    },
                 )
                 users_notified += 1
             except Exception:

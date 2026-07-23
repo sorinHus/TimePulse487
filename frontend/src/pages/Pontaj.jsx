@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   getPontajSheet,
+  getPersonalPontajSheet,
   savePontajSheet,
   regeneratePontajSheet,
   submitPontajSheet,
@@ -55,6 +56,7 @@ export default function Pontaj() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const departmentId = searchParams.get("department_id");
+  const isSelf = searchParams.get("self") === "1";
   const year = Number(searchParams.get("year"));
   const month = Number(searchParams.get("month"));
 
@@ -79,17 +81,19 @@ export default function Pontaj() {
   };
 
   const fetchSheet = useCallback(async () => {
-    if (!departmentId || !year || !month) return;
+    if ((!isSelf && !departmentId) || !year || !month) return;
     setError("");
     try {
-      const data = await getPontajSheet(departmentId, year, month);
+      const data = isSelf
+        ? await getPersonalPontajSheet(year, month)
+        : await getPontajSheet(departmentId, year, month);
       applyServerSheet(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [departmentId, year, month, t]);
+  }, [isSelf, departmentId, year, month, t]);
 
   useEffect(() => {
     setLoading(true);
@@ -107,7 +111,7 @@ export default function Pontaj() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirtyIds]);
 
-  if (!departmentId || !year || !month) {
+  if ((!isSelf && !departmentId) || !year || !month) {
     return <div className={styles.page}><p className={styles.error}>{t("pontaj.noDepartment")}</p></div>;
   }
 
@@ -115,8 +119,8 @@ export default function Pontaj() {
   const isManagerOfDept = user?.effective_role === "manager" && String(user.department) === String(meta?.department);
   const isAdmin = user?.effective_role === "admin";
   const isReviewer = user?.effective_role === "admin" || user?.effective_role === "director";
-  const canEditCells = isEditable && (isAdmin || isManagerOfDept);
-  const canReview = isReviewer && meta?.status === "generated";
+  const canEditCells = isEditable && (isSelf || isAdmin || isManagerOfDept);
+  const canReview = !isSelf && isReviewer && meta?.status === "generated";
 
   const monthTitle = new Date(year, month - 1, 1).toLocaleDateString(
     dateLocale(i18n.language), { month: "long", year: "numeric" }
@@ -129,7 +133,9 @@ export default function Pontaj() {
 
   const changeMonth = (newYear, newMonth) => {
     if (!confirmDiscard()) return;
-    setSearchParams({ department_id: departmentId, year: String(newYear), month: String(newMonth) });
+    setSearchParams(isSelf
+      ? { self: "1", year: String(newYear), month: String(newMonth) }
+      : { department_id: departmentId, year: String(newYear), month: String(newMonth) });
   };
 
   const handlePrevMonth = () => {
@@ -264,7 +270,9 @@ export default function Pontaj() {
   const handleExportExcel = async () => {
     setExportBusy(true);
     try {
-      const blob = await exportPontaj(year, month, departmentId);
+      const blob = isSelf
+        ? await exportPontaj(year, month, null, user.id)
+        : await exportPontaj(year, month, departmentId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -311,7 +319,7 @@ export default function Pontaj() {
           <button className={styles.btnBack} onClick={handleBack}>← {t("pontaj.backToReports")}</button>
           <div className={styles.monthNav}>
             <button className={styles.btnMonthNav} onClick={handlePrevMonth} aria-label={t("pontaj.prevMonth")} title={t("pontaj.prevMonth")}>‹</button>
-            <h1 className={styles.title}>{meta?.department_name || ""} — {monthTitle}</h1>
+            <h1 className={styles.title}>{isSelf ? t("pontaj.myPontaj") : (meta?.department_name || "")} — {monthTitle}</h1>
             <button className={styles.btnMonthNav} onClick={handleNextMonth} aria-label={t("pontaj.nextMonth")} title={t("pontaj.nextMonth")}>›</button>
             <input
               type="month"
@@ -355,7 +363,7 @@ export default function Pontaj() {
           )}
           {canEditCells && (
             <button className={styles.btnApprove} onClick={handleSubmit} disabled={actionBusy}>
-              {meta.status === "rejected" ? t("pontaj.resubmit") : t("pontaj.submit")}
+              {isSelf ? t("pontaj.approve") : meta.status === "rejected" ? t("pontaj.resubmit") : t("pontaj.submit")}
             </button>
           )}
           <button className={styles.btnCancel} onClick={handleExportExcel} disabled={exportBusy}>

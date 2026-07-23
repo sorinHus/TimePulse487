@@ -299,6 +299,18 @@ export default function Reports() {
             <div className={styles.cardFooter}>
               <span className={styles.formatBadge} style={{ background: "#3b82f618", color: "#3b82f6" }}>.xlsx</span>
               <div className={styles.footerButtons}>
+                {user?.effective_role === "director" && (
+                  <button
+                    className={styles.exportBtn}
+                    style={{ background: "transparent", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    onClick={() => {
+                      const [year, month] = pontajMonth.split("-");
+                      navigate(`/pontaj?self=1&year=${year}&month=${Number(month)}`);
+                    }}
+                  >
+                    {t("reports.pontaj.myPontaj")}
+                  </button>
+                )}
                 {pontajType === "department" && pontajDept && (
                   <button
                     className={styles.exportBtn}

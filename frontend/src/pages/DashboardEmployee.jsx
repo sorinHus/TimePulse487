@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
-import { clockIn, clockOut, getTodaySessions } from "../api/attendance";
+import { clockIn, getTodaySessions } from "../api/attendance";
 import { getEmployeeDashboard } from "../api/dashboard";
 import { dateLocale } from "../i18n/config";
 import styles from "./DashboardEmployee.module.css";
@@ -65,19 +65,6 @@ export default function DashboardEmployee() {
       await fetchData();
     } catch (e) {
       setError(e?.response?.data?.detail || t("dashboardEmployee.clockInFailed"));
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-  const handleClockOut = async () => {
-    setError("");
-    setLoadingAction(true);
-    try {
-      await clockOut();
-      await fetchData();
-    } catch (e) {
-      setError(e?.response?.data?.detail || t("dashboardEmployee.clockOutFailed"));
     } finally {
       setLoadingAction(false);
     }
@@ -173,12 +160,6 @@ export default function DashboardEmployee() {
             <button className={styles.btnCheckIn} onClick={handleClockIn} disabled={loadingAction || !!onLeave}>
               {loadingAction ? <span className={styles.spinner} /> : null}
               {t("dashboardEmployee.clockIn")}
-            </button>
-          )}
-          {hasOpenSession && (
-            <button className={styles.btnCheckOut} onClick={handleClockOut} disabled={loadingAction}>
-              {loadingAction ? <span className={styles.spinner} /> : null}
-              {t("dashboardEmployee.clockOut")}
             </button>
           )}
           {isDayComplete && !hasOpenSession && (

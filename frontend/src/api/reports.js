@@ -3,6 +3,9 @@ import api from './axios'
 export const getPontajSheet = (departmentId, year, month) =>
   api.get(`/reports/pontaj/sheet/?department_id=${departmentId}&year=${year}&month=${month}`).then(r => r.data)
 
+export const getPersonalPontajSheet = (year, month) =>
+  api.get(`/reports/pontaj/personal-sheet/?year=${year}&month=${month}`).then(r => r.data)
+
 export const savePontajSheet = (sheetId, entries) =>
   api.post(`/reports/pontaj/sheet/${sheetId}/save/`, { entries }).then(r => r.data)
 

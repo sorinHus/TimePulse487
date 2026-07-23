@@ -11,7 +11,13 @@ class PontajSheet(models.Model):
     ]
 
     department = models.ForeignKey(
-        'accounts.Department', on_delete=models.CASCADE, related_name='pontaj_sheets'
+        'accounts.Department', on_delete=models.CASCADE, related_name='pontaj_sheets',
+        null=True, blank=True
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='personal_pontaj_sheets',
+        null=True, blank=True,
+        help_text='Set instead of department for a self-service personal sheet (e.g. the director\'s own).'
     )
     year = models.PositiveIntegerField()
     month = models.PositiveSmallIntegerField()
@@ -31,11 +37,23 @@ class PontajSheet(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['department', 'year', 'month']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['department', 'year', 'month'],
+                condition=models.Q(department__isnull=False),
+                name='uniq_department_pontaj_sheet',
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'year', 'month'],
+                condition=models.Q(user__isnull=False),
+                name='uniq_personal_pontaj_sheet',
+            ),
+        ]
         ordering = ['-year', '-month']
 
     def __str__(self):
-        return f'{self.department.name} {self.year}-{self.month:02d} ({self.status})'
+        owner = self.department.name if self.department_id else self.user.get_full_name()
+        return f'{owner} {self.year}-{self.month:02d} ({self.status})'
 
 
 class PontajEntry(models.Model):

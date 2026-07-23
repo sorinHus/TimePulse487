@@ -16,12 +16,14 @@ from .serializers import (
 WORKDAY_HOURS = Decimal('8.50')
 
 
-def create_notification(user, title, message, notif_type='system'):
+def create_notification(user, title, message, notif_type='system', code='', params=None):
     Notification.objects.create(
         user=user,
         title=title,
         message=message,
-        type=notif_type
+        type=notif_type,
+        code=code,
+        params=params or {},
     )
 
 
@@ -360,7 +362,13 @@ class OvertimeRequestView(APIView):
                 manager,
                 'New overtime request',
                 f'{request.user.get_full_name()} requested {round(overtime, 2)}h overtime for {req_date}.',
-                'overtime'
+                'overtime',
+                code='overtime_requested',
+                params={
+                    'actor_name': request.user.get_full_name(),
+                    'hours': round(overtime, 2),
+                    'date': str(req_date),
+                },
             )
 
         return Response(OvertimeRequestSerializer(ot_request).data, status=status.HTTP_201_CREATED)
@@ -451,7 +459,17 @@ class OvertimeReviewView(APIView):
             if manager_note:
                 msg += f' Note: {manager_note}'
 
-        create_notification(ot_request.user, 'Overtime request reviewed', msg, 'overtime')
+        create_notification(
+            ot_request.user, 'Overtime request reviewed', msg, 'overtime',
+            code='overtime_reviewed',
+            params={
+                'context': ot_request.status + ('_note' if manager_note else ''),
+                'date': str(ot_request.date),
+                'approved_hours': str(ot_request.approved_hours),
+                'requested_hours': str(ot_request.requested_hours),
+                'note': manager_note,
+            },
+        )
 
         return Response(OvertimeRequestSerializer(ot_request).data)
 

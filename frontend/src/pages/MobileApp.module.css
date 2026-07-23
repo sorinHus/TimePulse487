@@ -193,7 +193,6 @@
 .bigBtn:active:not(:disabled) { opacity: 0.8; }
 
 .btnIn  { background: #1d4ed8; color: #fff; }
-.btnOut { background: #be123c; color: #fff; }
 
 /* ── Date label ──────────────────────────────────────────── */
 .dateLabel {

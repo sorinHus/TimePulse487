@@ -14,6 +14,7 @@ from .pontaj import (
     EDITABLE_STATUSES,
     build_day_maps,
     compute_pontaj_cell,
+    get_or_create_personal_sheet,
     get_or_create_sheet,
     sync_leave_requests,
 )
@@ -37,7 +38,23 @@ def _can_edit_department(user, department):
     return user.effective_role == 'manager' and user.department_id == department.id
 
 
+def _can_view_sheet(user, sheet):
+    """Personal sheets (no department, self-service): only the owner or an
+    admin. Department sheets: existing department-based rule."""
+    if sheet.user_id:
+        return user.id == sheet.user_id or user.effective_role == 'admin'
+    return _can_view_department(user, sheet.department)
+
+
+def _can_edit_sheet(user, sheet):
+    if sheet.user_id:
+        return user.id == sheet.user_id or user.effective_role == 'admin'
+    return _can_edit_department(user, sheet.department)
+
+
 def _sheet_link(sheet):
+    if sheet.user_id:
+        return f'/pontaj?self=1&year={sheet.year}&month={sheet.month}'
     return f'/pontaj?department_id={sheet.department_id}&year={sheet.year}&month={sheet.month}'
 
 
@@ -100,6 +117,22 @@ class PontajSheetView(APIView):
         return Response(PontajSheetSerializer(sheet).data)
 
 
+class PontajPersonalSheetView(APIView):
+    """Pontaj individual, fara departament — pentru cineva care isi genereaza
+    si isi aproba singur pontajul (ex. directorul general)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        year = request.query_params.get('year')
+        month = request.query_params.get('month')
+        if not (year and month):
+            return Response({'detail': 'year and month are required.'}, status=400)
+
+        sheet = get_or_create_personal_sheet(request.user, int(year), int(month))
+        sync_leave_requests(sheet)
+        return Response(PontajSheetSerializer(sheet).data)
+
+
 class PontajSheetSaveView(APIView):
     """Salveaza pe server modificarile facute local in grila (fara sa
     schimbe starea foii si fara sa notifice pe nimeni)."""
@@ -111,7 +144,7 @@ class PontajSheetSaveView(APIView):
         except PontajSheet.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=404)
 
-        if not _can_edit_department(request.user, sheet.department):
+        if not _can_edit_sheet(request.user, sheet):
             return Response({'detail': 'Permission denied.'}, status=403)
         if sheet.status not in EDITABLE_STATUSES:
             return Response({'detail': 'This pontaj sheet can no longer be edited.'}, status=400)
@@ -133,7 +166,7 @@ class PontajSheetRegenerateView(APIView):
         except PontajSheet.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=404)
 
-        if not _can_edit_department(request.user, sheet.department):
+        if not _can_edit_sheet(request.user, sheet):
             return Response({'detail': 'Permission denied.'}, status=403)
         if sheet.status not in EDITABLE_STATUSES:
             return Response({'detail': 'This pontaj sheet can no longer be edited.'}, status=400)
@@ -166,7 +199,11 @@ class PontajSheetRegenerateView(APIView):
 class PontajSheetSubmitView(APIView):
     """Trimite foaia de pontaj la DG pentru aprobare — blocheaza editarea si
     notifica admin/director. Salveaza si eventualele modificari locale
-    nesalvate trimise odata cu cererea, intr-un singur apel."""
+    nesalvate trimise odata cu cererea, intr-un singur apel.
+
+    Pentru un pontaj personal (fara departament), nu exista cui sa i se
+    trimita spre revizuire — se aproba direct (draft/rejected -> approved),
+    fara starea intermediara 'generated' si fara notificare."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
@@ -175,12 +212,26 @@ class PontajSheetSubmitView(APIView):
         except PontajSheet.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=404)
 
-        if not _can_edit_department(request.user, sheet.department):
+        if not _can_edit_sheet(request.user, sheet):
             return Response({'detail': 'Permission denied.'}, status=403)
         if sheet.status not in EDITABLE_STATUSES:
             return Response({'detail': 'Only draft or rejected sheets can be submitted.'}, status=400)
 
         _apply_entries(sheet, request.data.get('entries') or [])
+
+        if sheet.user_id:
+            now = timezone.now()
+            sheet.status = 'approved'
+            sheet.generated_by = request.user
+            sheet.generated_at = now
+            sheet.reviewed_by = request.user
+            sheet.reviewed_at = now
+            sheet.rejection_note = ''
+            sheet.save(update_fields=[
+                'status', 'generated_by', 'generated_at',
+                'reviewed_by', 'reviewed_at', 'rejection_note', 'updated_at',
+            ])
+            return Response(PontajSheetSerializer(sheet).data)
 
         sheet.status = 'generated'
         sheet.generated_by = request.user
@@ -197,6 +248,13 @@ class PontajSheetSubmitView(APIView):
                 message=f'{sheet.department.name} — {sheet.year}-{sheet.month:02d} pontaj submitted by {request.user.get_full_name()}.',
                 type='system',
                 link=_sheet_link(sheet),
+                code='pontaj_submitted',
+                params={
+                    'department': sheet.department.name,
+                    'year': sheet.year,
+                    'month': f'{sheet.month:02d}',
+                    'actor_name': request.user.get_full_name(),
+                },
             )
 
         return Response(PontajSheetSerializer(sheet).data)
@@ -240,6 +298,15 @@ class PontajSheetReviewView(APIView):
                 ),
                 type='system',
                 link=_sheet_link(sheet),
+                code='pontaj_reviewed',
+                params={
+                    'context': sheet.status + ('_note' if rejection_note else ''),
+                    'department': sheet.department.name,
+                    'year': sheet.year,
+                    'month': f'{sheet.month:02d}',
+                    'actor_name': request.user.get_full_name(),
+                    'note': rejection_note,
+                },
             )
 
         return Response(PontajSheetSerializer(sheet).data)
