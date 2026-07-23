@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.http import HttpResponse
-from attendance.models import Attendance
 from leaves.models import LeaveRequest
 import calendar
 import openpyxl
@@ -352,72 +351,98 @@ class AdminDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        if request.user.role != 'admin':
+        if request.user.effective_role != 'admin':
             return Response({'detail': 'Permission denied.'}, status=403)
 
-        from datetime import date
-        today = timezone.localdate()
-        current_month = today.month
-        current_year = today.year
-
-        total_employees = User.objects.filter(is_active=True, is_superuser=False).count()
-        present_today = Attendance.objects.filter(date=today, status='present').count()
-        on_leave_today = LeaveRequest.objects.filter(
-            status='approved', start_date__lte=today, end_date__gte=today,
-        ).count()
-        pending_leaves = LeaveRequest.objects.filter(status='pending').count()
-        absent_today = total_employees - present_today - on_leave_today
-
-        working_days = 0
-        total_present = 0
-        from datetime import timedelta
-        d = date(current_year, current_month, 1)
-        while d <= today:
-            if d.weekday() < 5:
-                working_days += 1
-            d += timedelta(days=1)
-
-        if working_days > 0:
-            total_present = Attendance.objects.filter(
-                date__year=current_year, date__month=current_month, status='present'
-            ).count()
-            attendance_rate = round((total_present / (working_days * total_employees)) * 100, 1) if total_employees > 0 else 0
-        else:
-            attendance_rate = 0
-
-        recent_leaves = LeaveRequest.objects.filter(
-            status='pending'
-        ).select_related('user', 'leave_type').order_by('-created_at')[:5]
-
-        recent_leaves_data = [{
-            'id': leave.id,
-            'user': leave.user.get_full_name() or leave.user.username,
-            'leave_type': leave.leave_type.name,
-            'start_date': leave.start_date,
-            'end_date': leave.end_date,
-            'total_days': leave.total_days,
-            'created_at': leave.created_at,
-        } for leave in recent_leaves]
-
+        from decimal import Decimal
+        from django.db.models import Sum
+        from attendance.models import AttendanceSession
         from accounts.models import Department
+
+        today = timezone.localdate()
+        current_year = today.year
+        current_month = today.month
+
+        active_employees = User.objects.filter(is_active=True, is_superuser=False)
+        total_employees = active_employees.count()
+
+        present_today = active_employees.filter(
+            sessions__date=today, sessions__status__in=['complete', 'open'],
+        ).distinct().count()
+        on_leave_today = LeaveRequest.objects.filter(
+            status='approved', start_date__lte=today, end_date__gte=today, user__in=active_employees,
+        ).count()
+        pending_leave_requests = LeaveRequest.objects.filter(status='pending').count()
+        absent_today = max(0, total_employees - present_today - on_leave_today)
+
+        month_hours = AttendanceSession.objects.filter(
+            user__in=active_employees, date__year=current_year, date__month=current_month, status='complete',
+        ).aggregate(s=Sum('work_hours'))['s'] or Decimal('0')
+        avg_hours_this_month = round(float(month_hours) / total_employees, 1) if total_employees else 0
+
         departments = Department.objects.all()
         dept_data = [{
             'name': dept.name,
-            'total': User.objects.filter(department=dept, is_active=True, is_superuser=False).count(),
-            'present': Attendance.objects.filter(date=today, user__department=dept, status='present').count(),
+            'employee_count': User.objects.filter(department=dept, is_active=True, is_superuser=False).count(),
         } for dept in departments]
 
+        today_sessions = AttendanceSession.objects.filter(
+            date=today, user__in=active_employees,
+        ).select_related('user', 'user__department').order_by('user_id', 'clock_in')
+        rows_by_user = {}
+        for s in today_sessions:
+            row = rows_by_user.setdefault(s.user_id, {
+                'full_name': s.user.get_full_name() or s.user.username,
+                'department_name': s.user.department.name if s.user.department else None,
+                'check_in': None, 'check_out': None, 'hours_worked': Decimal('0'),
+            })
+            if row['check_in'] is None:
+                row['check_in'] = s.clock_in
+            if s.clock_out:
+                row['check_out'] = s.clock_out
+            row['hours_worked'] += s.work_hours or Decimal('0')
+        today_attendance = [{
+            'full_name': r['full_name'],
+            'department_name': r['department_name'],
+            'check_in': r['check_in'].isoformat() if r['check_in'] else None,
+            'check_out': r['check_out'].isoformat() if r['check_out'] else None,
+            'hours_worked': float(r['hours_worked']),
+            'status': 'present',
+        } for r in rows_by_user.values()]
+
+        recent_leaves = LeaveRequest.objects.select_related('user', 'leave_type').order_by('-created_at')[:8]
+        recent_leave_requests = [{
+            'id': leave.id,
+            'employee_name': leave.user.get_full_name() or leave.user.username,
+            'leave_type_name': leave.leave_type.name,
+            'start_date': leave.start_date,
+            'end_date': leave.end_date,
+            'days_requested': float(leave.total_days),
+            'status': leave.status,
+        } for leave in recent_leaves]
+
+        employees = [{
+            'first_name': u.first_name,
+            'last_name': u.last_name,
+            'username': u.username,
+            'full_name': u.get_full_name() or u.username,
+            'role': u.effective_role,
+            'department_name': u.department.name if u.department else None,
+            'position': u.position,
+            'is_active': u.is_active,
+        } for u in User.objects.filter(is_superuser=False).select_related('department').order_by('last_name', 'first_name')]
+
         return Response({
-            'stats': {
-                'total_employees': total_employees,
-                'present_today': present_today,
-                'on_leave_today': on_leave_today,
-                'absent_today': absent_today if absent_today > 0 else 0,
-                'pending_leaves': pending_leaves,
-                'attendance_rate': attendance_rate,
-            },
-            'recent_pending_leaves': recent_leaves_data,
+            'total_employees': total_employees,
+            'present_today': present_today,
+            'on_leave_today': on_leave_today,
+            'absent_today': absent_today,
+            'avg_hours_this_month': avg_hours_this_month,
+            'pending_leave_requests': pending_leave_requests,
             'departments': dept_data,
+            'today_attendance': today_attendance,
+            'recent_leave_requests': recent_leave_requests,
+            'employees': employees,
         })
 
 
@@ -425,49 +450,77 @@ class ManagerDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        if request.user.role not in ['admin', 'manager']:
+        if request.user.effective_role not in ['admin', 'manager']:
             return Response({'detail': 'Permission denied.'}, status=403)
 
-        from datetime import date
-        today = timezone.localdate()
+        from decimal import Decimal
+        from django.db.models import Sum
+        from attendance.models import AttendanceSession
 
-        team = User.objects.filter(is_active=True, manager=request.user)
+        user = request.user
+        today = timezone.localdate()
+        current_year = today.year
+        current_month = today.month
+
+        if user.effective_role == 'admin':
+            team = User.objects.filter(is_active=True)
+        else:
+            team = User.objects.filter(is_active=True, department=user.department)
         total_team = team.count()
 
-        present_today = Attendance.objects.filter(date=today, status='present', user__in=team).count()
+        present_today = team.filter(
+            sessions__date=today, sessions__status__in=['complete', 'open'],
+        ).distinct().count()
         on_leave_today = LeaveRequest.objects.filter(
-            status='approved', start_date__lte=today, end_date__gte=today, user__in=team
+            status='approved', start_date__lte=today, end_date__gte=today, user__in=team,
         ).count()
         pending_leaves = LeaveRequest.objects.filter(status='pending', user__in=team).count()
+
+        month_hours = AttendanceSession.objects.filter(
+            user__in=team, date__year=current_year, date__month=current_month, status='complete',
+        ).aggregate(s=Sum('work_hours'))['s'] or Decimal('0')
+        avg_hours_this_month = round(float(month_hours) / total_team, 1) if total_team else 0
 
         recent_leaves = LeaveRequest.objects.filter(
             status='pending', user__in=team
         ).select_related('user', 'leave_type').order_by('-created_at')[:5]
-
         recent_leaves_data = [{
             'id': leave.id,
-            'user': leave.user.get_full_name() or leave.user.username,
-            'leave_type': leave.leave_type.name,
+            'employee_name': leave.user.get_full_name() or leave.user.username,
+            'leave_type_name': leave.leave_type.name,
             'start_date': leave.start_date,
             'end_date': leave.end_date,
-            'total_days': leave.total_days,
-            'created_at': leave.created_at,
+            'days_requested': float(leave.total_days),
         } for leave in recent_leaves]
+
+        today_sessions = AttendanceSession.objects.filter(
+            date=today, user__in=team,
+        ).order_by('user_id', 'clock_in')
+        sessions_by_user = {}
+        for s in today_sessions:
+            row = sessions_by_user.setdefault(s.user_id, {
+                'check_in': None, 'check_out': None, 'hours_worked': Decimal('0'),
+            })
+            if row['check_in'] is None:
+                row['check_in'] = s.clock_in
+            if s.clock_out:
+                row['check_out'] = s.clock_out
+            row['hours_worked'] += s.work_hours or Decimal('0')
 
         team_status = []
         for member in team:
-            attendance = Attendance.objects.filter(user=member, date=today).first()
             on_leave = LeaveRequest.objects.filter(
                 user=member, status='approved',
                 start_date__lte=today, end_date__gte=today,
-            ).first()
+            ).select_related('leave_type').first()
+            session_row = sessions_by_user.get(member.id)
 
             if on_leave:
                 status_val = 'leave'
                 detail = on_leave.leave_type.name
-            elif attendance and attendance.check_in:
+            elif session_row:
                 status_val = 'present'
-                detail = str(attendance.check_in)[:5]
+                detail = session_row['check_in'].strftime('%H:%M') if session_row['check_in'] else '-'
             else:
                 status_val = 'absent'
                 detail = '-'
@@ -477,6 +530,9 @@ class ManagerDashboardView(APIView):
                 'full_name': member.get_full_name() or member.username,
                 'status': status_val,
                 'detail': detail,
+                'check_in': session_row['check_in'].isoformat() if session_row and session_row['check_in'] else None,
+                'check_out': session_row['check_out'].isoformat() if session_row and session_row['check_out'] else None,
+                'hours_worked': float(session_row['hours_worked']) if session_row else None,
             })
 
         return Response({
@@ -484,9 +540,10 @@ class ManagerDashboardView(APIView):
                 'total_team': total_team,
                 'present_today': present_today,
                 'on_leave_today': on_leave_today,
-                'absent_today': max(0, total_team - present_today - on_leave_today),
                 'pending_leaves': pending_leaves,
             },
+            'present_today': present_today,
+            'avg_hours_this_month': avg_hours_this_month,
             'team_status': team_status,
             'recent_pending_leaves': recent_leaves_data,
         })
@@ -496,52 +553,61 @@ class EmployeeDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from datetime import date
+        from decimal import Decimal
+        from django.db.models import Sum
+        from attendance.models import AttendanceSession
+        from leaves.models import LeaveBalance, LeaveType
+
         today = timezone.localdate()
         current_year = today.year
         current_month = today.month
         user = request.user
 
-        today_attendance = Attendance.objects.filter(user=user, date=today).first()
-        attendance_data = None
-        if today_attendance:
-            attendance_data = {
-                'check_in': str(today_attendance.check_in)[:5] if today_attendance.check_in else None,
-                'check_out': str(today_attendance.check_out)[:5] if today_attendance.check_out else None,
-                'work_hours': str(today_attendance.work_hours) if today_attendance.work_hours else None,
-                'status': today_attendance.status,
-            }
+        hours_this_month = AttendanceSession.objects.filter(
+            user=user, date__year=current_year, date__month=current_month, status='complete',
+        ).aggregate(s=Sum('work_hours'))['s'] or Decimal('0')
 
-        from leaves.models import LeaveBalance
-        balances = LeaveBalance.objects.filter(user=user, year=current_year).select_related('leave_type')
-        balance_data = [{
-            'leave_type': b.leave_type.name,
-            'color': b.leave_type.color,
-            'total_days': b.total_days,
-            'used_days': float(b.used_days),
-            'remaining_days': float(b.remaining_days),
-        } for b in balances]
+        def remaining_for(**lookup):
+            leave_type = LeaveType.objects.filter(is_active=True, **lookup).first()
+            if not leave_type:
+                return None
+            balance = LeaveBalance.objects.filter(user=user, leave_type=leave_type, year=current_year).first()
+            return float(balance.remaining_days) if balance else None
 
-        recent_requests = LeaveRequest.objects.filter(user=user).select_related('leave_type').order_by('-created_at')[:5]
-        requests_data = [{
-            'id': req.id,
-            'leave_type': req.leave_type.name,
-            'color': req.leave_type.color,
-            'start_date': req.start_date,
-            'end_date': req.end_date,
-            'total_days': req.total_days,
-            'status': req.status,
-        } for req in recent_requests]
+        leave_balance = {
+            'annual': remaining_for(name='Annual Leave'),
+            'sick': remaining_for(is_sick_leave=True),
+        }
 
-        present_this_month = Attendance.objects.filter(
-            user=user, date__year=current_year, date__month=current_month, status='present'
-        ).count()
+        pending_leave_requests = LeaveRequest.objects.filter(user=user, status='pending').count()
+
+        recent_dates = list(
+            AttendanceSession.objects.filter(user=user).order_by('-date')
+            .values_list('date', flat=True).distinct()[:10]
+        )
+        recent_sessions = AttendanceSession.objects.filter(
+            user=user, date__in=recent_dates
+        ).order_by('date', 'clock_in')
+        days_map = {}
+        for s in recent_sessions:
+            entry = days_map.setdefault(s.date, {'check_in': None, 'check_out': None, 'hours_worked': Decimal('0')})
+            if entry['check_in'] is None:
+                entry['check_in'] = s.clock_in
+            if s.clock_out:
+                entry['check_out'] = s.clock_out
+            entry['hours_worked'] += s.work_hours or Decimal('0')
+        recent_attendance = [{
+            'date': str(d),
+            'check_in': days_map[d]['check_in'].isoformat() if days_map[d]['check_in'] else None,
+            'check_out': days_map[d]['check_out'].isoformat() if days_map[d]['check_out'] else None,
+            'hours_worked': float(days_map[d]['hours_worked']),
+        } for d in sorted(days_map.keys(), reverse=True)]
 
         return Response({
-            'today_attendance': attendance_data,
-            'stats': {'present_this_month': present_this_month},
-            'leave_balances': balance_data,
-            'recent_requests': requests_data,
+            'hours_this_month': float(hours_this_month),
+            'leave_balance': leave_balance,
+            'pending_leave_requests': pending_leave_requests,
+            'recent_attendance': recent_attendance,
         })
 
 
