@@ -95,7 +95,6 @@ export default function Team() {
             id: m.user_id,
             username: m.full_name?.toLowerCase().replace(' ', '.') || '',
             is_active: true,
-            role: 'employee',
           }));
           setMembers(team);
         })
@@ -264,11 +263,11 @@ export default function Team() {
                   {getInitials(m)}
                 </div>
                 <div className={styles.cardName}>{m.full_name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || m.username}</div>
-                {m.position && <div className={styles.cardPosition}>{m.position}</div>}
+                {m.employee_number && <div className={styles.cardPosition}>#{m.employee_number}</div>}
                 <div className={styles.cardMeta}>
-                  {m.role && (
+                  {(m.position || m.role) && (
                     <span className={styles.rolePill} style={{ background: roleStyle.bg, color: roleStyle.color }}>
-                      {t(`common.roles.${m.role}`)}
+                      {m.position || t(`common.roles.${m.role}`)}
                     </span>
                   )}
                   {m.department_name && (

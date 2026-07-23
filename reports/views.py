@@ -464,9 +464,9 @@ class ManagerDashboardView(APIView):
         current_month = today.month
 
         if user.effective_role == 'admin':
-            team = User.objects.filter(is_active=True)
+            team = User.objects.filter(is_active=True).select_related('department')
         else:
-            team = User.objects.filter(is_active=True, department=user.department)
+            team = User.objects.filter(is_active=True, department=user.department).select_related('department')
         total_team = team.count()
 
         present_today = team.filter(
@@ -529,6 +529,10 @@ class ManagerDashboardView(APIView):
             team_status.append({
                 'user_id': member.id,
                 'full_name': member.get_full_name() or member.username,
+                'role': member.role,
+                'position': member.position,
+                'employee_number': member.employee_number,
+                'department_name': member.department.name if member.department_id else None,
                 'status': status_val,
                 'detail': detail,
                 'check_in': session_row['check_in'].isoformat() if session_row and session_row['check_in'] else None,
