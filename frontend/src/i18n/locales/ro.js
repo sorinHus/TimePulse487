@@ -346,6 +346,8 @@ export default {
     saveFailed: 'Salvare esuata.',
     noDepartment: 'Selecteaza un departament din Rapoarte pentru a vedea foaia de pontaj.',
     employee: 'Angajat',
+    legalHoliday: 'Sarbatoare legala',
+    totalHours: 'Total Ore',
     statusDraft: 'Ciorna',
     statusGenerated: 'Generat',
     statusApproved: 'Aprobat',

@@ -345,6 +345,8 @@ export default {
     saveFailed: 'Не вдалося зберегти.',
     noDepartment: 'Оберіть відділ у розділі "Звіти", щоб переглянути табель.',
     employee: 'Співробітник',
+    legalHoliday: 'Державне свято',
+    totalHours: 'Всього годин',
     statusDraft: 'Чернетка',
     statusGenerated: 'Сформовано',
     statusApproved: 'Затверджено',

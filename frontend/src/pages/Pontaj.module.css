@@ -201,6 +201,24 @@ thead .stickyCol {
   background: var(--row-hover);
 }
 
+.holidayCol {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.totalsCol {
+  background: var(--surface-alt);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.totalsFilled {
+  color: var(--text-primary);
+}
+
+thead .totalsCol {
+  color: var(--text-dim);
+}
+
 .editableCell {
   cursor: pointer;
 }

@@ -345,6 +345,8 @@ export default {
     saveFailed: 'Save failed.',
     noDepartment: 'Select a department from Reports to view the pontaj sheet.',
     employee: 'Employee',
+    legalHoliday: 'Legal holiday',
+    totalHours: 'Total Hours',
     statusDraft: 'Draft',
     statusGenerated: 'Generated',
     statusApproved: 'Approved',

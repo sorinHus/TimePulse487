@@ -17,6 +17,7 @@ class PontajSheetSerializer(serializers.ModelSerializer):
     generated_by_name = serializers.CharField(source='generated_by.get_full_name', read_only=True, default=None)
     reviewed_by_name = serializers.CharField(source='reviewed_by.get_full_name', read_only=True, default=None)
     num_days = serializers.SerializerMethodField()
+    holidays = serializers.SerializerMethodField()
     rows = serializers.SerializerMethodField()
 
     class Meta:
@@ -24,12 +25,17 @@ class PontajSheetSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'department', 'department_name', 'year', 'month', 'status',
             'generated_by_name', 'generated_at', 'reviewed_by_name', 'reviewed_at',
-            'rejection_note', 'num_days', 'rows',
+            'rejection_note', 'num_days', 'holidays', 'rows',
         ]
 
     def get_num_days(self, obj):
         import calendar
         return calendar.monthrange(obj.year, obj.month)[1]
+
+    def get_holidays(self, obj):
+        from leaves.utils import get_public_holidays
+        holidays = get_public_holidays(obj.year)
+        return sorted(d.day for d in holidays if d.month == obj.month)
 
     def get_rows(self, obj):
         entries = obj.entries.select_related('user').order_by(

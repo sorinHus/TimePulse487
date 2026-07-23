@@ -13,6 +13,19 @@ const STATUS_BADGE = {
   approved: "badgeGreen",
   rejected: "badgeRed",
 };
+const LEAVE_CODES = ["CO", "CM", "FP", "IC", "CI", "AC", "NE"];
+
+function computeTotals(cells) {
+  const totals = { hours: 0, CO: 0, CM: 0, FP: 0, IC: 0, CI: 0, AC: 0, NE: 0 };
+  for (const cell of cells) {
+    if (cell.leave_code && LEAVE_CODES.includes(cell.leave_code)) {
+      totals[cell.leave_code] += 1;
+    } else if (cell.hours != null) {
+      totals.hours += cell.hours;
+    }
+  }
+  return totals;
+}
 
 export default function Pontaj() {
   const { t, i18n } = useTranslation();
@@ -172,43 +185,66 @@ export default function Pontaj() {
                 <th className={styles.stickyCol}>{t("pontaj.employee")}</th>
                 {Array.from({ length: sheet.num_days }, (_, i) => i + 1).map((day) => {
                   const isWeekend = [0, 6].includes(new Date(year, month - 1, day).getDay());
+                  const isHoliday = sheet.holidays.includes(day);
                   return (
-                    <th key={day} className={isWeekend ? styles.weekendCol : ""}>{day}</th>
+                    <th
+                      key={day}
+                      className={isWeekend ? styles.weekendCol : isHoliday ? styles.holidayCol : ""}
+                      title={isHoliday ? t("pontaj.legalHoliday") : undefined}
+                    >
+                      {day}
+                    </th>
                   );
                 })}
+                <th className={styles.totalsCol}>{t("pontaj.totalHours")}</th>
+                {LEAVE_CODES.map((code) => (
+                  <th key={code} className={styles.totalsCol}>{code}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {sheet.rows.map((row) => (
-                <tr key={row.user_id}>
-                  <td className={styles.stickyCol}>{row.full_name}</td>
-                  {row.cells.map((cell) => {
-                    const isWeekend = [0, 6].includes(new Date(year, month - 1, cell.day).getDay());
-                    const isEditing = editingCell?.entryId === cell.entry_id;
-                    const display = cell.leave_code || (cell.hours ?? "");
-                    return (
-                      <td
-                        key={cell.day}
-                        className={`${isWeekend ? styles.weekendCol : ""} ${canEditCells && !isWeekend ? styles.editableCell : ""} ${cell.is_edited ? styles.editedCell : ""}`}
-                        onClick={() => !isWeekend && handleCellClick(cell)}
-                      >
-                        {isEditing ? (
-                          <input
-                            autoFocus
-                            className={styles.cellInput}
-                            value={editingCell.value}
-                            onChange={(e) => setEditingCell((c) => ({ ...c, value: e.target.value }))}
-                            onBlur={saveEditingCell}
-                            onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-                          />
-                        ) : (
-                          display || (isWeekend ? "" : "-")
-                        )}
+              {sheet.rows.map((row) => {
+                const totals = computeTotals(row.cells);
+                return (
+                  <tr key={row.user_id}>
+                    <td className={styles.stickyCol}>{row.full_name}</td>
+                    {row.cells.map((cell) => {
+                      const isWeekend = [0, 6].includes(new Date(year, month - 1, cell.day).getDay());
+                      const isHoliday = sheet.holidays.includes(cell.day);
+                      const isEditing = editingCell?.entryId === cell.entry_id;
+                      const display = cell.leave_code || (cell.hours ?? "");
+                      return (
+                        <td
+                          key={cell.day}
+                          className={`${isWeekend ? styles.weekendCol : isHoliday ? styles.holidayCol : ""} ${canEditCells && !isWeekend ? styles.editableCell : ""} ${cell.is_edited ? styles.editedCell : ""}`}
+                          onClick={() => !isWeekend && handleCellClick(cell)}
+                        >
+                          {isEditing ? (
+                            <input
+                              autoFocus
+                              className={styles.cellInput}
+                              value={editingCell.value}
+                              onChange={(e) => setEditingCell((c) => ({ ...c, value: e.target.value }))}
+                              onBlur={saveEditingCell}
+                              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+                            />
+                          ) : (
+                            display || (isWeekend ? "" : "-")
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className={`${styles.totalsCol} ${totals.hours > 0 ? styles.totalsFilled : ""}`}>
+                      {totals.hours > 0 ? Math.round(totals.hours * 10) / 10 : 0}
+                    </td>
+                    {LEAVE_CODES.map((code) => (
+                      <td key={code} className={`${styles.totalsCol} ${totals[code] > 0 ? styles.totalsFilled : ""}`}>
+                        {totals[code]}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
