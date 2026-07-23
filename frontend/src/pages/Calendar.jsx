@@ -34,10 +34,14 @@ function EntryChip({ entry }) {
   const { t } = useTranslation();
   const color = entry.status === "leave"
     ? (entry.color || "#f59e0b")
+    : entry.status === "present"
+    ? "#22c55e"
     : "#ef4444";
 
   const tooltipText = entry.status === "leave"
     ? `${entry.full_name} · ${translateLeaveType(t, entry.leave_type) || t("leaves.leaveFallback")}`
+    : entry.status === "present"
+    ? `${entry.full_name} · ${t("common.status.present")}`
     : `${entry.full_name} · ${t("common.status.absent")}`;
 
   return (
@@ -105,15 +109,16 @@ export default function Calendar() {
   const todayDay = today.getFullYear() === year && today.getMonth() === month
     ? today.getDate() : null;
 
-  // dayMap: day -> { leave: [], absent: [] }
+  // dayMap: day -> { leave: [], absent: [], present: [] }
   const dayMap = {};
   calData.forEach(entry => {
-    if (entry.status !== "leave" && entry.status !== "absent") return;
+    if (entry.status !== "leave" && entry.status !== "absent" && entry.status !== "present") return;
     const d = new Date(entry.date);
     if (d.getFullYear() !== year || d.getMonth() !== month) return;
     const day = d.getDate();
-    if (!dayMap[day]) dayMap[day] = { leave: [], absent: [] };
+    if (!dayMap[day]) dayMap[day] = { leave: [], absent: [], present: [] };
     if (entry.status === "leave") dayMap[day].leave.push(entry);
+    else if (entry.status === "present") dayMap[day].present.push(entry);
     else dayMap[day].absent.push(entry);
   });
 
@@ -123,7 +128,7 @@ export default function Calendar() {
 
   const handleDayClick = (day) => {
     if (!day) return;
-    const entries = [...(dayMap[day]?.leave || []), ...(dayMap[day]?.absent || [])];
+    const entries = [...(dayMap[day]?.leave || []), ...(dayMap[day]?.absent || []), ...(dayMap[day]?.present || [])];
     if (!entries.length) return;
     setSelected(selected?.day === day ? null : { day, entries });
   };
@@ -201,9 +206,10 @@ export default function Calendar() {
           <div className={styles.grid}>
             {cells.map((day, i) => {
               const dayEntries = day ? dayMap[day] : null;
-              const leaveEntries  = dayEntries?.leave  || [];
-              const absentEntries = dayEntries?.absent || [];
-              const allEntries    = [...leaveEntries, ...absentEntries];
+              const leaveEntries   = dayEntries?.leave   || [];
+              const absentEntries  = dayEntries?.absent  || [];
+              const presentEntries = dayEntries?.present || [];
+              const allEntries     = [...leaveEntries, ...absentEntries, ...presentEntries];
               const isToday    = day === todayDay;
               const isWeekend  = day ? ((i % 7) >= 5) : false;
               const isSelected = selected?.day === day;
@@ -284,6 +290,8 @@ function DetailRow({ entry }) {
   const { t } = useTranslation();
   const color = entry.status === "leave"
     ? (entry.color || "#f59e0b")
+    : entry.status === "present"
+    ? "#22c55e"
     : "#ef4444";
 
   return (
@@ -301,7 +309,11 @@ function DetailRow({ entry }) {
         className={styles.detailStatus}
         style={{ background: `${color}22`, color }}
       >
-        {entry.status === "leave" ? (translateLeaveType(t, entry.leave_type) || t("leaves.leaveFallback")) : t("common.status.absent")}
+        {entry.status === "leave"
+          ? (translateLeaveType(t, entry.leave_type) || t("leaves.leaveFallback"))
+          : entry.status === "present"
+          ? t("common.status.present")
+          : t("common.status.absent")}
       </span>
     </div>
   );
