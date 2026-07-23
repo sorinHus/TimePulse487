@@ -22,6 +22,15 @@ for name in departments_data:
     departments[name] = dept
     print(f'Department: {name}')
 
+# --- Numerotare marca (matricol) ---
+next_employee_number = 1
+
+def allocate_employee_number():
+    global next_employee_number
+    number = f'{next_employee_number:04d}'
+    next_employee_number += 1
+    return number
+
 # --- Director general ---
 if not User.objects.filter(username='director.general').exists():
     director = User.objects.create_user(
@@ -32,6 +41,7 @@ if not User.objects.filter(username='director.general').exists():
         email='director@timepulse.app',
         role='director',
         position='Director General',
+        employee_number=allocate_employee_number(),
         hire_date=date(2015, 1, 10),
     )
     print('Created: director.general')
@@ -142,6 +152,7 @@ for dept_name, data in dept_data.items():
             role='manager',
             department=dept,
             position=mgr_position,
+            employee_number=allocate_employee_number(),
             hire_date=date(2017, 1, 1),
             manager=director,
         )
@@ -162,12 +173,19 @@ for dept_name, data in dept_data.items():
                 role='employee',
                 department=dept,
                 position=position,
+                employee_number=allocate_employee_number(),
                 hire_date=hire_dates[i],
                 manager=manager,
             )
             print(f'  Created employee: {username}')
         else:
             print(f'  Exists employee: {username}')
+
+# --- Backfill numar de marca pentru utilizatorii existenti fara el ---
+for user in User.objects.filter(employee_number__isnull=True).order_by('id'):
+    user.employee_number = allocate_employee_number()
+    user.save(update_fields=['employee_number'])
+    print(f'Backfilled employee_number for: {user.username} -> {user.employee_number}')
 
 print('\n✅ Seed complet!')
 print(f'   Director: director.general / Director2026!')

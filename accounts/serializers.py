@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'full_name', 'role', 'effective_role', 'department', 'department_name',
-            'phone', 'position', 'hire_date', 'avatar', 'is_active', 'deactivation_reason',
+            'phone', 'position', 'employee_number', 'hire_date', 'avatar', 'is_active', 'deactivation_reason',
             'temporary_role', 'temporary_role_start', 'temporary_role_end',
             'is_substituting', 'substituting_for', 'substituting_for_name',
         ]
@@ -50,7 +50,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password2', 'role', 'department']
+        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password2', 'role', 'department', 'position', 'employee_number']
 
     def validate(self, data):
         if data['password'] != data['password2']:

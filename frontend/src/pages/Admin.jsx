@@ -14,6 +14,7 @@ function getInitials(u) {
 const EMPTY_FORM = {
   username: "", email: "", first_name: "", last_name: "",
   password: "", password2: "", role: "employee", department: "",
+  position: "", employee_number: "",
 };
 
 export default function Admin() {
@@ -85,6 +86,7 @@ export default function Admin() {
     try {
       const payload = { ...form };
       if (!payload.department) delete payload.department;
+      if (!payload.employee_number) delete payload.employee_number;
       delete payload.password2;
       await api.post("/auth/register/", payload);
       setSuccessMsg(t("admin.userCreatedSuccess", { username: form.username }));
@@ -289,6 +291,14 @@ export default function Admin() {
                       ))}
                     </select>
                   </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.position")}</label>
+                    <input className={styles.input} value={form.position} onChange={f("position")} placeholder={t("admin.form.positionHint")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.employeeNumber")}</label>
+                    <input className={styles.input} value={form.employee_number} onChange={f("employee_number")} placeholder={t("admin.form.employeeNumberHint")} />
+                  </div>
                 </div>
                 {formError && <div className={styles.formError}>{formError}</div>}
                 <div className={styles.formActions}>
@@ -322,6 +332,7 @@ export default function Admin() {
               <span>{t("admin.table.role")}</span>
               <span>{t("admin.table.department")}</span>
               <span>{t("admin.table.position")}</span>
+              <span>{t("admin.table.employeeNumber")}</span>
               <span>{t("admin.table.email")}</span>
               <span>{t("admin.table.status")}</span>
             </div>
@@ -344,6 +355,7 @@ export default function Admin() {
                   </span>
                   <span className={styles.muted}>{u.department_name || "—"}</span>
                   <span className={styles.muted}>{u.position || "—"}</span>
+                  <span className={styles.muted}>{u.employee_number || "—"}</span>
                   <span className={styles.muted}>{u.email || "—"}</span>
                   <span className={styles.statusCell}>
                     {u.is_active ? (

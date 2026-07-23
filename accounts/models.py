@@ -45,6 +45,10 @@ class User(AbstractUser):
     )
     phone = models.CharField(max_length=20, blank=True)
     position = models.CharField(max_length=100, blank=True)
+    employee_number = models.CharField(
+        max_length=20, unique=True, null=True, blank=True,
+        verbose_name='Număr marcă'
+    )
     hire_date = models.DateField(null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_active = models.BooleanField(default=True)

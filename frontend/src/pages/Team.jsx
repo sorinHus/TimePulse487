@@ -304,6 +304,7 @@ export default function Team() {
             <span>{t("team.table.role")}</span>
             <span>{t("team.table.department")}</span>
             <span>{t("team.table.position")}</span>
+            <span>{t("team.table.employeeNumber")}</span>
             <span>{t("team.table.email")}</span>
             <span>{t("team.table.status")}</span>
             {canRegisterSick && <span></span>}
@@ -328,6 +329,7 @@ export default function Team() {
                 </span>
                 <span className={styles.muted}>{m.department_name || "—"}</span>
                 <span className={styles.muted}>{m.position || "—"}</span>
+                <span className={styles.muted}>{m.employee_number || "—"}</span>
                 <span className={styles.muted}>{m.email || "—"}</span>
                 <span>
                   <span className={`${styles.statusBadge} ${m.is_active === false ? styles.statusInactive : styles.statusActive}`}>
