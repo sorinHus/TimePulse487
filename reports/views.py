@@ -545,6 +545,20 @@ class EmployeeDashboardView(APIView):
         })
 
 
+def _pontaj_hours_for(user, session):
+    """Ore de pontaj/tichete de masă pentru o zi lucrată.
+
+    Dacă departamentul are un ScheduleType configurat, se folosește valoarea
+    fixă a acestuia (indiferent de orele reale). Altfel, comportamentul
+    rămâne identic cu cel de dinaintea ScheduleType: orele reale, sau 8 dacă
+    lipsesc.
+    """
+    department = user.department
+    if department and department.schedule_type:
+        return float(department.schedule_type.pontaj_hours)
+    return float(session.work_hours) if session.work_hours else 8.0
+
+
 class PontajExportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -562,21 +576,21 @@ class PontajExportView(APIView):
         if user_id:
             if user.effective_role not in ['admin', 'manager', 'director']:
                 return Response({'detail': 'Permission denied.'}, status=403)
-            users = User.objects.filter(id=user_id, is_active=True)
+            users = User.objects.filter(id=user_id, is_active=True).select_related('department__schedule_type')
         elif department_id:
             if user.effective_role not in ['admin', 'manager', 'director']:
                 return Response({'detail': 'Permission denied.'}, status=403)
             users = User.objects.filter(
                 department_id=department_id, is_active=True
-            ).order_by('last_name', 'first_name')
+            ).select_related('department__schedule_type').order_by('last_name', 'first_name')
         elif user.effective_role == 'manager':
             users = User.objects.filter(
                 department=user.department, is_active=True
-            ).order_by('last_name', 'first_name')
+            ).select_related('department__schedule_type').order_by('last_name', 'first_name')
         elif user.effective_role in ['admin', 'director']:
-            users = User.objects.filter(is_active=True).order_by('last_name', 'first_name')
+            users = User.objects.filter(is_active=True).select_related('department__schedule_type').order_by('last_name', 'first_name')
         else:
-            users = User.objects.filter(id=user.id)
+            users = User.objects.filter(id=user.id).select_related('department__schedule_type')
 
         num_days = calendar.monthrange(year, month)[1]
         month_name = calendar.month_name[month]
@@ -760,7 +774,7 @@ class PontajExportView(APIView):
                         totals['T_AC'] += 1
                 elif day in session_map:
                     s = session_map[day]
-                    hours = float(s.work_hours) if s.work_hours else 8
+                    hours = _pontaj_hours_for(u, s)
                     cell.value = hours
                     cell.fill = present_fill
                     total_ore += hours

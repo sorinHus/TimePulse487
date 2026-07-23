@@ -3,12 +3,20 @@ from django.contrib import admin
 # Register your models here.
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from attendance.models import ScheduleType
 from .models import User, Department
+
+
+@admin.register(ScheduleType)
+class ScheduleTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'start_time', 'end_time', 'break_minutes', 'pontaj_hours']
+    search_fields = ['name']
 
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description', 'created_at']
+    list_display = ['name', 'schedule_type', 'description', 'created_at']
+    list_filter = ['schedule_type']
     search_fields = ['name']
 
 

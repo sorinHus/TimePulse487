@@ -6,6 +6,12 @@ from django.utils import timezone
 class Department(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    schedule_type = models.ForeignKey(
+        'attendance.ScheduleType',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='departments'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

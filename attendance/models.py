@@ -134,6 +134,30 @@ class OvertimeRequest(models.Model):
         return f'{self.user.username} - {self.date} - {self.status}'
 
 
+class ScheduleType(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    break_minutes = models.PositiveIntegerField(default=60)
+    pontaj_hours = models.DecimalField(
+        max_digits=4, decimal_places=2, default=Decimal('8.00'),
+        help_text='Ore fixe de pontaj/tichete de masă per zi lucrată, indiferent de orele reale.'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Schedule Type'
+        verbose_name_plural = 'Schedule Types'
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name} ({self.start_time}–{self.end_time})'
+
+    @property
+    def crosses_midnight(self):
+        return self.end_time <= self.start_time
+
+
 class Notification(models.Model):
     TYPE_CHOICES = [
         ('overtime', 'Overtime'),
