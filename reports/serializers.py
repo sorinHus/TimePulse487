@@ -8,8 +8,8 @@ from .models import PontajEntry, PontajSheet
 class PontajEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = PontajEntry
-        fields = ['id', 'sheet', 'user', 'day', 'hours', 'leave_code', 'is_edited', 'updated_at']
-        read_only_fields = ['id', 'sheet', 'user', 'is_edited', 'updated_at']
+        fields = ['id', 'sheet', 'user', 'day', 'hours', 'leave_code', 'is_edited', 'leave_from_request', 'updated_at']
+        read_only_fields = ['id', 'sheet', 'user', 'is_edited', 'leave_from_request', 'updated_at']
 
 
 class PontajSheetSerializer(serializers.ModelSerializer):
@@ -52,5 +52,6 @@ class PontajSheetSerializer(serializers.ModelSerializer):
                 'hours': float(entry.hours) if entry.hours is not None else None,
                 'leave_code': entry.leave_code,
                 'is_edited': entry.is_edited,
+                'leave_from_request': entry.leave_from_request,
             })
         return list(by_user.values())

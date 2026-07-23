@@ -1,13 +1,17 @@
 import calendar
+from collections import defaultdict
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from attendance.models import AttendanceSession
 from leaves.models import LeaveRequest
 from .models import PontajEntry, PontajSheet
 
 User = get_user_model()
+
+EDITABLE_STATUSES = ('draft', 'rejected')
 
 LEAVE_CODE_MAP = {
     'Annual Leave': 'CO',
@@ -25,6 +29,8 @@ LEAVE_CODE_MAP = {
     'Carer Leave': 'CI',
     'Family Emergency Leave': 'AC',
 }
+
+LEAVE_CODES = ['CO', 'CM', 'FP', 'IC', 'CI', 'AC', 'NE']
 
 
 def pontaj_hours_for(user, session):
@@ -103,6 +109,44 @@ def get_or_create_sheet(department, year, month):
             entries.append(PontajEntry(
                 sheet=sheet, user=u, day=day,
                 hours=hours, leave_code=leave_code,
+                leave_from_request=bool(leave_code),
             ))
     PontajEntry.objects.bulk_create(entries)
     return sheet
+
+
+def sync_leave_requests(sheet):
+    """Recalculează concediile aprobate pentru fiecare angajat din sheet și le
+    aplică peste intrările existente — o cerere aprobată are mereu prioritate,
+    fie peste ore lucrate, fie peste un cod de concediu introdus manual
+    (aceeași precedență ca la crearea inițială a foii). Rulează doar pe foi
+    încă editabile; o foaie generată/aprobată e un instantaneu istoric și nu
+    se mai modifică singură."""
+    if sheet.status not in EDITABLE_STATUSES:
+        return
+
+    num_days = calendar.monthrange(sheet.year, sheet.month)[1]
+    entries_by_user = defaultdict(dict)
+    for entry in sheet.entries.select_related('user').all():
+        entries_by_user[entry.user_id][entry.day] = entry
+
+    now = timezone.now()
+    to_update = []
+    for user_id, day_entries in entries_by_user.items():
+        user = next(iter(day_entries.values())).user
+        _, leave_day_map = build_day_maps(user, sheet.year, sheet.month, num_days)
+        for day, code in leave_day_map.items():
+            entry = day_entries.get(day)
+            if not entry or (entry.leave_code == code and entry.leave_from_request):
+                continue
+            entry.leave_code = code
+            entry.hours = None
+            entry.leave_from_request = True
+            entry.is_edited = False
+            entry.updated_at = now
+            to_update.append(entry)
+
+    if to_update:
+        PontajEntry.objects.bulk_update(
+            to_update, ['leave_code', 'hours', 'leave_from_request', 'is_edited', 'updated_at']
+        )

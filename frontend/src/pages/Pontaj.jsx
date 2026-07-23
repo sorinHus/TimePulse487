@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getPontajSheet, patchPontajEntry, generatePontajSheet, reviewPontajSheet } from "../api/reports";
+import { getPontajSheet, patchPontajEntry, generatePontajSheet, reviewPontajSheet, fillPontajRow } from "../api/reports";
 import { dateLocale } from "../i18n/config";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Pontaj.module.css";
@@ -14,24 +14,38 @@ const STATUS_BADGE = {
   rejected: "badgeRed",
 };
 const LEAVE_CODES = ["CO", "CM", "FP", "IC", "CI", "AC", "NE"];
+const HOURS_PER_LEAVE_DAY = 8;
 
 function computeTotals(cells) {
-  const totals = { hours: 0, CO: 0, CM: 0, FP: 0, IC: 0, CI: 0, AC: 0, NE: 0 };
+  const totals = { workedHours: 0, leaveHours: 0, CO: 0, CM: 0, FP: 0, IC: 0, CI: 0, AC: 0, NE: 0 };
   for (const cell of cells) {
     if (cell.leave_code && LEAVE_CODES.includes(cell.leave_code)) {
       totals[cell.leave_code] += 1;
+      totals.leaveHours += HOURS_PER_LEAVE_DAY;
     } else if (cell.hours != null) {
-      totals.hours += cell.hours;
+      totals.workedHours += cell.hours;
     }
   }
+  totals.totalHours = totals.workedHours + totals.leaveHours;
   return totals;
+}
+
+function computeMonthlyNorm(year, month, numDays, holidays) {
+  let workDays = 0;
+  for (let day = 1; day <= numDays; day++) {
+    const dow = new Date(year, month - 1, day).getDay();
+    if (dow === 0 || dow === 6) continue;
+    if (holidays.includes(day)) continue;
+    workDays++;
+  }
+  return workDays * HOURS_PER_LEAVE_DAY;
 }
 
 export default function Pontaj() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const departmentId = searchParams.get("department_id");
   const year = Number(searchParams.get("year"));
   const month = Number(searchParams.get("month"));
@@ -77,6 +91,25 @@ export default function Pontaj() {
     dateLocale(i18n.language), { month: "long", year: "numeric" }
   );
 
+  const monthlyNorm = sheet ? computeMonthlyNorm(year, month, sheet.num_days, sheet.holidays) : 0;
+
+  const changeMonth = (newYear, newMonth) => {
+    setSearchParams({ department_id: departmentId, year: String(newYear), month: String(newMonth) });
+  };
+
+  const handlePrevMonth = () => {
+    changeMonth(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1);
+  };
+
+  const handleNextMonth = () => {
+    changeMonth(month === 12 ? year + 1 : year, month === 12 ? 1 : month + 1);
+  };
+
+  const handleMonthInput = (e) => {
+    const [y, m] = e.target.value.split("-").map(Number);
+    if (y && m) changeMonth(y, m);
+  };
+
   const handleCellClick = (cell) => {
     if (!canEditCells) return;
     setEditingCell({ entryId: cell.entry_id, value: cell.leave_code || (cell.hours ?? "") });
@@ -92,6 +125,16 @@ export default function Pontaj() {
     try {
       await patchPontajEntry(editingCell.entryId, payload);
       await fetchSheet();
+    } catch (e) {
+      setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
+    }
+  };
+
+  const handleFillRow = async (userId, value) => {
+    if (!value) return;
+    try {
+      const data = await fillPontajRow(sheet.id, userId, value);
+      setSheet(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
     }
@@ -140,7 +183,18 @@ export default function Pontaj() {
       <div className={styles.header}>
         <div>
           <button className={styles.btnBack} onClick={() => navigate("/reports")}>← {t("pontaj.backToReports")}</button>
-          <h1 className={styles.title}>{sheet?.department_name || ""} — {monthTitle}</h1>
+          <div className={styles.monthNav}>
+            <button className={styles.btnMonthNav} onClick={handlePrevMonth} aria-label={t("pontaj.prevMonth")} title={t("pontaj.prevMonth")}>‹</button>
+            <h1 className={styles.title}>{sheet?.department_name || ""} — {monthTitle}</h1>
+            <button className={styles.btnMonthNav} onClick={handleNextMonth} aria-label={t("pontaj.nextMonth")} title={t("pontaj.nextMonth")}>›</button>
+            <input
+              type="month"
+              className={styles.monthInput}
+              value={`${year}-${String(month).padStart(2, "0")}`}
+              onChange={handleMonthInput}
+              aria-label={t("pontaj.jumpToMonth")}
+            />
+          </div>
           {sheet && (
             <div className={styles.subtitleRow}>
               <span className={`${styles.badge} ${styles[STATUS_BADGE[sheet.status]]}`}>
@@ -183,6 +237,7 @@ export default function Pontaj() {
             <thead>
               <tr>
                 <th className={styles.stickyCol}>{t("pontaj.employee")}</th>
+                {canEditCells && <th>{t("pontaj.fillRow")}</th>}
                 {Array.from({ length: sheet.num_days }, (_, i) => i + 1).map((day) => {
                   const isWeekend = [0, 6].includes(new Date(year, month - 1, day).getDay());
                   const isHoliday = sheet.holidays.includes(day);
@@ -196,18 +251,41 @@ export default function Pontaj() {
                     </th>
                   );
                 })}
+                <th className={styles.totalsCol}>{t("pontaj.norm")}</th>
                 <th className={styles.totalsCol}>{t("pontaj.totalHours")}</th>
                 {LEAVE_CODES.map((code) => (
                   <th key={code} className={styles.totalsCol}>{code}</th>
                 ))}
+                <th className={styles.totalsCol}>{t("pontaj.unworkedDays")}</th>
+                <th className={styles.totalsCol}>{t("pontaj.verification")}</th>
               </tr>
             </thead>
             <tbody>
               {sheet.rows.map((row) => {
                 const totals = computeTotals(row.cells);
+                const diff = Math.round((monthlyNorm - totals.totalHours) * 10) / 10;
                 return (
                   <tr key={row.user_id}>
                     <td className={styles.stickyCol}>{row.full_name}</td>
+                    {canEditCells && (
+                      <td className={styles.fillCol}>
+                        <select
+                          className={styles.fillSelect}
+                          value=""
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            e.target.value = "";
+                            handleFillRow(row.user_id, v);
+                          }}
+                        >
+                          <option value="">{t("pontaj.fillRowPlaceholder")}</option>
+                          <option value="8">8</option>
+                          {LEAVE_CODES.map((code) => (
+                            <option key={code} value={code}>{code}</option>
+                          ))}
+                        </select>
+                      </td>
+                    )}
                     {row.cells.map((cell) => {
                       const isWeekend = [0, 6].includes(new Date(year, month - 1, cell.day).getDay());
                       const isHoliday = sheet.holidays.includes(cell.day);
@@ -216,8 +294,9 @@ export default function Pontaj() {
                       return (
                         <td
                           key={cell.day}
-                          className={`${isWeekend ? styles.weekendCol : isHoliday ? styles.holidayCol : ""} ${canEditCells && !isWeekend ? styles.editableCell : ""} ${cell.is_edited ? styles.editedCell : ""}`}
+                          className={`${isWeekend ? styles.weekendCol : isHoliday ? styles.holidayCol : ""} ${canEditCells && !isWeekend ? styles.editableCell : ""} ${cell.is_edited ? styles.editedCell : ""} ${cell.leave_from_request ? styles.requestLeaveCell : ""}`}
                           onClick={() => !isWeekend && handleCellClick(cell)}
+                          title={cell.leave_from_request ? t("pontaj.fromRequestTitle") : undefined}
                         >
                           {isEditing ? (
                             <input
@@ -234,19 +313,39 @@ export default function Pontaj() {
                         </td>
                       );
                     })}
-                    <td className={`${styles.totalsCol} ${totals.hours > 0 ? styles.totalsFilled : ""}`}>
-                      {totals.hours > 0 ? Math.round(totals.hours * 10) / 10 : 0}
+                    <td className={styles.totalsCol}>{monthlyNorm}</td>
+                    <td className={`${styles.totalsCol} ${totals.totalHours > 0 ? styles.totalsFilled : ""}`}>
+                      {totals.totalHours > 0 ? Math.round(totals.totalHours * 10) / 10 : 0}
                     </td>
                     {LEAVE_CODES.map((code) => (
                       <td key={code} className={`${styles.totalsCol} ${totals[code] > 0 ? styles.totalsFilled : ""}`}>
                         {totals[code]}
                       </td>
                     ))}
+                    <td className={`${styles.totalsCol} ${totals.leaveHours > 0 ? styles.totalsFilled : ""}`}>
+                      {totals.leaveHours}
+                    </td>
+                    <td className={`${styles.totalsCol} ${diff === 0 ? styles.verifyMatch : styles.verifyMismatch}`}>
+                      {diff}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {sheet && (
+        <div className={styles.legend}>
+          <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchHoliday}`} />{t("pontaj.legendHoliday")}</span>
+          <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchRequest}`} />{t("pontaj.legendFromRequest")}</span>
+          <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchManual}`} />{t("pontaj.legendManual")}</span>
+          {LEAVE_CODES.map((code) => (
+            <span key={code} className={styles.legendItem}>
+              <strong>{code}</strong> — {t(`pontaj.legendCode${code}`)}
+            </span>
+          ))}
         </div>
       )}
 

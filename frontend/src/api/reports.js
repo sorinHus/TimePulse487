@@ -11,3 +11,6 @@ export const generatePontajSheet = (sheetId) =>
 
 export const reviewPontajSheet = (sheetId, action, rejectionNote = '') =>
   api.post(`/reports/pontaj/sheet/${sheetId}/review/`, { action, rejection_note: rejectionNote }).then(r => r.data)
+
+export const fillPontajRow = (sheetId, userId, value) =>
+  api.post(`/reports/pontaj/sheet/${sheetId}/fill-row/`, { user_id: userId, value }).then(r => r.data)

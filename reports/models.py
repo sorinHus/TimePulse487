@@ -47,6 +47,7 @@ class PontajEntry(models.Model):
     hours = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
     leave_code = models.CharField(max_length=4, blank=True, default='')
     is_edited = models.BooleanField(default=False)
+    leave_from_request = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

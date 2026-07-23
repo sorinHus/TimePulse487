@@ -39,8 +39,39 @@
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 0.4rem;
+  margin: 0;
   letter-spacing: -0.4px;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.btnMonthNav {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btnMonthNav:hover { color: var(--text-primary); border-color: var(--accent-light); }
+
+.monthInput {
+  margin-left: 0.3rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-main);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-family: inherit;
 }
 
 .subtitleRow {
@@ -155,6 +186,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: auto;
+  width: fit-content;
   max-width: 100%;
 }
 
@@ -211,12 +243,44 @@ thead .stickyCol {
   color: var(--text-dim);
 }
 
-.totalsFilled {
+.grid td.totalsFilled {
   color: var(--text-primary);
 }
 
 thead .totalsCol {
   color: var(--text-dim);
+}
+
+.grid td.verifyMatch {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.grid td.verifyMismatch {
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+.grid td.requestLeaveCell {
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+.fillCol {
+  padding: 0.25rem !important;
+}
+
+.fillSelect {
+  width: 100%;
+  min-width: 92px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-main);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .editableCell {
@@ -226,10 +290,42 @@ thead .totalsCol {
   background: rgba(37, 99, 235, 0.1);
 }
 
-.editedCell {
+.grid td.editedCell {
   color: var(--accent-light);
   font-weight: 600;
 }
+
+/* ── Legend ── */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border-row);
+}
+
+.swatchHoliday { background: rgba(245, 158, 11, 0.35); }
+.swatchRequest { background: rgba(167, 139, 250, 0.5); }
+.swatchManual  { background: rgba(37, 99, 235, 0.35); }
 
 .cellInput {
   width: 44px;

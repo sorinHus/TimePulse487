@@ -12,6 +12,7 @@ from .views import (
 from .pontaj_views import (
     PontajSheetView,
     PontajEntryDetailView,
+    PontajRowFillView,
     PontajSheetGenerateView,
     PontajSheetReviewView,
 )
@@ -23,6 +24,7 @@ urlpatterns = [
     path('reports/pontaj/export/', PontajExportView.as_view(), name='pontaj_export'),
     path('reports/pontaj/sheet/', PontajSheetView.as_view(), name='pontaj_sheet'),
     path('reports/pontaj/entries/<int:pk>/', PontajEntryDetailView.as_view(), name='pontaj_entry_detail'),
+    path('reports/pontaj/sheet/<int:pk>/fill-row/', PontajRowFillView.as_view(), name='pontaj_sheet_fill_row'),
     path('reports/pontaj/sheet/<int:pk>/generate/', PontajSheetGenerateView.as_view(), name='pontaj_sheet_generate'),
     path('reports/pontaj/sheet/<int:pk>/review/', PontajSheetReviewView.as_view(), name='pontaj_sheet_review'),
     path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
