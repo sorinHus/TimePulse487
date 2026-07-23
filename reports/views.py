@@ -48,7 +48,7 @@ class TeamCalendarView(APIView):
         result = []
         for u in users:
             sessions = AttendanceSession.objects.filter(
-                user=u, date__year=year, date__month=month, status='complete',
+                user=u, date__year=year, date__month=month, status__in=['complete', 'open'],
             )
             attended_days = set(s.date.day for s in sessions)
 
