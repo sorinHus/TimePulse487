@@ -485,7 +485,7 @@ export default function Pontaj() {
                       {totals.leaveHours}
                     </td>
                     <td className={`${styles.totalsCol} ${diff === 0 ? styles.verifyMatch : styles.verifyMismatch}`}>
-                      {diff > 0 ? `+${diff}` : diff}
+                      {diff === 0 ? t("pontaj.verificationOk") : diff > 0 ? `+${diff}` : diff}
                     </td>
                   </tr>
                 );

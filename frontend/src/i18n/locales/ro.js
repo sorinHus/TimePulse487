@@ -365,6 +365,7 @@ export default {
     norm: 'Norma',
     unworkedDays: 'Zile nelucrate',
     verification: 'Verificare',
+    verificationOk: 'OK',
     fillRow: 'Populare',
     fillRowPlaceholder: 'Populeaza randul...',
     fromRequestTitle: 'Din cerere de concediu aprobata',

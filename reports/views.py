@@ -633,6 +633,7 @@ class PontajExportView(APIView):
         user_id = request.query_params.get('user_id')
         user = request.user
 
+        scope_department = None
         if user_id:
             if user.effective_role not in ['admin', 'manager', 'director']:
                 return Response({'detail': 'Permission denied.'}, status=403)
@@ -640,10 +641,12 @@ class PontajExportView(APIView):
         elif department_id:
             if user.effective_role not in ['admin', 'manager', 'director']:
                 return Response({'detail': 'Permission denied.'}, status=403)
+            scope_department = Department.objects.filter(id=department_id).first()
             users = User.objects.filter(
                 department_id=department_id, is_active=True
             ).select_related('department__schedule_type').order_by('last_name', 'first_name')
         elif user.effective_role == 'manager':
+            scope_department = user.department
             users = User.objects.filter(
                 department=user.department, is_active=True
             ).select_related('department__schedule_type').order_by('last_name', 'first_name')
@@ -653,8 +656,27 @@ class PontajExportView(APIView):
             users = User.objects.filter(id=user.id).select_related('department__schedule_type')
 
         users_list = list(users)
+        if user_id and users_list:
+            scope_department = users_list[0].department
+
         num_days = calendar.monthrange(year, month)[1]
-        month_name = calendar.month_name[month]
+        RO_MONTHS = [
+            '', 'ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+            'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie',
+        ]
+        month_name_ro = RO_MONTHS[month]
+
+        if scope_department:
+            scope_label = scope_department.name
+            manager = User.objects.filter(
+                department=scope_department, role='manager', is_active=True
+            ).order_by('last_name', 'first_name').first()
+        else:
+            scope_label = users_list[0].get_full_name() if user_id and users_list else 'Toate departamentele'
+            manager = None
+        if not manager:
+            manager = User.objects.filter(role='director', is_active=True).order_by('last_name', 'first_name').first()
+        manager_name = manager.get_full_name() if manager else ''
 
         # Sursa reala a datelor: foile de pontaj salvate (departament sau
         # personale), nu o recalculare live din sesiuni/concedii.
@@ -684,7 +706,7 @@ class PontajExportView(APIView):
 
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = f'Attendance {month_name} {year}'
+        ws.title = f'Pontaj {month_name_ro} {year}'[:31]
 
         thin = Side(style='thin', color='000000')
         border_all = Border(left=thin, right=thin, top=thin, bottom=thin)
@@ -695,8 +717,6 @@ class PontajExportView(APIView):
         leave_co_fill = PatternFill('solid', start_color='FFF2CC', end_color='FFF2CC')
         leave_cm_fill = PatternFill('solid', start_color='FCE4D6', end_color='FCE4D6')
         leave_other_fill = PatternFill('solid', start_color='EDD9FC', end_color='EDD9FC')
-        match_fill    = PatternFill('solid', start_color='C6E0B4', end_color='C6E0B4')
-        mismatch_fill = PatternFill('solid', start_color='F8CBAD', end_color='F8CBAD')
 
         center = Alignment(horizontal='center', vertical='center', wrap_text=True)
         left   = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -710,13 +730,12 @@ class PontajExportView(APIView):
             ('Total\nOre', 'T_ORE'),
             *((code, f'T_{code}') for code in LEAVE_CODES),
             ('Zile\nnelucrate', 'T_UNWORKED'),
-            ('Verificare', 'T_CHECK'),
         ]
 
         # ── Header companie ──────────────────────────────────────────────────
         last_col = get_column_letter(2 + num_days + len(total_cols))
         ws.merge_cells(f'A1:{last_col}1')
-        ws['A1'] = f'Nexoria Group — Monthly Attendance Sheet — {month_name} {year}'
+        ws['A1'] = f'Nexoria Group — Fișă lunară de pontaj — {scope_label} — {month_name_ro} {year}'
         ws['A1'].alignment = center
         ws['A1'].fill = PatternFill('solid', start_color='1E3A5F', end_color='1E3A5F')
         ws['A1'].font = Font(bold=True, size=11, name='Arial', color='FFFFFF')
@@ -825,19 +844,15 @@ class PontajExportView(APIView):
 
             leave_hours = sum(leave_counts.values()) * 8
             total_hours = round(worked_hours + leave_hours, 1)
-            diff = round(total_hours - norm_hours, 1)
-            row_values = [norm_hours, total_hours, *(leave_counts[c] for c in LEAVE_CODES), leave_hours, diff]
+            row_values = [norm_hours, total_hours, *(leave_counts[c] for c in LEAVE_CODES), leave_hours]
 
-            for i, ((label, key), val) in enumerate(zip(total_cols, row_values)):
+            for i, val in enumerate(row_values):
                 col = total_start_col + i
                 tc = ws.cell(row=row, column=col, value=val)
-                tc.font = bold if (key == 'T_CHECK' or val) else normal
+                tc.font = bold if val else normal
                 tc.alignment = center
                 tc.border = border_all
-                if key == 'T_CHECK':
-                    tc.fill = match_fill if diff == 0 else mismatch_fill
-                else:
-                    tc.fill = header_fill
+                tc.fill = header_fill
 
         # ── Lățimi coloane ────────────────────────────────────────────────────
         ws.column_dimensions['A'].width = 5
@@ -853,6 +868,18 @@ class PontajExportView(APIView):
             ws.row_dimensions[data_start_row + idx].height = 16
 
         ws.freeze_panes = 'C4'
+
+        # ── Manager ───────────────────────────────────────────────────────────
+        if manager_name:
+            manager_row = data_start_row + len(users_list) + 1
+            ws.cell(row=manager_row, column=total_start_col, value='Manager:').font = bold
+            ws.merge_cells(
+                start_row=manager_row, start_column=total_start_col + 1,
+                end_row=manager_row, end_column=total_start_col + len(total_cols) - 1,
+            )
+            name_cell = ws.cell(row=manager_row, column=total_start_col + 1, value=manager_name)
+            name_cell.font = normal
+            name_cell.alignment = left
 
         # ── Legendă ───────────────────────────────────────────────────────────
         legend_row = data_start_row + len(users_list) + 2
@@ -879,11 +906,8 @@ class PontajExportView(APIView):
 
         # ── Response ──────────────────────────────────────────────────────────
         dept_label = ''
-        if department_id:
-            try:
-                dept_label = f'_{Department.objects.get(id=department_id).name.replace(" ", "_")}'
-            except Department.DoesNotExist:
-                pass
+        if scope_department:
+            dept_label = f'_{scope_department.name.replace(" ", "_")}'
         elif user_id and users_list:
             dept_label = f'_{users_list[0].username}'
 

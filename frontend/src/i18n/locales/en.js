@@ -364,6 +364,7 @@ export default {
     norm: 'Norm',
     unworkedDays: 'Unworked Days',
     verification: 'Verification',
+    verificationOk: 'OK',
     fillRow: 'Fill row',
     fillRowPlaceholder: 'Fill row with…',
     fromRequestTitle: 'From an approved leave request',

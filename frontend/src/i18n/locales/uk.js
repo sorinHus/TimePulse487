@@ -364,6 +364,7 @@ export default {
     norm: 'Норма',
     unworkedDays: 'Невідпрацьовані дні',
     verification: 'Перевірка',
+    verificationOk: 'OK',
     fillRow: 'Заповнити рядок',
     fillRowPlaceholder: 'Заповнити рядок…',
     fromRequestTitle: 'Із затвердженої заяви на відпустку',
