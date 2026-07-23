@@ -11,9 +11,9 @@ from .views import (
 )
 from .pontaj_views import (
     PontajSheetView,
-    PontajEntryDetailView,
-    PontajRowFillView,
-    PontajSheetGenerateView,
+    PontajSheetSaveView,
+    PontajSheetRegenerateView,
+    PontajSheetSubmitView,
     PontajSheetReviewView,
 )
 
@@ -23,9 +23,9 @@ urlpatterns = [
     path('reports/leaves/export/', LeaveExportView.as_view(), name='leave_export'),
     path('reports/pontaj/export/', PontajExportView.as_view(), name='pontaj_export'),
     path('reports/pontaj/sheet/', PontajSheetView.as_view(), name='pontaj_sheet'),
-    path('reports/pontaj/entries/<int:pk>/', PontajEntryDetailView.as_view(), name='pontaj_entry_detail'),
-    path('reports/pontaj/sheet/<int:pk>/fill-row/', PontajRowFillView.as_view(), name='pontaj_sheet_fill_row'),
-    path('reports/pontaj/sheet/<int:pk>/generate/', PontajSheetGenerateView.as_view(), name='pontaj_sheet_generate'),
+    path('reports/pontaj/sheet/<int:pk>/save/', PontajSheetSaveView.as_view(), name='pontaj_sheet_save'),
+    path('reports/pontaj/sheet/<int:pk>/regenerate/', PontajSheetRegenerateView.as_view(), name='pontaj_sheet_regenerate'),
+    path('reports/pontaj/sheet/<int:pk>/submit/', PontajSheetSubmitView.as_view(), name='pontaj_sheet_submit'),
     path('reports/pontaj/sheet/<int:pk>/review/', PontajSheetReviewView.as_view(), name='pontaj_sheet_review'),
     path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/manager/', ManagerDashboardView.as_view(), name='manager_dashboard'),

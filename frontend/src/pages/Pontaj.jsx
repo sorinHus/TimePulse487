@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getPontajSheet, patchPontajEntry, generatePontajSheet, reviewPontajSheet, fillPontajRow } from "../api/reports";
+import {
+  getPontajSheet,
+  savePontajSheet,
+  regeneratePontajSheet,
+  submitPontajSheet,
+  reviewPontajSheet,
+} from "../api/reports";
+import { exportPontaj } from "../api/dashboard";
 import { dateLocale } from "../i18n/config";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Pontaj.module.css";
@@ -36,7 +43,7 @@ function computeMonthlyNorm(year, month, numDays, holidays) {
   for (let day = 1; day <= numDays; day++) {
     const dow = new Date(year, month - 1, day).getDay();
     if (dow === 0 || dow === 6) continue;
-    if (holidays.includes(day)) continue;
+    if (holidays[day]) continue;
     workDays++;
   }
   return workDays * HOURS_PER_LEAVE_DAY;
@@ -51,19 +58,32 @@ export default function Pontaj() {
   const year = Number(searchParams.get("year"));
   const month = Number(searchParams.get("month"));
 
-  const [sheet, setSheet] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [dirtyIds, setDirtyIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingCell, setEditingCell] = useState(null);
   const [rejectModal, setRejectModal] = useState({ open: false, note: "" });
   const [actionBusy, setActionBusy] = useState(false);
+  const [savingBusy, setSavingBusy] = useState(false);
+  const [regenBusy, setRegenBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  const applyServerSheet = (data) => {
+    const { rows: newRows, ...m } = data;
+    setMeta(m);
+    setRows(newRows);
+    setDirtyIds(new Set());
+  };
 
   const fetchSheet = useCallback(async () => {
     if (!departmentId || !year || !month) return;
     setError("");
     try {
       const data = await getPontajSheet(departmentId, year, month);
-      setSheet(data);
+      applyServerSheet(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.loadFailed"));
     } finally {
@@ -76,25 +96,39 @@ export default function Pontaj() {
     fetchSheet();
   }, [fetchSheet]);
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (dirtyIds.size > 0) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirtyIds]);
+
   if (!departmentId || !year || !month) {
     return <div className={styles.page}><p className={styles.error}>{t("pontaj.noDepartment")}</p></div>;
   }
 
-  const isEditable = sheet && EDITABLE_STATUSES.includes(sheet.status);
-  const isManagerOfDept = user?.effective_role === "manager" && String(user.department) === String(sheet?.department);
+  const isEditable = meta && EDITABLE_STATUSES.includes(meta.status);
+  const isManagerOfDept = user?.effective_role === "manager" && String(user.department) === String(meta?.department);
   const isAdmin = user?.effective_role === "admin";
   const isReviewer = user?.effective_role === "admin" || user?.effective_role === "director";
   const canEditCells = isEditable && (isAdmin || isManagerOfDept);
-  const canGenerate = isEditable && (isAdmin || isManagerOfDept);
-  const canReview = isReviewer && sheet?.status === "generated";
+  const canReview = isReviewer && meta?.status === "generated";
 
   const monthTitle = new Date(year, month - 1, 1).toLocaleDateString(
     dateLocale(i18n.language), { month: "long", year: "numeric" }
   );
 
-  const monthlyNorm = sheet ? computeMonthlyNorm(year, month, sheet.num_days, sheet.holidays) : 0;
+  const monthlyNorm = meta ? computeMonthlyNorm(year, month, meta.num_days, meta.holidays) : 0;
+
+  const confirmDiscard = () =>
+    dirtyIds.size === 0 || window.confirm(t("pontaj.discardConfirm"));
 
   const changeMonth = (newYear, newMonth) => {
+    if (!confirmDiscard()) return;
     setSearchParams({ department_id: departmentId, year: String(newYear), month: String(newMonth) });
   };
 
@@ -111,40 +145,115 @@ export default function Pontaj() {
     if (y && m) changeMonth(y, m);
   };
 
+  const handleBack = () => {
+    if (confirmDiscard()) navigate("/reports");
+  };
+
   const handleCellClick = (cell) => {
     if (!canEditCells) return;
     const current = cell.leave_code || (CELL_HOUR_OPTIONS.includes(cell.hours) ? String(cell.hours) : "");
     setEditingCell({ entryId: cell.entry_id, value: current });
   };
 
-  const saveCellValue = async (entryId, value) => {
+  const handleCellSelect = (entryId, value) => {
     setEditingCell(null);
-    const payload = value === "" ? { leave_code: "" }
-      : LEAVE_CODES.includes(value) ? { leave_code: value }
-      : { hours: Number(value) };
-    try {
-      await patchPontajEntry(entryId, payload);
-      await fetchSheet();
-    } catch (e) {
-      setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
-    }
+    const patch = value === "" ? { hours: null, leave_code: "" }
+      : LEAVE_CODES.includes(value) ? { hours: null, leave_code: value }
+      : { hours: Number(value), leave_code: "" };
+    setRows((prev) => prev.map((row) => ({
+      ...row,
+      cells: row.cells.map((c) => c.entry_id === entryId
+        ? { ...c, ...patch, is_edited: true, leave_from_request: false }
+        : c),
+    })));
+    setDirtyIds((prev) => new Set(prev).add(entryId));
   };
 
-  const handleFillRow = async (userId, value) => {
+  const handleFillRow = (userId, value) => {
     if (!value) return;
+    const touched = [];
+    setRows((prev) => prev.map((row) => {
+      if (row.user_id !== userId) return row;
+      return {
+        ...row,
+        cells: row.cells.map((c) => {
+          const isWeekend = [0, 6].includes(new Date(year, month - 1, c.day).getDay());
+          const isHoliday = Boolean(meta.holidays[c.day]);
+          if (isWeekend || isHoliday || c.leave_code) return c;
+          touched.push(c.entry_id);
+          return value === "8"
+            ? { ...c, hours: 8, leave_code: "", is_edited: true, leave_from_request: false }
+            : { ...c, hours: null, leave_code: value, is_edited: true, leave_from_request: false };
+        }),
+      };
+    }));
+    setDirtyIds((prev) => {
+      const next = new Set(prev);
+      touched.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const collectDirtyEntries = () => {
+    const entries = [];
+    for (const row of rows) {
+      for (const cell of row.cells) {
+        if (dirtyIds.has(cell.entry_id)) {
+          entries.push({ id: cell.entry_id, hours: cell.hours, leave_code: cell.leave_code });
+        }
+      }
+    }
+    return entries;
+  };
+
+  const handleSave = async () => {
+    if (dirtyIds.size === 0) return;
+    setSavingBusy(true);
+    setError("");
     try {
-      const data = await fillPontajRow(sheet.id, userId, value);
-      setSheet(data);
+      const data = await savePontajSheet(meta.id, collectDirtyEntries());
+      applyServerSheet(data);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2000);
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
+    } finally {
+      setSavingBusy(false);
     }
   };
 
-  const handleGenerate = async () => {
-    setActionBusy(true);
+  const handleRegenerate = async () => {
+    setRegenBusy(true);
+    setError("");
     try {
-      const data = await generatePontajSheet(sheet.id);
-      setSheet(data);
+      const { entries } = await regeneratePontajSheet(meta.id);
+      const changed = entries.filter((e) => !dirtyIds.has(e.id));
+      if (changed.length === 0) return;
+      const byId = new Map(changed.map((e) => [e.id, e]));
+      setRows((prev) => prev.map((row) => ({
+        ...row,
+        cells: row.cells.map((c) => byId.has(c.entry_id)
+          ? { ...c, hours: byId.get(c.entry_id).hours, leave_code: byId.get(c.entry_id).leave_code, leave_from_request: byId.get(c.entry_id).leave_from_request }
+          : c),
+      })));
+      setDirtyIds((prev) => {
+        const next = new Set(prev);
+        changed.forEach((e) => next.add(e.id));
+        return next;
+      });
+    } catch (e) {
+      setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
+    } finally {
+      setRegenBusy(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setActionBusy(true);
+    setError("");
+    try {
+      const data = await submitPontajSheet(meta.id, collectDirtyEntries());
+      applyServerSheet(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
     } finally {
@@ -152,11 +261,28 @@ export default function Pontaj() {
     }
   };
 
+  const handleExportExcel = async () => {
+    setExportBusy(true);
+    try {
+      const blob = await exportPontaj(year, month, departmentId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pontaj_${year}-${String(month).padStart(2, "0")}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setError(t("pontaj.saveFailed"));
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
   const handleApprove = async () => {
     setActionBusy(true);
     try {
-      const data = await reviewPontajSheet(sheet.id, "approve");
-      setSheet(data);
+      const data = await reviewPontajSheet(meta.id, "approve");
+      applyServerSheet(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
     } finally {
@@ -168,8 +294,8 @@ export default function Pontaj() {
     if (!rejectModal.note.trim()) return;
     setActionBusy(true);
     try {
-      const data = await reviewPontajSheet(sheet.id, "reject", rejectModal.note.trim());
-      setSheet(data);
+      const data = await reviewPontajSheet(meta.id, "reject", rejectModal.note.trim());
+      applyServerSheet(data);
       setRejectModal({ open: false, note: "" });
     } catch (e) {
       setError(e?.response?.data?.detail || t("pontaj.saveFailed"));
@@ -182,10 +308,10 @@ export default function Pontaj() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <button className={styles.btnBack} onClick={() => navigate("/reports")}>← {t("pontaj.backToReports")}</button>
+          <button className={styles.btnBack} onClick={handleBack}>← {t("pontaj.backToReports")}</button>
           <div className={styles.monthNav}>
             <button className={styles.btnMonthNav} onClick={handlePrevMonth} aria-label={t("pontaj.prevMonth")} title={t("pontaj.prevMonth")}>‹</button>
-            <h1 className={styles.title}>{sheet?.department_name || ""} — {monthTitle}</h1>
+            <h1 className={styles.title}>{meta?.department_name || ""} — {monthTitle}</h1>
             <button className={styles.btnMonthNav} onClick={handleNextMonth} aria-label={t("pontaj.nextMonth")} title={t("pontaj.nextMonth")}>›</button>
             <input
               type="month"
@@ -195,29 +321,46 @@ export default function Pontaj() {
               aria-label={t("pontaj.jumpToMonth")}
             />
           </div>
-          {sheet && (
+          {meta && (
             <div className={styles.subtitleRow}>
-              <span className={`${styles.badge} ${styles[STATUS_BADGE[sheet.status]]}`}>
-                {t(`pontaj.status${sheet.status.charAt(0).toUpperCase()}${sheet.status.slice(1)}`)}
+              <span className={`${styles.badge} ${styles[STATUS_BADGE[meta.status]]}`}>
+                {t(`pontaj.status${meta.status.charAt(0).toUpperCase()}${meta.status.slice(1)}`)}
               </span>
-              {sheet.generated_by_name && (
-                <span className={styles.auditLine}>{t("pontaj.generatedBy", { name: sheet.generated_by_name })}</span>
+              {meta.generated_by_name && (
+                <span className={styles.auditLine}>{t("pontaj.generatedBy", { name: meta.generated_by_name })}</span>
               )}
-              {sheet.reviewed_by_name && (
-                <span className={styles.auditLine}>{t("pontaj.reviewedBy", { name: sheet.reviewed_by_name })}</span>
+              {meta.reviewed_by_name && (
+                <span className={styles.auditLine}>{t("pontaj.reviewedBy", { name: meta.reviewed_by_name })}</span>
               )}
+              {dirtyIds.size > 0 && (
+                <span className={styles.unsavedBadge}>{t("pontaj.unsavedChanges", { count: dirtyIds.size })}</span>
+              )}
+              {savedFlash && <span className={styles.savedBadge}>{t("pontaj.saved")}</span>}
             </div>
           )}
-          {sheet?.status === "rejected" && sheet.rejection_note && (
-            <p className={styles.rejectionNote}>{t("pontaj.rejectionNote", { note: sheet.rejection_note })}</p>
+          {meta?.status === "rejected" && meta.rejection_note && (
+            <p className={styles.rejectionNote}>{t("pontaj.rejectionNote", { note: meta.rejection_note })}</p>
           )}
         </div>
         <div className={styles.actions}>
-          {canGenerate && (
-            <button className={styles.btnGenerate} onClick={handleGenerate} disabled={actionBusy}>
-              {sheet.status === "rejected" ? t("pontaj.resubmit") : t("pontaj.generate")}
+          {canEditCells && (
+            <button className={styles.btnCancel} onClick={handleRegenerate} disabled={regenBusy}>
+              {t("pontaj.regenerate")}
             </button>
           )}
+          {canEditCells && (
+            <button className={styles.btnGenerate} onClick={handleSave} disabled={savingBusy || dirtyIds.size === 0}>
+              {t("pontaj.save")}
+            </button>
+          )}
+          {canEditCells && (
+            <button className={styles.btnApprove} onClick={handleSubmit} disabled={actionBusy}>
+              {meta.status === "rejected" ? t("pontaj.resubmit") : t("pontaj.submit")}
+            </button>
+          )}
+          <button className={styles.btnCancel} onClick={handleExportExcel} disabled={exportBusy}>
+            {t("pontaj.exportExcel")}
+          </button>
           {canReview && (
             <>
               <button className={styles.btnApprove} onClick={handleApprove} disabled={actionBusy}>{t("pontaj.approve")}</button>
@@ -231,21 +374,21 @@ export default function Pontaj() {
 
       {loading ? (
         <p className={styles.muted}>{t("common.loading")}</p>
-      ) : sheet && (
+      ) : meta && (
         <div className={styles.gridWrap}>
           <table className={styles.grid}>
             <thead>
               <tr>
                 <th className={styles.stickyCol}>{t("pontaj.employee")}</th>
                 {canEditCells && <th>{t("pontaj.fillRow")}</th>}
-                {Array.from({ length: sheet.num_days }, (_, i) => i + 1).map((day) => {
+                {Array.from({ length: meta.num_days }, (_, i) => i + 1).map((day) => {
                   const isWeekend = [0, 6].includes(new Date(year, month - 1, day).getDay());
-                  const isHoliday = sheet.holidays.includes(day);
+                  const holidayName = meta.holidays[day];
                   return (
                     <th
                       key={day}
-                      className={isWeekend ? styles.weekendCol : isHoliday ? styles.holidayCol : ""}
-                      title={isHoliday ? t("pontaj.legalHoliday") : undefined}
+                      className={isWeekend ? styles.weekendCol : holidayName ? styles.holidayCol : ""}
+                      title={holidayName || undefined}
                     >
                       {day}
                     </th>
@@ -261,7 +404,7 @@ export default function Pontaj() {
               </tr>
             </thead>
             <tbody>
-              {sheet.rows.map((row) => {
+              {rows.map((row) => {
                 const totals = computeTotals(row.cells);
                 const diff = Math.round((totals.totalHours - monthlyNorm) * 10) / 10;
                 return (
@@ -288,22 +431,23 @@ export default function Pontaj() {
                     )}
                     {row.cells.map((cell) => {
                       const isWeekend = [0, 6].includes(new Date(year, month - 1, cell.day).getDay());
-                      const isHoliday = sheet.holidays.includes(cell.day);
+                      const holidayName = meta.holidays[cell.day];
                       const isEditing = editingCell?.entryId === cell.entry_id;
                       const display = cell.leave_code || (cell.hours ?? "");
+                      const title = holidayName || (cell.leave_from_request ? t("pontaj.fromRequestTitle") : undefined);
                       return (
                         <td
                           key={cell.day}
-                          className={`${isWeekend ? styles.weekendCol : isHoliday ? styles.holidayCol : ""} ${canEditCells && !isWeekend ? styles.editableCell : ""} ${cell.is_edited ? styles.editedCell : ""} ${cell.leave_from_request ? styles.requestLeaveCell : ""}`}
+                          className={`${isWeekend ? styles.weekendCol : holidayName ? styles.holidayCol : ""} ${canEditCells && !isWeekend ? styles.editableCell : ""} ${cell.is_edited ? styles.editedCell : ""} ${cell.leave_from_request ? styles.requestLeaveCell : ""}`}
                           onClick={() => !isWeekend && handleCellClick(cell)}
-                          title={cell.leave_from_request ? t("pontaj.fromRequestTitle") : undefined}
+                          title={title}
                         >
                           {isEditing ? (
                             <select
                               autoFocus
                               className={styles.cellSelect}
                               defaultValue={editingCell.value}
-                              onChange={(e) => saveCellValue(cell.entry_id, e.target.value)}
+                              onChange={(e) => handleCellSelect(cell.entry_id, e.target.value)}
                               onBlur={() => setEditingCell(null)}
                             >
                               <option value="">-</option>
@@ -343,16 +487,23 @@ export default function Pontaj() {
         </div>
       )}
 
-      {sheet && (
+      {meta && (
         <div className={styles.legend}>
-          <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchHoliday}`} />{t("pontaj.legendHoliday")}</span>
-          <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchRequest}`} />{t("pontaj.legendFromRequest")}</span>
-          <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchManual}`} />{t("pontaj.legendManual")}</span>
-          {LEAVE_CODES.map((code) => (
-            <span key={code} className={styles.legendItem}>
-              <strong>{code}</strong> — {t(`pontaj.legendCode${code}`)}
-            </span>
-          ))}
+          <div className={styles.legendGroup}>
+            <span className={styles.legendGroupTitle}>{t("pontaj.legendMarkersTitle")}</span>
+            <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchHoliday}`} />{t("pontaj.legendHoliday")}</span>
+            <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchRequest}`} />{t("pontaj.legendFromRequest")}</span>
+            <span className={styles.legendItem}><span className={`${styles.legendSwatch} ${styles.swatchManual}`} />{t("pontaj.legendManual")}</span>
+          </div>
+          <div className={styles.legendDivider} />
+          <div className={styles.legendGroup}>
+            <span className={styles.legendGroupTitle}>{t("pontaj.legendCodesTitle")}</span>
+            {LEAVE_CODES.map((code) => (
+              <span key={code} className={styles.legendItem}>
+                <strong>{code}</strong> — {t(`pontaj.legendCode${code}`)}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

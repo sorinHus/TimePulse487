@@ -1,4 +1,5 @@
-from datetime import date
+import calendar
+from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -9,8 +10,14 @@ from rest_framework.views import APIView
 from accounts.models import Department
 from attendance.models import Notification
 from .models import PontajEntry, PontajSheet
-from .pontaj import EDITABLE_STATUSES, LEAVE_CODES, get_or_create_sheet, sync_leave_requests
-from .serializers import PontajEntrySerializer, PontajSheetSerializer
+from .pontaj import (
+    EDITABLE_STATUSES,
+    build_day_maps,
+    compute_pontaj_cell,
+    get_or_create_sheet,
+    sync_leave_requests,
+)
+from .serializers import PontajSheetSerializer
 
 User = get_user_model()
 
@@ -23,11 +30,51 @@ def _can_view_department(user, department):
 
 
 def _can_edit_department(user, department):
-    """Write access (edit cells, generate): admin or the department's own manager.
-    Director deliberately excluded — director only reviews (approve/reject)."""
+    """Write access (edit cells, save, submit): admin or the department's own
+    manager. Director deliberately excluded — director only reviews (approve/reject)."""
     if user.effective_role == 'admin':
         return True
     return user.effective_role == 'manager' and user.department_id == department.id
+
+
+def _sheet_link(sheet):
+    return f'/pontaj?department_id={sheet.department_id}&year={sheet.year}&month={sheet.month}'
+
+
+def _apply_entries(sheet, entries_payload):
+    """Aplica local, peste PontajEntry-urile sheet-ului, o lista de
+    {id, hours, leave_code} trimisa de client (folosita de Salveaza si de
+    Trimite la DG, care poate salva modificarile nesalvate inainte de a
+    schimba starea)."""
+    if not entries_payload:
+        return
+
+    ids = [item.get('id') for item in entries_payload if item.get('id')]
+    entries_by_id = {e.id: e for e in PontajEntry.objects.filter(sheet=sheet, id__in=ids)}
+
+    now = timezone.now()
+    to_update = []
+    for item in entries_payload:
+        entry = entries_by_id.get(item.get('id'))
+        if not entry:
+            continue
+        leave_code = (item.get('leave_code') or '').strip().upper()
+        if leave_code:
+            entry.leave_code = leave_code
+            entry.hours = None
+        else:
+            entry.leave_code = ''
+            hours = item.get('hours')
+            entry.hours = hours if hours not in (None, '') else None
+        entry.is_edited = True
+        entry.leave_from_request = False
+        entry.updated_at = now
+        to_update.append(entry)
+
+    if to_update:
+        PontajEntry.objects.bulk_update(
+            to_update, ['hours', 'leave_code', 'is_edited', 'leave_from_request', 'updated_at']
+        )
 
 
 class PontajSheetView(APIView):
@@ -53,39 +100,9 @@ class PontajSheetView(APIView):
         return Response(PontajSheetSerializer(sheet).data)
 
 
-class PontajEntryDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def patch(self, request, pk):
-        try:
-            entry = PontajEntry.objects.select_related('sheet__department').get(pk=pk)
-        except PontajEntry.DoesNotExist:
-            return Response({'detail': 'Not found.'}, status=404)
-
-        if not _can_edit_department(request.user, entry.sheet.department):
-            return Response({'detail': 'Permission denied.'}, status=403)
-        if entry.sheet.status not in EDITABLE_STATUSES:
-            return Response({'detail': 'This pontaj sheet can no longer be edited.'}, status=400)
-
-        if 'hours' in request.data:
-            entry.hours = request.data['hours']
-            entry.leave_code = ''
-        elif 'leave_code' in request.data:
-            entry.leave_code = (request.data['leave_code'] or '').strip().upper()
-            entry.hours = None
-        else:
-            return Response({'detail': 'Provide either hours or leave_code.'}, status=400)
-
-        entry.is_edited = True
-        entry.leave_from_request = False
-        entry.save(update_fields=['hours', 'leave_code', 'is_edited', 'leave_from_request', 'updated_at'])
-        return Response(PontajEntrySerializer(entry).data)
-
-
-class PontajRowFillView(APIView):
-    """Populează rapid toate zilele lucrătoare ale unui angajat cu o singură
-    valoare (8 ore sau un cod de concediu). Celulele care au deja un cod de
-    concediu sunt ignorate — nu se suprascriu concediile existente."""
+class PontajSheetSaveView(APIView):
+    """Salveaza pe server modificarile facute local in grila (fara sa
+    schimbe starea foii si fara sa notifice pe nimeni)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
@@ -99,40 +116,57 @@ class PontajRowFillView(APIView):
         if sheet.status not in EDITABLE_STATUSES:
             return Response({'detail': 'This pontaj sheet can no longer be edited.'}, status=400)
 
-        user_id = request.data.get('user_id')
-        value = (request.data.get('value') or '').strip().upper()
-        if not user_id or not value:
-            return Response({'detail': 'user_id and value are required.'}, status=400)
-        if value != '8' and value not in LEAVE_CODES:
-            return Response({'detail': 'Invalid value.'}, status=400)
-
-        entries = PontajEntry.objects.filter(
-            sheet=sheet, user_id=user_id
-        ).exclude(leave_code__in=LEAVE_CODES)
-
-        now = timezone.now()
-        to_update = []
-        for entry in entries:
-            if date(sheet.year, sheet.month, entry.day).weekday() >= 5:
-                continue
-            if value == '8':
-                entry.hours = 8
-                entry.leave_code = ''
-            else:
-                entry.hours = None
-                entry.leave_code = value
-            entry.is_edited = True
-            entry.leave_from_request = False
-            entry.updated_at = now
-            to_update.append(entry)
-        PontajEntry.objects.bulk_update(
-            to_update, ['hours', 'leave_code', 'is_edited', 'leave_from_request', 'updated_at']
-        )
-
+        _apply_entries(sheet, request.data.get('entries') or [])
         return Response(PontajSheetSerializer(sheet).data)
 
 
-class PontajSheetGenerateView(APIView):
+class PontajSheetRegenerateView(APIView):
+    """Recalculeaza (fara sa salveze) valorile celulelor needitate manual pe
+    baza pontajului real (sesiuni de lucru + cereri de concediu aprobate).
+    Returneaza doar intrarile a caror valoare calculata difera de cea
+    curenta, ca managerul sa le revizuiasca inainte de a apasa Salveaza."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            sheet = PontajSheet.objects.select_related('department').get(pk=pk)
+        except PontajSheet.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not _can_edit_department(request.user, sheet.department):
+            return Response({'detail': 'Permission denied.'}, status=403)
+        if sheet.status not in EDITABLE_STATUSES:
+            return Response({'detail': 'This pontaj sheet can no longer be edited.'}, status=400)
+
+        num_days = calendar.monthrange(sheet.year, sheet.month)[1]
+        entries_by_user = defaultdict(list)
+        for entry in sheet.entries.filter(is_edited=False).select_related('user'):
+            entries_by_user[entry.user_id].append(entry)
+
+        changed = []
+        for user_entries in entries_by_user.values():
+            user = user_entries[0].user
+            session_map, leave_day_map = build_day_maps(user, sheet.year, sheet.month, num_days)
+            for entry in user_entries:
+                hours, leave_code = compute_pontaj_cell(
+                    user, sheet.year, sheet.month, entry.day, session_map, leave_day_map
+                )
+                current_hours = float(entry.hours) if entry.hours is not None else None
+                if hours != current_hours or leave_code != entry.leave_code:
+                    changed.append({
+                        'id': entry.id,
+                        'hours': hours,
+                        'leave_code': leave_code,
+                        'leave_from_request': bool(leave_code),
+                    })
+
+        return Response({'entries': changed})
+
+
+class PontajSheetSubmitView(APIView):
+    """Trimite foaia de pontaj la DG pentru aprobare — blocheaza editarea si
+    notifica admin/director. Salveaza si eventualele modificari locale
+    nesalvate trimise odata cu cererea, intr-un singur apel."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
@@ -145,6 +179,8 @@ class PontajSheetGenerateView(APIView):
             return Response({'detail': 'Permission denied.'}, status=403)
         if sheet.status not in EDITABLE_STATUSES:
             return Response({'detail': 'Only draft or rejected sheets can be submitted.'}, status=400)
+
+        _apply_entries(sheet, request.data.get('entries') or [])
 
         sheet.status = 'generated'
         sheet.generated_by = request.user
@@ -160,6 +196,7 @@ class PontajSheetGenerateView(APIView):
                 title='Pontaj submitted for approval',
                 message=f'{sheet.department.name} — {sheet.year}-{sheet.month:02d} pontaj submitted by {request.user.get_full_name()}.',
                 type='system',
+                link=_sheet_link(sheet),
             )
 
         return Response(PontajSheetSerializer(sheet).data)
@@ -202,6 +239,7 @@ class PontajSheetReviewView(APIView):
                     + (f' Note: {rejection_note}' if rejection_note else '')
                 ),
                 type='system',
+                link=_sheet_link(sheet),
             )
 
         return Response(PontajSheetSerializer(sheet).data)

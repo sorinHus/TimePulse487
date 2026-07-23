@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getNotifications, markNotificationRead, markAllRead, deleteNotification } from "../api/attendance";
 import styles from "./Notifications.module.css";
@@ -43,6 +44,7 @@ const TYPE_COLORS = {
 
 export default function Notifications() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -75,6 +77,11 @@ export default function Notifications() {
   const handleMarkAllRead = async () => {
     await markAllRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+  };
+
+  const handleItemClick = (n) => {
+    if (!n.is_read) handleMarkRead(n.id);
+    if (n.link) navigate(n.link);
   };
 
   const filtered = notifications.filter((n) => {
@@ -126,7 +133,7 @@ export default function Notifications() {
             <div
               key={n.id}
               className={`${styles.item} ${!n.is_read ? styles.unread : ""}`}
-              onClick={() => !n.is_read && handleMarkRead(n.id)}
+              onClick={() => handleItemClick(n)}
             >
               <div className={`${styles.typeIcon} ${TYPE_COLORS[n.type] || styles.typeSystem}`}>
                 {TYPE_ICONS[n.type] || TYPE_ICONS.system}

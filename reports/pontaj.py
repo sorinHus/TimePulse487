@@ -30,8 +30,6 @@ LEAVE_CODE_MAP = {
     'Family Emergency Leave': 'AC',
 }
 
-LEAVE_CODES = ['CO', 'CM', 'FP', 'IC', 'CI', 'AC', 'NE']
-
 
 def pontaj_hours_for(user, session):
     """Ore de pontaj/tichete de masă pentru o zi lucrată.

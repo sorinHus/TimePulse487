@@ -3,9 +3,10 @@ from datetime import date, timedelta
 from django.core.cache import cache
 
 
-def get_public_holidays(year: int) -> set:
-    """Fetch Romanian public holidays from zilelibere.webventure.ro with caching."""
-    cache_key = f'public_holidays_{year}'
+def get_public_holidays_named(year: int) -> dict:
+    """Fetch Romanian public holidays from zilelibere.webventure.ro with caching.
+    Returns {date: name}."""
+    cache_key = f'public_holidays_named_{year}'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -17,14 +18,15 @@ def get_public_holidays(year: int) -> set:
         )
         if response.status_code == 200:
             data = response.json()
-            holidays = set()
+            holidays = {}
             for item in data:
+                name = item.get('name', '')
                 # date is a list of objects: [{"date": "2026/01/01", "weekday": "Thu"}, ...]
                 for day_obj in item.get('date', []):
                     try:
                         raw = day_obj['date'].replace('/', '-')
                         d = date.fromisoformat(raw)
-                        holidays.add(d)
+                        holidays[d] = name
                     except (KeyError, ValueError):
                         continue
             cache.set(cache_key, holidays, timeout=86400)  # 24h
@@ -32,7 +34,12 @@ def get_public_holidays(year: int) -> set:
     except Exception:
         pass
 
-    return set()
+    return {}
+
+
+def get_public_holidays(year: int) -> set:
+    """Fetch Romanian public holidays from zilelibere.webventure.ro with caching."""
+    return set(get_public_holidays_named(year).keys())
 
 
 def count_working_days(start_date: date, end_date: date) -> int:

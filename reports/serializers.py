@@ -2,14 +2,7 @@ from collections import defaultdict
 
 from rest_framework import serializers
 
-from .models import PontajEntry, PontajSheet
-
-
-class PontajEntrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PontajEntry
-        fields = ['id', 'sheet', 'user', 'day', 'hours', 'leave_code', 'is_edited', 'leave_from_request', 'updated_at']
-        read_only_fields = ['id', 'sheet', 'user', 'is_edited', 'leave_from_request', 'updated_at']
+from .models import PontajSheet
 
 
 class PontajSheetSerializer(serializers.ModelSerializer):
@@ -33,9 +26,9 @@ class PontajSheetSerializer(serializers.ModelSerializer):
         return calendar.monthrange(obj.year, obj.month)[1]
 
     def get_holidays(self, obj):
-        from leaves.utils import get_public_holidays
-        holidays = get_public_holidays(obj.year)
-        return sorted(d.day for d in holidays if d.month == obj.month)
+        from leaves.utils import get_public_holidays_named
+        holidays = get_public_holidays_named(obj.year)
+        return {d.day: name for d, name in holidays.items() if d.month == obj.month}
 
     def get_rows(self, obj):
         entries = obj.entries.select_related('user').order_by(
