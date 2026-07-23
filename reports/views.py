@@ -733,7 +733,7 @@ class PontajExportView(APIView):
         ]
 
         # ── Header companie ──────────────────────────────────────────────────
-        last_col = get_column_letter(2 + num_days + len(total_cols))
+        last_col = get_column_letter(4 + num_days + len(total_cols))
         ws.merge_cells(f'A1:{last_col}1')
         ws['A1'] = f'Nexoria Group — Fișă lunară de pontaj — {scope_label} — {month_name_ro} {year}'
         ws['A1'].alignment = center
@@ -756,8 +756,22 @@ class PontajExportView(APIView):
         ws['B2'].border = border_all
         ws['B2'].fill = header_fill
 
+        ws.merge_cells('C2:C3')
+        ws['C2'] = 'Funcție'
+        ws['C2'].font = bold
+        ws['C2'].alignment = center
+        ws['C2'].border = border_all
+        ws['C2'].fill = header_fill
+
+        ws.merge_cells('D2:D3')
+        ws['D2'] = 'Marcă'
+        ws['D2'].font = bold
+        ws['D2'].alignment = center
+        ws['D2'].border = border_all
+        ws['D2'].fill = header_fill
+
         day_names_en = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
-        start_col = 3
+        start_col = 5
 
         for day in range(1, num_days + 1):
             d = date(year, month, day)
@@ -812,6 +826,16 @@ class PontajExportView(APIView):
             cell_name.alignment = left
             cell_name.border = border_all
 
+            cell_position = ws.cell(row=row, column=3, value=u.position or '')
+            cell_position.font = normal
+            cell_position.alignment = left
+            cell_position.border = border_all
+
+            cell_marca = ws.cell(row=row, column=4, value=u.employee_number or '')
+            cell_marca.font = normal
+            cell_marca.alignment = center
+            cell_marca.border = border_all
+
             worked_hours = 0.0
             leave_counts = {code: 0 for code in LEAVE_CODES}
 
@@ -857,6 +881,8 @@ class PontajExportView(APIView):
         # ── Lățimi coloane ────────────────────────────────────────────────────
         ws.column_dimensions['A'].width = 5
         ws.column_dimensions['B'].width = 24
+        ws.column_dimensions['C'].width = 18
+        ws.column_dimensions['D'].width = 10
         for day in range(1, num_days + 1):
             ws.column_dimensions[get_column_letter(start_col + day - 1)].width = 3.5
         for i in range(len(total_cols)):
@@ -867,7 +893,7 @@ class PontajExportView(APIView):
         for idx in range(len(users_list)):
             ws.row_dimensions[data_start_row + idx].height = 16
 
-        ws.freeze_panes = 'C4'
+        ws.freeze_panes = f'{get_column_letter(start_col)}4'
 
         # ── Manager ───────────────────────────────────────────────────────────
         if manager_name:

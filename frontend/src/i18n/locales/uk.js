@@ -360,6 +360,8 @@ export default {
     noDepartment: 'Оберіть відділ у розділі "Звіти", щоб переглянути табель.',
     myPontaj: 'Мій табель',
     employee: 'Співробітник',
+    position: 'Посада',
+    employeeNumber: 'Табельний №',
     totalHours: 'Всього годин',
     norm: 'Норма',
     unworkedDays: 'Невідпрацьовані дні',

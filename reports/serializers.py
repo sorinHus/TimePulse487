@@ -41,11 +41,13 @@ class PontajSheetSerializer(serializers.ModelSerializer):
         entries = obj.entries.select_related('user').order_by(
             'user__last_name', 'user__first_name', 'day'
         )
-        by_user = defaultdict(lambda: {'user_id': None, 'full_name': '', 'cells': []})
+        by_user = defaultdict(lambda: {'user_id': None, 'full_name': '', 'position': '', 'employee_number': None, 'cells': []})
         for entry in entries:
             bucket = by_user[entry.user_id]
             bucket['user_id'] = entry.user_id
             bucket['full_name'] = entry.user.get_full_name() or entry.user.username
+            bucket['position'] = entry.user.position
+            bucket['employee_number'] = entry.user.employee_number
             bucket['cells'].append({
                 'entry_id': entry.id,
                 'day': entry.day,

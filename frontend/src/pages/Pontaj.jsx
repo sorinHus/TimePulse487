@@ -388,6 +388,8 @@ export default function Pontaj() {
             <thead>
               <tr>
                 <th className={styles.stickyCol}>{t("pontaj.employee")}</th>
+                <th>{t("pontaj.position")}</th>
+                <th>{t("pontaj.employeeNumber")}</th>
                 {canEditCells && <th>{t("pontaj.fillRow")}</th>}
                 {Array.from({ length: meta.num_days }, (_, i) => i + 1).map((day) => {
                   const isWeekend = [0, 6].includes(new Date(year, month - 1, day).getDay());
@@ -418,6 +420,8 @@ export default function Pontaj() {
                 return (
                   <tr key={row.user_id}>
                     <td className={styles.stickyCol}>{row.full_name}</td>
+                    <td className={styles.muted}>{row.position || "—"}</td>
+                    <td className={styles.muted}>{row.employee_number || "—"}</td>
                     {canEditCells && (
                       <td className={styles.fillCol}>
                         <select

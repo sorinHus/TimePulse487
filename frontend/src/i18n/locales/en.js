@@ -360,6 +360,8 @@ export default {
     noDepartment: 'Select a department from Reports to view the pontaj sheet.',
     myPontaj: 'My Pontaj',
     employee: 'Employee',
+    position: 'Position',
+    employeeNumber: 'Employee no.',
     totalHours: 'Total Hours',
     norm: 'Norm',
     unworkedDays: 'Unworked Days',
