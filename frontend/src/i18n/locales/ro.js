@@ -188,7 +188,7 @@ export default {
     noTeamMembers: 'Nu exista membri in echipa.',
   },
   attendance: {
-    title: 'Pontaj',
+    title: 'Prezenta',
     subtitle: 'Urmareste orele tale de lucru zilnice',
     nightWarning: '⚠ Se apropie intervalul de noapte (22:00–06:00)',
     nightConfirm: 'Atentie: urmeaza sa contorizati ore de noapte (22:00–06:00). Continuati?',
