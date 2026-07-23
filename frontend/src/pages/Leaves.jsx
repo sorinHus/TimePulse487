@@ -319,8 +319,8 @@ export default function Leaves() {
         {Number(schedule?.carryover_days) > 0 && (
           <div className={styles.carryoverBanner}>
             <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-              <circle cx="8" cy="8" r="7" stroke="#fbbf24" strokeWidth="1.4"/>
-              <path d="M8 5v3.5L10 10" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round"/>
+              <circle cx="8" cy="8" r="7" stroke="var(--status-amber)" strokeWidth="1.4"/>
+              <path d="M8 5v3.5L10 10" stroke="var(--status-amber)" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
             {t("leaves.carryover", {
               dayCount: `${schedule.carryover_days} ${schedule.carryover_days === 1 ? t("common.day") : t("common.days")}`,

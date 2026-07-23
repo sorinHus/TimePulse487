@@ -190,7 +190,7 @@
 
 .errorMsg {
   font-size: 0.78rem;
-  color: #fca5a5;
+  color: var(--status-red);
   margin: 0;
 }
 

@@ -148,7 +148,7 @@
 
 .errorMsg {
   font-size: 0.78rem;
-  color: #fca5a5;
+  color: var(--status-red);
   margin: 0;
   text-align: right;
 }
@@ -175,7 +175,7 @@
 
 .btnOut {
   background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
+  color: var(--status-red);
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 .btnOut:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
@@ -188,7 +188,7 @@
 
 .doneTag {
   font-size: 0.85rem;
-  color: #4ade80;
+  color: var(--status-green);
   font-weight: 600;
 }
 
@@ -375,9 +375,9 @@
   font-weight: 600;
 }
 
-.badgeGreen { background: rgba(34,197,94,0.12);  color: #4ade80; }
-.badgeAmber { background: rgba(245,158,11,0.12); color: #fbbf24; }
-.badgeRed   { background: rgba(239,68,68,0.12);  color: #fca5a5; }
+.badgeGreen { background: rgba(34,197,94,0.12);  color: var(--status-green); }
+.badgeAmber { background: rgba(245,158,11,0.12); color: var(--status-amber); }
+.badgeRed   { background: rgba(239,68,68,0.12);  color: var(--status-red); }
 .badgeGray  { background: rgba(100,116,139,0.1); color: var(--text-dim); }
 
 .empty {
@@ -407,7 +407,7 @@
   padding: 0.65rem 1.25rem;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #fbbf24;
+  color: var(--status-amber);
 }
 
 /* ── Row clickable (expand) ── */
@@ -482,7 +482,7 @@
   border-radius: 20px;
   border: 1px solid rgba(245, 158, 11, 0.35);
   background: rgba(245, 158, 11, 0.08);
-  color: #fbbf24;
+  color: var(--status-amber);
   cursor: pointer;
   font-family: inherit;
   transition: background 0.15s;
@@ -500,6 +500,6 @@
 }
 
 .otPending  { background: rgba(100,116,139,0.1); color: var(--text-muted); }
-.otApproved { background: rgba(34,197,94,0.12);  color: #4ade80; }
+.otApproved { background: rgba(34,197,94,0.12);  color: var(--status-green); }
 .otPartial  { background: rgba(59,130,246,0.12); color: var(--accent-light); }
 .otRejected { background: rgba(239,68,68,0.12);  color: #f87171; }

@@ -116,7 +116,7 @@
   flex-shrink: 0;
 }
 
-.typeOvertime { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+.typeOvertime { background: rgba(245, 158, 11, 0.12); color: var(--status-amber); }
 .typeLeave    { background: rgba(59, 130, 246, 0.12); color: var(--accent-light); }
 .typeSystem   { background: rgba(100, 116, 139, 0.12); color: var(--text-muted); }
 

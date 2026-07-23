@@ -554,8 +554,8 @@ export default function Team() {
 
                   <div className={styles.autoApproveNote}>
                     <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                      <circle cx="8" cy="8" r="7" stroke="#4ade80" strokeWidth="1.4"/>
-                      <path d="M5 8l2 2 4-4" stroke="#4ade80" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="8" cy="8" r="7" stroke="var(--status-green)" strokeWidth="1.4"/>
+                      <path d="M5 8l2 2 4-4" stroke="var(--status-green)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     {t("team.sick.autoApproveNote")}
                   </div>
@@ -578,8 +578,8 @@ export default function Team() {
                 <div className={styles.successBlock}>
                   <div className={styles.successIcon}>
                     <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
-                      <circle cx="12" cy="12" r="11" stroke="#4ade80" strokeWidth="1.5"/>
-                      <path d="M7 12l3.5 3.5L17 8.5" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="12" cy="12" r="11" stroke="var(--status-green)" strokeWidth="1.5"/>
+                      <path d="M7 12l3.5 3.5L17 8.5" stroke="var(--status-green)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                   <p className={styles.successTitle}>{t("team.sick.registeredTitle")}</p>

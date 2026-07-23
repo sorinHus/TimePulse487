@@ -18,6 +18,9 @@
   --shadow:             rgba(0, 0, 0, 0.4);
   --role-admin-color:   #c4b5fd;
   --role-manager-color: #38bdf8;
+  --status-green:       #4ade80;
+  --status-amber:       #fbbf24;
+  --status-red:         #fca5a5;
 }
 
 /* Light mode */
@@ -40,6 +43,9 @@ html[data-theme="light"] {
   --shadow:             rgba(0, 0, 0, 0.08);
   --role-admin-color:   #7c3aed;
   --role-manager-color: #0284c7;
+  --status-green:       #15803d;
+  --status-amber:       #92400e;
+  --status-red:         #b91c1c;
 }
 
 * {

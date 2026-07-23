@@ -237,7 +237,7 @@
 
 .logoutBtn:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
+  color: var(--status-red);
 }
 
 /* ── Badge pending ── */
