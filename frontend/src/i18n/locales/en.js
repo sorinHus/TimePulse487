@@ -331,6 +331,7 @@ export default {
       title: 'Leave Requests Report',
       desc: 'Summary of all approved, rejected and pending leave requests for the selected year.',
     },
+    viewEdit: 'View / Edit',
     pontaj: {
       title: 'Monthly Attendance Sheet',
       desc: 'Nexoria Group attendance register — worked days and leave codes (CO, CM, FP etc.) per employee.',

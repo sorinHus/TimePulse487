@@ -325,13 +325,14 @@ export default {
     subtitle: 'Exporta date de pontaj si concedii',
     exportFailed: 'Exportul a esuat. Incearca din nou.',
     attendance: {
-      title: 'Raport de pontaj',
+      title: 'Raport prezenta',
       desc: 'Date lunare de pontaj, inclusiv orele de intrare/iesire si totalul orelor lucrate per angajat.',
     },
     leaves: {
       title: 'Raport cereri de concediu',
       desc: 'Sumar al cererilor de concediu aprobate, respinse si in asteptare pentru anul selectat.',
     },
+    viewEdit: 'Vezi / Editeaza',
     pontaj: {
       title: 'Fisa lunara de pontaj',
       desc: 'Registrul de pontaj Nexoria Group — zile lucrate si coduri de concediu (CO, CM, FP etc.) per angajat.',

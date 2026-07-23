@@ -150,19 +150,28 @@ export default function Reports() {
             </div>
             <div className={styles.cardFooter}>
               <span className={styles.formatBadge} style={{ background: "#22c55e18", color: "#22c55e" }}>.xlsx</span>
-              <button
-                className={styles.exportBtn}
-                style={{ background: "#22c55e18", color: "#22c55e", borderColor: "#22c55e33" }}
-                onClick={handleExportAttendance}
-                disabled={loadingAttendance}
-              >
-                {loadingAttendance ? <span className={styles.spinner} /> : (
-                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                    <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-                {loadingAttendance ? t("reports.exporting") : t("reports.exportExcel")}
-              </button>
+              <div className={styles.footerButtons}>
+                <button
+                  className={styles.exportBtn}
+                  style={{ background: "transparent", color: "#22c55e", borderColor: "#22c55e33" }}
+                  onClick={() => navigate("/calendar")}
+                >
+                  {t("reports.viewEdit")}
+                </button>
+                <button
+                  className={styles.exportBtn}
+                  style={{ background: "#22c55e18", color: "#22c55e", borderColor: "#22c55e33" }}
+                  onClick={handleExportAttendance}
+                  disabled={loadingAttendance}
+                >
+                  {loadingAttendance ? <span className={styles.spinner} /> : (
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                      <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {loadingAttendance ? t("reports.exporting") : t("reports.exportExcel")}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -194,19 +203,28 @@ export default function Reports() {
             </div>
             <div className={styles.cardFooter}>
               <span className={styles.formatBadge} style={{ background: "#ef444418", color: "#ef4444" }}>.pdf</span>
-              <button
-                className={styles.exportBtn}
-                style={{ background: "#ef444418", color: "#ef4444", borderColor: "#ef444433" }}
-                onClick={handleExportLeaves}
-                disabled={loadingLeaves}
-              >
-                {loadingLeaves ? <span className={styles.spinner} /> : (
-                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                    <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-                {loadingLeaves ? t("reports.exporting") : t("reports.exportPdf")}
-              </button>
+              <div className={styles.footerButtons}>
+                <button
+                  className={styles.exportBtn}
+                  style={{ background: "transparent", color: "#ef4444", borderColor: "#ef444433" }}
+                  onClick={() => navigate("/leaves")}
+                >
+                  {t("reports.viewEdit")}
+                </button>
+                <button
+                  className={styles.exportBtn}
+                  style={{ background: "#ef444418", color: "#ef4444", borderColor: "#ef444433" }}
+                  onClick={handleExportLeaves}
+                  disabled={loadingLeaves}
+                >
+                  {loadingLeaves ? <span className={styles.spinner} /> : (
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                      <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {loadingLeaves ? t("reports.exporting") : t("reports.exportPdf")}
+                </button>
+              </div>
             </div>
           </div>
         </div>

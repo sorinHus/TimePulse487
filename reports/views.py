@@ -9,6 +9,7 @@ import calendar
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.comments import Comment
 
 User = get_user_model()
 
@@ -612,11 +613,19 @@ class EmployeeDashboardView(APIView):
 
 
 class PontajExportView(APIView):
+    """Exportă exact datele salvate în PontajSheet/PontajEntry (aceleași
+    afișate/editate în pagina /pontaj) — nu recalculează pe loc din sesiuni
+    de lucru, ca să reflecte editările manuale și starea aprobată a foii."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        from collections import defaultdict
         from datetime import date
-        from .pontaj import build_day_maps, compute_pontaj_cell
+
+        from accounts.models import Department
+        from leaves.utils import get_public_holidays_named
+
+        from .pontaj import get_or_create_personal_sheet, get_or_create_sheet, sync_leave_requests
 
         year = int(request.query_params.get('year', timezone.now().year))
         month = int(request.query_params.get('month', timezone.now().month))
@@ -643,8 +652,35 @@ class PontajExportView(APIView):
         else:
             users = User.objects.filter(id=user.id).select_related('department__schedule_type')
 
+        users_list = list(users)
         num_days = calendar.monthrange(year, month)[1]
         month_name = calendar.month_name[month]
+
+        # Sursa reala a datelor: foile de pontaj salvate (departament sau
+        # personale), nu o recalculare live din sesiuni/concedii.
+        entries_by_user = {}
+        dept_ids = {u.department_id for u in users_list if u.department_id}
+        for dept in Department.objects.filter(id__in=dept_ids):
+            sheet = get_or_create_sheet(dept, year, month)
+            sync_leave_requests(sheet)
+            per_day = defaultdict(dict)
+            for entry in sheet.entries.all():
+                per_day[entry.user_id][entry.day] = entry
+            entries_by_user.update(per_day)
+        for u in users_list:
+            if u.department_id is None and u.id not in entries_by_user:
+                sheet = get_or_create_personal_sheet(u, year, month)
+                sync_leave_requests(sheet)
+                per_day = defaultdict(dict)
+                for entry in sheet.entries.all():
+                    per_day[entry.user_id][entry.day] = entry
+                entries_by_user.update(per_day)
+
+        holidays = {d.day: name for d, name in get_public_holidays_named(year).items() if d.month == month}
+        norm_hours = sum(
+            8 for day in range(1, num_days + 1)
+            if date(year, month, day).weekday() < 5 and day not in holidays
+        )
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -654,10 +690,13 @@ class PontajExportView(APIView):
         border_all = Border(left=thin, right=thin, top=thin, bottom=thin)
         header_fill   = PatternFill('solid', start_color='D9E1F2', end_color='D9E1F2')
         weekend_fill  = PatternFill('solid', start_color='D9D9D9', end_color='D9D9D9')
+        holiday_fill  = PatternFill('solid', start_color='FCE4EC', end_color='FCE4EC')
         present_fill  = PatternFill('solid', start_color='E2EFDA', end_color='E2EFDA')
         leave_co_fill = PatternFill('solid', start_color='FFF2CC', end_color='FFF2CC')
         leave_cm_fill = PatternFill('solid', start_color='FCE4D6', end_color='FCE4D6')
         leave_other_fill = PatternFill('solid', start_color='EDD9FC', end_color='EDD9FC')
+        match_fill    = PatternFill('solid', start_color='C6E0B4', end_color='C6E0B4')
+        mismatch_fill = PatternFill('solid', start_color='F8CBAD', end_color='F8CBAD')
 
         center = Alignment(horizontal='center', vertical='center', wrap_text=True)
         left   = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -665,11 +704,19 @@ class PontajExportView(APIView):
         normal = Font(size=9, name='Arial')
         small  = Font(size=8, name='Arial')
 
+        LEAVE_CODES = ('CO', 'CM', 'FP', 'IC', 'CI', 'AC', 'NE')
+        total_cols = [
+            ('Norma', 'T_NORM'),
+            ('Total\nOre', 'T_ORE'),
+            *((code, f'T_{code}') for code in LEAVE_CODES),
+            ('Zile\nnelucrate', 'T_UNWORKED'),
+            ('Verificare', 'T_CHECK'),
+        ]
+
         # ── Header companie ──────────────────────────────────────────────────
-        last_col = get_column_letter(2 + num_days + 8)
+        last_col = get_column_letter(2 + num_days + len(total_cols))
         ws.merge_cells(f'A1:{last_col}1')
         ws['A1'] = f'Nexoria Group — Monthly Attendance Sheet — {month_name} {year}'
-        ws['A1'].font = Font(bold=True, size=11, name='Arial')
         ws['A1'].alignment = center
         ws['A1'].fill = PatternFill('solid', start_color='1E3A5F', end_color='1E3A5F')
         ws['A1'].font = Font(bold=True, size=11, name='Arial', color='FFFFFF')
@@ -696,6 +743,7 @@ class PontajExportView(APIView):
         for day in range(1, num_days + 1):
             d = date(year, month, day)
             col = start_col + day - 1
+            is_holiday = day in holidays
 
             cell1 = ws.cell(row=2, column=col, value=day)
             cell1.font = bold
@@ -710,20 +758,14 @@ class PontajExportView(APIView):
             if d.weekday() >= 5:
                 cell1.fill = weekend_fill
                 cell2.fill = weekend_fill
+            elif is_holiday:
+                cell1.fill = holiday_fill
+                cell2.fill = holiday_fill
+                cell1.comment = Comment(holidays[day], 'HCM487')
             else:
                 cell1.fill = header_fill
                 cell2.fill = header_fill
 
-        total_cols = [
-            ('Total\nHours', 'T_ORE'),
-            ('CO', 'T_CO'),
-            ('CM', 'T_CM'),
-            ('FP', 'T_FP'),
-            ('IC', 'T_IC'),
-            ('CI', 'T_CI'),
-            ('AC', 'T_AC'),
-            ('NE', 'T_NE'),
-        ]
         total_start_col = start_col + num_days
         for i, (label, key) in enumerate(total_cols):
             col = total_start_col + i
@@ -736,12 +778,10 @@ class PontajExportView(APIView):
 
         # ── Date angajați ─────────────────────────────────────────────────────
         data_start_row = 4
-        users_list = list(users)
 
         for idx, u in enumerate(users_list):
             row = data_start_row + idx
-
-            session_map, leave_day_map = build_day_maps(u, year, month, num_days)
+            day_entries = entries_by_user.get(u.id, {})
 
             cell_nr = ws.cell(row=row, column=1, value=idx + 1)
             cell_nr.font = normal
@@ -753,8 +793,8 @@ class PontajExportView(APIView):
             cell_name.alignment = left
             cell_name.border = border_all
 
-            total_ore = 0
-            totals = {k: 0 for _, k in total_cols}
+            worked_hours = 0.0
+            leave_counts = {code: 0 for code in LEAVE_CODES}
 
             for day in range(1, num_days + 1):
                 d = date(year, month, day)
@@ -768,40 +808,36 @@ class PontajExportView(APIView):
                     cell.fill = weekend_fill
                     continue
 
-                hours, code = compute_pontaj_cell(u, year, month, day, session_map, leave_day_map)
-                if code:
+                entry = day_entries.get(day)
+                code = entry.leave_code if entry else ''
+                hours = float(entry.hours) if entry and entry.hours is not None else None
+
+                if code in leave_counts:
                     cell.value = code
-                    if code == 'CO':
-                        cell.fill = leave_co_fill
-                        totals['T_CO'] += 1
-                    elif code == 'CM':
-                        cell.fill = leave_cm_fill
-                        totals['T_CM'] += 1
-                    elif code == 'FP':
-                        cell.fill = leave_other_fill
-                        totals['T_FP'] += 1
-                    elif code == 'IC':
-                        cell.fill = leave_other_fill
-                        totals['T_IC'] += 1
-                    elif code == 'CI':
-                        cell.fill = leave_other_fill
-                        totals['T_CI'] += 1
-                    else:
-                        cell.fill = leave_other_fill
-                        totals['T_AC'] += 1
+                    cell.fill = leave_co_fill if code == 'CO' else leave_cm_fill if code == 'CM' else leave_other_fill
+                    leave_counts[code] += 1
                 elif hours is not None:
                     cell.value = hours
                     cell.fill = present_fill
-                    total_ore += hours
+                    worked_hours += hours
+                elif day in holidays:
+                    cell.fill = holiday_fill
 
-            for i, (label, key) in enumerate(total_cols):
+            leave_hours = sum(leave_counts.values()) * 8
+            total_hours = round(worked_hours + leave_hours, 1)
+            diff = round(total_hours - norm_hours, 1)
+            row_values = [norm_hours, total_hours, *(leave_counts[c] for c in LEAVE_CODES), leave_hours, diff]
+
+            for i, ((label, key), val) in enumerate(zip(total_cols, row_values)):
                 col = total_start_col + i
-                val = total_ore if key == 'T_ORE' else totals[key]
-                tc = ws.cell(row=row, column=col, value=round(val, 1) if key == 'T_ORE' else int(val))
-                tc.font = bold if val > 0 else normal
+                tc = ws.cell(row=row, column=col, value=val)
+                tc.font = bold if (key == 'T_CHECK' or val) else normal
                 tc.alignment = center
                 tc.border = border_all
-                tc.fill = header_fill
+                if key == 'T_CHECK':
+                    tc.fill = match_fill if diff == 0 else mismatch_fill
+                else:
+                    tc.fill = header_fill
 
         # ── Lățimi coloane ────────────────────────────────────────────────────
         ws.column_dimensions['A'].width = 5
@@ -834,13 +870,19 @@ class PontajExportView(APIView):
             ws.cell(row=legend_row + i + 1, column=1, value=code).font = bold
             ws.cell(row=legend_row + i + 1, column=2, value=desc).font = normal
 
+        if holidays:
+            holiday_legend_row = legend_row + len(legend) + 2
+            ws.cell(row=holiday_legend_row, column=1, value='Public Holidays:').font = bold
+            for i, day in enumerate(sorted(holidays)):
+                ws.cell(row=holiday_legend_row + i + 1, column=1, value=f'{day:02d}.{month:02d}.{year}').font = normal
+                ws.cell(row=holiday_legend_row + i + 1, column=2, value=holidays[day]).font = normal
+
         # ── Response ──────────────────────────────────────────────────────────
         dept_label = ''
         if department_id:
-            from accounts.models import Department
             try:
                 dept_label = f'_{Department.objects.get(id=department_id).name.replace(" ", "_")}'
-            except:
+            except Department.DoesNotExist:
                 pass
         elif user_id and users_list:
             dept_label = f'_{users_list[0].username}'
