@@ -1,17 +1,80 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Sidebar from "./Sidebar";
 import { getUnreadCount } from "../api/attendance";
-import { setLanguage } from "../i18n/config";
+import { setLanguage, dateLocale } from "../i18n/config";
 import styles from "./Layout.module.css";
+
+const LANGUAGES = [
+  { code: "ro", label: "RO" },
+  { code: "en", label: "EN" },
+  { code: "uk", label: "UA" },
+];
+
+// Emoji regional-indicator flags don't render as flags on Windows (no color
+// flag glyphs in Segoe UI Emoji), so these are drawn as small SVGs instead.
+function FlagIcon({ code }) {
+  if (code === "ro") {
+    return (
+      <svg viewBox="0 0 3 2" width="16" height="12" preserveAspectRatio="none">
+        <rect width="1" height="2" fill="#002B7F" />
+        <rect x="1" width="1" height="2" fill="#FCD116" />
+        <rect x="2" width="1" height="2" fill="#CE1126" />
+      </svg>
+    );
+  }
+  if (code === "uk") {
+    return (
+      <svg viewBox="0 0 3 2" width="16" height="12" preserveAspectRatio="none">
+        <rect width="3" height="1" fill="#0057B7" />
+        <rect y="1" width="3" height="1" fill="#FFD700" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 60 40" width="16" height="12" preserveAspectRatio="none">
+      <rect width="60" height="40" fill="#012169" />
+      <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFF" strokeWidth="8" />
+      <path d="M0,0 L24,16 M60,0 L36,16 M0,40 L24,24 M60,40 L36,24" stroke="#C8102E" strokeWidth="5.5" />
+      <path d="M30,0 V40 M0,20 H60" stroke="#FFF" strokeWidth="13" />
+      <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" strokeWidth="8" />
+    </svg>
+  );
+}
 
 export default function Layout({ theme, onToggleTheme }) {
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef(null);
   const navigate = useNavigate();
-  const currentLang = i18n.language === "en" ? "en" : "ro";
+  const currentLang = LANGUAGES.find((l) => l.code === i18n.language)?.code || "ro";
+  const currentLangOption = LANGUAGES.find((l) => l.code === currentLang);
+
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    const handlePointerDown = (e) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target)) {
+        setLangMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setLangMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [langMenuOpen]);
+
+  const chooseLanguage = (code) => {
+    setLanguage(code);
+    setLangMenuOpen(false);
+  };
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -38,23 +101,42 @@ export default function Layout({ theme, onToggleTheme }) {
         <header className={styles.topbar}>
           <div className={styles.topbarLeft} />
           <div className={styles.topbarRight}>
-            <div className={styles.langGroup} role="group" aria-label="RO / EN">
+            <div className={styles.langDropdown} ref={langMenuRef}>
               <button
                 type="button"
-                className={`${styles.langOption} ${currentLang === "ro" ? styles.langActive : ""}`}
-                onClick={() => setLanguage("ro")}
-                aria-pressed={currentLang === "ro"}
+                className={styles.langTrigger}
+                onClick={() => setLangMenuOpen((open) => !open)}
+                aria-haspopup="listbox"
+                aria-expanded={langMenuOpen}
               >
-                RO
+                <span className={styles.langFlag}><FlagIcon code={currentLangOption?.code} /></span>
+                <span>{currentLangOption?.label}</span>
+                <svg
+                  className={styles.langChevron}
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  width="12"
+                  height="12"
+                >
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
-              <button
-                type="button"
-                className={`${styles.langOption} ${currentLang === "en" ? styles.langActive : ""}`}
-                onClick={() => setLanguage("en")}
-                aria-pressed={currentLang === "en"}
-              >
-                EN
-              </button>
+              {langMenuOpen && (
+                <ul className={styles.langMenu} role="listbox">
+                  {LANGUAGES.map((lang) => (
+                    <li key={lang.code} role="option" aria-selected={currentLang === lang.code}>
+                      <button
+                        type="button"
+                        className={`${styles.langMenuItem} ${currentLang === lang.code ? styles.langMenuItemActive : ""}`}
+                        onClick={() => chooseLanguage(lang.code)}
+                      >
+                        <span className={styles.langFlag}><FlagIcon code={lang.code} /></span>
+                        <span>{lang.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <button
               className={styles.themeBtn}
@@ -72,7 +154,7 @@ export default function Layout({ theme, onToggleTheme }) {
               )}
             </button>
             <span className={styles.dateBadge}>
-              {new Date().toLocaleDateString(currentLang === "ro" ? "ro-RO" : "en-GB", {
+              {new Date().toLocaleDateString(dateLocale(currentLang), {
                 weekday: "short",
                 day: "numeric",
                 month: "short",

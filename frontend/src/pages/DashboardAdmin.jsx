@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getAdminDashboard } from "../api/dashboard";
+import { dateLocale } from "../i18n/config";
 import styles from "./DashboardAdmin.module.css";
 
 function formatHours(decimal) {
@@ -35,7 +36,7 @@ const TABS = ["attendance", "leaveRequests", "employees"];
 
 export default function DashboardAdmin() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
+  const locale = dateLocale(i18n.language);
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState("attendance");
 

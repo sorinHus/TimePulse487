@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { clockIn, clockOut, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendance";
+import { dateLocale } from "../i18n/config";
 import styles from "./Attendance.module.css";
 
 
@@ -41,7 +42,7 @@ function getMonthParam(offset = 0) {
 
 export default function Attendance() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
+  const locale = dateLocale(i18n.language);
   const [todaySummary, setTodaySummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [expandedDates, setExpandedDates] = useState({});

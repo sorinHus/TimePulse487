@@ -49,17 +49,17 @@
 
 /* ── Language switcher ── */
 
-.langGroup {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
+.langDropdown {
+  position: relative;
 }
 
-.langOption {
+.langTrigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   background: transparent;
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   cursor: pointer;
   color: var(--text-muted);
   font-size: 0.7rem;
@@ -69,12 +69,60 @@
   transition: color 0.15s, background 0.15s;
 }
 
-.langOption:hover {
+.langTrigger:hover {
   color: var(--text-primary);
   background: var(--border);
 }
 
-.langActive {
+.langFlag {
+  display: inline-flex;
+  border-radius: 2px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.langChevron {
+  color: var(--text-faint);
+}
+
+.langMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 92px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.langMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 6px 8px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.langMenuItem:hover {
+  color: var(--text-primary);
+  background: var(--border);
+}
+
+.langMenuItemActive {
   color: var(--text-primary);
   background: var(--border);
 }

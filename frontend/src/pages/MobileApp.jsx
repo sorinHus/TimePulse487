@@ -6,6 +6,7 @@ import {
   getLeaveBalance, getLeaveTypes, createLeaveRequest,
   getLeaveRequests, getWorkingDays,
 } from '../api/leaves'
+import { dateLocale } from '../i18n/config'
 import s from './MobileApp.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ function LoginScreen({ onLogin }) {
 ════════════════════════════════════════════════════════════ */
 function ClockTab() {
   const { t, i18n } = useTranslation()
-  const locale = i18n.language === 'ro' ? 'ro-RO' : 'en-GB'
+  const locale = dateLocale(i18n.language)
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [err, setErr]         = useState('')

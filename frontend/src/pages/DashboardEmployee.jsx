@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { clockIn, clockOut, getTodaySessions } from "../api/attendance";
 import { getEmployeeDashboard } from "../api/dashboard";
+import { dateLocale } from "../i18n/config";
 import styles from "./DashboardEmployee.module.css";
 
 function formatTime(isoString, locale) {
@@ -33,7 +34,7 @@ function StatCard({ label, value, accent, sublabel }) {
 
 export default function DashboardEmployee() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
+  const locale = dateLocale(i18n.language);
   const { user } = useAuth();
 
   const [todaySummary, setTodaySummary] = useState(null);

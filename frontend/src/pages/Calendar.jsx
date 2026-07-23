@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getTeamCalendar } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
+import { dateLocale } from "../i18n/config";
 import styles from "./Calendar.module.css";
 
 function getMonthGrid(year, month) {
@@ -55,7 +56,7 @@ function EntryChip({ entry }) {
 
 export default function Calendar() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
+  const locale = dateLocale(i18n.language);
   const DAYS = [
     t("calendar.days.mon"), t("calendar.days.tue"), t("calendar.days.wed"),
     t("calendar.days.thu"), t("calendar.days.fri"), t("calendar.days.sat"), t("calendar.days.sun"),

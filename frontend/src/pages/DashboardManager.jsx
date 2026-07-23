@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { getManagerDashboard } from "../api/dashboard";
+import { dateLocale } from "../i18n/config";
 import styles from "./DashboardManager.module.css";
 
 function formatHours(decimal) {
@@ -44,7 +45,7 @@ function StatCard({ label, value, sub, accent, delay }) {
 
 export default function DashboardManager() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "ro" ? "ro-RO" : "en-GB";
+  const locale = dateLocale(i18n.language);
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState("attendance");
