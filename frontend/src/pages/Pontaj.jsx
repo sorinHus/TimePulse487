@@ -119,8 +119,9 @@ export default function Pontaj() {
 
   const saveCellValue = async (entryId, value) => {
     setEditingCell(null);
-    if (!value) return;
-    const payload = LEAVE_CODES.includes(value) ? { leave_code: value } : { hours: Number(value) };
+    const payload = value === "" ? { leave_code: "" }
+      : LEAVE_CODES.includes(value) ? { leave_code: value }
+      : { hours: Number(value) };
     try {
       await patchPontajEntry(entryId, payload);
       await fetchSheet();
@@ -262,7 +263,7 @@ export default function Pontaj() {
             <tbody>
               {sheet.rows.map((row) => {
                 const totals = computeTotals(row.cells);
-                const diff = Math.round((monthlyNorm - totals.totalHours) * 10) / 10;
+                const diff = Math.round((totals.totalHours - monthlyNorm) * 10) / 10;
                 return (
                   <tr key={row.user_id}>
                     <td className={styles.stickyCol}>{row.full_name}</td>
@@ -332,7 +333,7 @@ export default function Pontaj() {
                       {totals.leaveHours}
                     </td>
                     <td className={`${styles.totalsCol} ${diff === 0 ? styles.verifyMatch : styles.verifyMismatch}`}>
-                      {diff}
+                      {diff > 0 ? `+${diff}` : diff}
                     </td>
                   </tr>
                 );
