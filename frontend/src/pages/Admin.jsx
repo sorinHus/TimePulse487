@@ -17,6 +17,11 @@ const EMPTY_FORM = {
   position: "", employee_number: "",
 };
 
+const EMPTY_EDIT_FORM = {
+  username: "", email: "", first_name: "", last_name: "", phone: "",
+  role: "employee", department: "", position: "", employee_number: "", hire_date: "",
+};
+
 export default function Admin() {
   const { t } = useTranslation();
   const [users, setUsers] = useState([]);
@@ -36,6 +41,10 @@ export default function Admin() {
   const [bulkLoading, setBulkLoading] = useState("");
   const [deleteModal, setDeleteModal] = useState({ open: false, user: null });
   const [deactivateModal, setDeactivateModal] = useState({ open: false, user: null, reason: "" });
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editFormError, setEditFormError] = useState("");
   const [scheduleTypes, setScheduleTypes] = useState([]);
   const [scheduleForm, setScheduleForm] = useState({ name: "", start_time: "", end_time: "", break_minutes: "60", pontaj_hours: "8" });
   const [scheduleError, setScheduleError] = useState("");
@@ -122,6 +131,55 @@ export default function Admin() {
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditStart = (u) => {
+    setShowForm(false);
+    setEditingUser(u);
+    setEditFormError("");
+    setEditForm({
+      username: u.username || "",
+      email: u.email || "",
+      first_name: u.first_name || "",
+      last_name: u.last_name || "",
+      phone: u.phone || "",
+      role: u.role || "employee",
+      department: u.department || "",
+      position: u.position || "",
+      employee_number: u.employee_number || "",
+      hire_date: u.hire_date || "",
+    });
+  };
+
+  const handleEditCancel = () => {
+    setEditingUser(null);
+    setEditFormError("");
+  };
+
+  const ef = (key) => (e) => setEditForm((v) => ({ ...v, [key]: e.target.value }));
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditFormError("");
+    setEditSubmitting(true);
+    try {
+      const payload = { ...editForm };
+      if (!payload.department) payload.department = null;
+      if (!payload.employee_number) payload.employee_number = null;
+      if (!payload.hire_date) payload.hire_date = null;
+      await api.patch(`/users/${editingUser.id}/`, payload);
+      setEditingUser(null);
+      await fetchUsers();
+    } catch (e) {
+      const data = e?.response?.data;
+      setEditFormError(
+        data?.detail ||
+        Object.entries(data || {}).map(([k, v]) => `${k}: ${[v].flat().join(", ")}`).join(" · ") ||
+        t("admin.errors.updateUserFailed")
+      );
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -385,7 +443,7 @@ export default function Admin() {
         {activeTab === "users" && (
           <button
             className={styles.btnNew}
-            onClick={() => { setShowForm((v) => !v); setFormError(""); }}
+            onClick={() => { setShowForm((v) => !v); setFormError(""); setEditingUser(null); }}
           >
             {showForm ? t("admin.cancelNew") : t("admin.newUser")}
           </button>
@@ -492,6 +550,76 @@ export default function Admin() {
             </div>
           )}
 
+          {/* Edit user form */}
+          {editingUser && (
+            <div className={styles.formCard}>
+              <h2 className={styles.formTitle}>{t("admin.editUserTitle", { name: editingUser.full_name || editingUser.username })}</h2>
+              <form onSubmit={handleEditSubmit} className={styles.form} noValidate>
+                <div className={styles.formGrid}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.firstName")}</label>
+                    <input className={styles.input} value={editForm.first_name} onChange={ef("first_name")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.lastName")}</label>
+                    <input className={styles.input} value={editForm.last_name} onChange={ef("last_name")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.username")}</label>
+                    <input className={styles.input} value={editForm.username} onChange={ef("username")} required />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.email")}</label>
+                    <input className={styles.input} type="email" value={editForm.email} onChange={ef("email")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.phone")}</label>
+                    <input className={styles.input} value={editForm.phone} onChange={ef("phone")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.role")}</label>
+                    <select className={styles.select} value={editForm.role} onChange={ef("role")}>
+                      {ROLES.map((r) => (
+                        <option key={r} value={r}>{t(`common.roles.${r}`)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.department")}</label>
+                    <select className={styles.select} value={editForm.department} onChange={ef("department")}>
+                      <option value="">{t("admin.form.noneDept")}</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.position")}</label>
+                    <input className={styles.input} value={editForm.position} onChange={ef("position")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.employeeNumber")}</label>
+                    <input className={styles.input} value={editForm.employee_number} onChange={ef("employee_number")} />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t("admin.form.hireDate")}</label>
+                    <input className={styles.input} type="date" value={editForm.hire_date || ""} onChange={ef("hire_date")} />
+                  </div>
+                </div>
+                {editFormError && <div className={styles.formError}>{editFormError}</div>}
+                <div className={styles.formActions}>
+                  <button type="button" className={styles.btnCancel} onClick={handleEditCancel}>
+                    {t("common.cancel")}
+                  </button>
+                  <button type="submit" className={styles.btnSubmit} disabled={editSubmitting}>
+                    {editSubmitting && <span className={styles.spinner} />}
+                    {t("common.save")}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           {/* Search */}
           <div className={styles.searchWrap}>
             <svg viewBox="0 0 16 16" fill="none" width="14" height="14" className={styles.searchIcon}>
@@ -555,6 +683,13 @@ export default function Admin() {
                   <span className={styles.muted}>{u.employee_number || "—"}</span>
                   <span className={styles.muted}>{u.email || "—"}</span>
                   <span className={styles.statusCell}>
+                    <button
+                      className={styles.btnEdit}
+                      onClick={() => handleEditStart(u)}
+                      title={t("common.edit")}
+                    >
+                      ✎
+                    </button>
                     {u.is_active ? (
                       <button
                         className={styles.btnDeactivate}
