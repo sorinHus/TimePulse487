@@ -451,7 +451,7 @@ class ManagerDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        if request.user.effective_role not in ['admin', 'manager']:
+        if request.user.effective_role not in ['admin', 'manager', 'director']:
             return Response({'detail': 'Permission denied.'}, status=403)
 
         from decimal import Decimal
@@ -465,6 +465,10 @@ class ManagerDashboardView(APIView):
 
         if user.effective_role == 'admin':
             team = User.objects.filter(is_active=True).select_related('department')
+        elif user.effective_role == 'director':
+            # Directorul general nu are departament propriu — echipa lui sunt
+            # managerii de departamente, nu toti angajatii organizatiei.
+            team = User.objects.filter(is_active=True, role='manager').select_related('department')
         else:
             team = User.objects.filter(is_active=True, department=user.department).select_related('department')
         total_team = team.count()

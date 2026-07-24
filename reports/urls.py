@@ -12,6 +12,7 @@ from .views import (
 from .pontaj_views import (
     PontajSheetView,
     PontajPersonalSheetView,
+    PontajOrgOverviewView,
     PontajSheetSaveView,
     PontajSheetRegenerateView,
     PontajSheetSubmitView,
@@ -25,6 +26,7 @@ urlpatterns = [
     path('reports/pontaj/export/', PontajExportView.as_view(), name='pontaj_export'),
     path('reports/pontaj/sheet/', PontajSheetView.as_view(), name='pontaj_sheet'),
     path('reports/pontaj/personal-sheet/', PontajPersonalSheetView.as_view(), name='pontaj_personal_sheet'),
+    path('reports/pontaj/org-overview/', PontajOrgOverviewView.as_view(), name='pontaj_org_overview'),
     path('reports/pontaj/sheet/<int:pk>/save/', PontajSheetSaveView.as_view(), name='pontaj_sheet_save'),
     path('reports/pontaj/sheet/<int:pk>/regenerate/', PontajSheetRegenerateView.as_view(), name='pontaj_sheet_regenerate'),
     path('reports/pontaj/sheet/<int:pk>/submit/', PontajSheetSubmitView.as_view(), name='pontaj_sheet_submit'),

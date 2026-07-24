@@ -329,6 +329,18 @@ export default function Reports() {
                     {t("reports.pontaj.myPontaj")}
                   </button>
                 )}
+                {(user?.effective_role === "director" || user?.effective_role === "admin") && (
+                  <button
+                    className={styles.exportBtn}
+                    style={{ background: "transparent", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    onClick={() => {
+                      const [year, month] = pontajMonth.split("-");
+                      navigate(`/pontaj/general?year=${year}&month=${Number(month)}`);
+                    }}
+                  >
+                    {t("reports.pontaj.generalPontaj")}
+                  </button>
+                )}
                 {pontajType === "department" && pontajDept && (
                   <button
                     className={styles.exportBtn}

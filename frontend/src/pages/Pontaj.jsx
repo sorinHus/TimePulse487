@@ -15,17 +15,17 @@ import { useAuth } from "../context/AuthContext";
 import styles from "./Pontaj.module.css";
 
 const EDITABLE_STATUSES = ["draft", "rejected"];
-const STATUS_BADGE = {
+export const STATUS_BADGE = {
   draft: "badgeGray",
   generated: "badgeAmber",
   approved: "badgeGreen",
   rejected: "badgeRed",
 };
-const LEAVE_CODES = ["CO", "CM", "FP", "IC", "CI", "AC", "NE"];
+export const LEAVE_CODES = ["CO", "CM", "FP", "IC", "CI", "AC", "NE"];
 const CELL_HOUR_OPTIONS = [2, 4, 6, 8, 12];
 const HOURS_PER_LEAVE_DAY = 8;
 
-function computeTotals(cells) {
+export function computeTotals(cells) {
   const totals = { workedHours: 0, leaveHours: 0, CO: 0, CM: 0, FP: 0, IC: 0, CI: 0, AC: 0, NE: 0 };
   for (const cell of cells) {
     if (cell.leave_code && LEAVE_CODES.includes(cell.leave_code)) {
@@ -39,7 +39,7 @@ function computeTotals(cells) {
   return totals;
 }
 
-function computeMonthlyNorm(year, month, numDays, holidays) {
+export function computeMonthlyNorm(year, month, numDays, holidays) {
   let workDays = 0;
   for (let day = 1; day <= numDays; day++) {
     const dow = new Date(year, month - 1, day).getDay();

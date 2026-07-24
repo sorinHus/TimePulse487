@@ -11,6 +11,7 @@ import Leaves from './pages/Leaves'
 import Calendar from './pages/Calendar'
 import Reports from './pages/Reports'
 import Pontaj from './pages/Pontaj'
+import PontajGeneral from './pages/PontajGeneral'
 import Admin from './pages/Admin'
 import Team from './pages/Team'
 import Notifications from './pages/Notifications'
@@ -64,6 +65,7 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/pontaj" element={<Pontaj />} />
+            <Route path="/pontaj/general" element={<PontajGeneral />} />
             <Route path="/team" element={<Team />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/notifications" element={<Notifications />} />

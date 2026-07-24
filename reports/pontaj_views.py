@@ -133,6 +133,67 @@ class PontajPersonalSheetView(APIView):
         return Response(PontajSheetSerializer(sheet).data)
 
 
+class PontajOrgOverviewView(APIView):
+    """Vedere combinata, doar-citire, cu toti angajatii din toate
+    departamentele intr-un singur tabel — pentru directorul general, care
+    altfel ar trebui sa deschida foaia fiecarui departament pe rand.
+    Actiunile de aprobare/respingere raman pe foaia fiecarui departament
+    (vezi sheet_id/department_id per rand, folosite pentru link)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.effective_role not in ['admin', 'director']:
+            return Response({'detail': 'Permission denied.'}, status=403)
+
+        year = request.query_params.get('year')
+        month = request.query_params.get('month')
+        if not (year and month):
+            return Response({'detail': 'year and month are required.'}, status=400)
+        year, month = int(year), int(month)
+
+        dept_ids_with_staff = set(
+            User.objects.filter(is_active=True, department__isnull=False)
+            .values_list('department_id', flat=True).distinct()
+        )
+        rows = []
+        for dept in Department.objects.filter(id__in=dept_ids_with_staff).order_by('name'):
+            sheet = get_or_create_sheet(dept, year, month)
+            sync_leave_requests(sheet)
+            data = PontajSheetSerializer(sheet).data
+            for row in data['rows']:
+                row['department_id'] = dept.id
+                row['department_name'] = dept.name
+                row['sheet_id'] = sheet.id
+                row['sheet_status'] = sheet.status
+                rows.append(row)
+
+        personal_users = User.objects.filter(
+            department__isnull=True, is_active=True
+        ).order_by('last_name', 'first_name')
+        for u in personal_users:
+            sheet = get_or_create_personal_sheet(u, year, month)
+            sync_leave_requests(sheet)
+            data = PontajSheetSerializer(sheet).data
+            for row in data['rows']:
+                row['department_id'] = None
+                row['department_name'] = None
+                row['sheet_id'] = sheet.id
+                row['sheet_status'] = sheet.status
+                rows.append(row)
+
+        num_days = calendar.monthrange(year, month)[1]
+        from leaves.utils import get_public_holidays_named
+        holidays = {d.day: name for d, name in get_public_holidays_named(year).items() if d.month == month}
+
+        return Response({
+            'year': year,
+            'month': month,
+            'num_days': num_days,
+            'holidays': holidays,
+            'rows': rows,
+        })
+
+
 class PontajSheetSaveView(APIView):
     """Salveaza pe server modificarile facute local in grila (fara sa
     schimbe starea foii si fara sa notifice pe nimeni)."""
