@@ -677,6 +677,8 @@ class PontajExportView(APIView):
 
         if scope_department:
             scope_label = scope_department.name
+            if user_id and users_list:
+                scope_label = f'{scope_label} — {users_list[0].get_full_name()}'
             manager = User.objects.filter(
                 department=scope_department, role='manager', is_active=True
             ).order_by('last_name', 'first_name').first()
