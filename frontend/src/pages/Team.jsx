@@ -298,7 +298,7 @@ export default function Team() {
       {/* List view */}
       {view === "list" && (
         <div className={styles.table}>
-          <div className={`${styles.tableRow} ${styles.tableHead}`}>
+          <div className={`${styles.tableRow} ${styles.tableHead} ${canRegisterSick ? styles.tableRowWithAction : ""}`}>
             <span>{t("team.table.member")}</span>
             <span>{t("team.table.role")}</span>
             <span>{t("team.table.department")}</span>
