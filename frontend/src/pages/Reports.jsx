@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { exportAttendanceExcel, exportLeavesPdf, exportPontaj } from "../api/dashboard";
+import { exportAttendanceExcel, exportLeavesPdf } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import styles from "./Reports.module.css";
@@ -29,8 +29,10 @@ export default function Reports() {
   const [users, setUsers] = useState([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [loadingLeaves, setLoadingLeaves] = useState(false);
-  const [loadingPontaj, setLoadingPontaj] = useState(false);
   const [errors, setErrors] = useState({});
+  const selectedIndividualUser = pontajType === "individual" && pontajUser
+    ? users.find(u => String(u.id) === String(pontajUser))
+    : null;
 
   useEffect(() => {
     api.get("/departments/")
@@ -83,29 +85,6 @@ export default function Reports() {
       setErrors(e => ({ ...e, leaves: t("reports.exportFailed") }));
     } finally {
       setLoadingLeaves(false);
-    }
-  };
-
-  const handleExportPontaj = async () => {
-    setErrors({});
-    setLoadingPontaj(true);
-    try {
-      const [year, month] = pontajMonth.split("-");
-      const blob = await exportPontaj(
-        year, month,
-        pontajType === "department" ? pontajDept || null : null,
-        pontajType === "individual" ? pontajUser || null : null,
-      );
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `attendance_sheet_${pontajMonth}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      setErrors(e => ({ ...e, pontaj: t("reports.exportFailed") }));
-    } finally {
-      setLoadingPontaj(false);
     }
   };
 
@@ -312,7 +291,6 @@ export default function Reports() {
                 </div>
               )}
 
-              {errors.pontaj && <p className={styles.errorMsg}>{errors.pontaj}</p>}
             </div>
             <div className={styles.cardFooter}>
               <span className={styles.formatBadge} style={{ background: "#3b82f618", color: "#3b82f6" }}>.xlsx</span>
@@ -320,7 +298,7 @@ export default function Reports() {
                 {user?.effective_role === "director" && (
                   <button
                     className={styles.exportBtn}
-                    style={{ background: "transparent", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
                     onClick={() => {
                       const [year, month] = pontajMonth.split("-");
                       navigate(`/pontaj?self=1&year=${year}&month=${Number(month)}`);
@@ -332,7 +310,7 @@ export default function Reports() {
                 {(user?.effective_role === "director" || user?.effective_role === "admin") && (
                   <button
                     className={styles.exportBtn}
-                    style={{ background: "transparent", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
                     onClick={() => {
                       const [year, month] = pontajMonth.split("-");
                       navigate(`/pontaj/general?year=${year}&month=${Number(month)}`);
@@ -344,7 +322,7 @@ export default function Reports() {
                 {pontajType === "department" && pontajDept && (
                   <button
                     className={styles.exportBtn}
-                    style={{ background: "transparent", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
                     onClick={() => {
                       const [year, month] = pontajMonth.split("-");
                       navigate(`/pontaj?department_id=${pontajDept}&year=${year}&month=${Number(month)}`);
@@ -353,19 +331,18 @@ export default function Reports() {
                     {t("reports.pontaj.viewEdit")}
                   </button>
                 )}
-                <button
-                  className={styles.exportBtn}
-                  style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
-                  onClick={handleExportPontaj}
-                  disabled={loadingPontaj}
-                >
-                  {loadingPontaj ? <span className={styles.spinner} /> : (
-                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                      <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                  {loadingPontaj ? t("reports.pontaj.generating") : t("reports.exportExcel")}
-                </button>
+                {pontajType === "individual" && selectedIndividualUser?.department && (
+                  <button
+                    className={styles.exportBtn}
+                    style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
+                    onClick={() => {
+                      const [year, month] = pontajMonth.split("-");
+                      navigate(`/pontaj?department_id=${selectedIndividualUser.department}&year=${year}&month=${Number(month)}`);
+                    }}
+                  >
+                    {t("reports.pontaj.viewEdit")}
+                  </button>
+                )}
               </div>
             </div>
           </div>

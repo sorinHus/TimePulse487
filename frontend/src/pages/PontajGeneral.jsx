@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPontajOrgOverview } from "../api/reports";
+import { exportPontaj } from "../api/dashboard";
 import { dateLocale } from "../i18n/config";
 import { LEAVE_CODES, STATUS_BADGE, computeTotals, computeMonthlyNorm } from "./Pontaj";
 import styles from "./Pontaj.module.css";
@@ -22,6 +23,7 @@ export default function PontajGeneral() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exportBusy, setExportBusy] = useState(false);
   const dayAbbrevs = t("pontaj.days", { returnObjects: true });
 
   const fetchData = useCallback(async () => {
@@ -57,6 +59,23 @@ export default function PontajGeneral() {
 
   const monthlyNorm = data ? computeMonthlyNorm(year, month, data.num_days, data.holidays) : 0;
 
+  const handleExportExcel = async () => {
+    setExportBusy(true);
+    try {
+      const blob = await exportPontaj(year, month);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pontaj_general_${year}-${String(month).padStart(2, "0")}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setError(t("pontaj.saveFailed"));
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -74,6 +93,11 @@ export default function PontajGeneral() {
               aria-label={t("pontaj.jumpToMonth")}
             />
           </div>
+        </div>
+        <div className={styles.actions}>
+          <button className={styles.btnCancel} onClick={handleExportExcel} disabled={exportBusy}>
+            {t("pontaj.exportExcel")}
+          </button>
         </div>
       </div>
 
