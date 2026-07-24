@@ -41,6 +41,9 @@ export default function Admin() {
   const [scheduleError, setScheduleError] = useState("");
   const [deptForm, setDeptForm] = useState({ name: "", description: "" });
   const [deptError, setDeptError] = useState("");
+  const [editingDeptId, setEditingDeptId] = useState(null);
+  const [editDeptForm, setEditDeptForm] = useState({ name: "", description: "" });
+  const [editDeptError, setEditDeptError] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -234,6 +237,37 @@ export default function Admin() {
       await fetchDepartments();
     } catch (e) {
       alert(e?.response?.data?.detail || t("admin.departments.errors.updateFailed"));
+    }
+  };
+
+  const handleDeptEditStart = (dept) => {
+    setEditingDeptId(dept.id);
+    setEditDeptForm({ name: dept.name, description: dept.description || "" });
+    setEditDeptError("");
+  };
+
+  const handleDeptEditCancel = () => {
+    setEditingDeptId(null);
+    setEditDeptError("");
+  };
+
+  const handleDeptEditSave = async (id) => {
+    setEditDeptError("");
+    if (!editDeptForm.name.trim()) {
+      setEditDeptError(t("admin.departments.errors.deptNameRequired"));
+      return;
+    }
+    try {
+      await api.patch(`/departments/${id}/`, editDeptForm);
+      setEditingDeptId(null);
+      await fetchDepartments();
+    } catch (e) {
+      const data = e?.response?.data;
+      setEditDeptError(
+        data?.detail ||
+        Object.entries(data || {}).map(([k, v]) => `${k}: ${[v].flat().join(", ")}`).join(" · ") ||
+        t("admin.departments.errors.updateFailed")
+      );
     }
   };
 
@@ -723,35 +757,76 @@ export default function Admin() {
               <span></span>
             </div>
             {departments.length > 0 ? departments.map((d) => (
-              <div key={d.id} className={styles.deptRow}>
-                <span className={styles.seniorityVal}>{d.name}</span>
-                <span className={styles.muted}>{d.description || "—"}</span>
-                <span>
-                  <select
-                    className={styles.select}
-                    value={d.schedule_type || ""}
-                    onChange={(e) => handleDeptScheduleChange(d, e.target.value ? parseInt(e.target.value) : null)}
-                  >
-                    <option value="">{t("admin.departments.deptForm.noSchedule")}</option>
-                    {scheduleTypes.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </span>
-                <span>
-                  <button
-                    className={styles.btnDelete}
-                    onClick={() => handleDeptDelete(d.id)}
-                    title={t("common.delete")}
-                  >
-                    ✕
-                  </button>
-                </span>
-              </div>
+              editingDeptId === d.id ? (
+                <div key={d.id} className={styles.deptRow}>
+                  <input
+                    className={styles.input}
+                    value={editDeptForm.name}
+                    onChange={(e) => setEditDeptForm((f) => ({ ...f, name: e.target.value }))}
+                    autoFocus
+                  />
+                  <input
+                    className={styles.input}
+                    value={editDeptForm.description}
+                    onChange={(e) => setEditDeptForm((f) => ({ ...f, description: e.target.value }))}
+                  />
+                  <span className={styles.muted}>{d.schedule_type_name || "—"}</span>
+                  <span className={styles.rowActions}>
+                    <button
+                      className={styles.btnSave}
+                      onClick={() => handleDeptEditSave(d.id)}
+                      title={t("common.save")}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      className={styles.btnDelete}
+                      onClick={handleDeptEditCancel}
+                      title={t("common.cancel")}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
+              ) : (
+                <div key={d.id} className={styles.deptRow}>
+                  <span className={styles.seniorityVal}>{d.name}</span>
+                  <span className={styles.muted}>{d.description || "—"}</span>
+                  <span>
+                    <select
+                      className={styles.select}
+                      value={d.schedule_type || ""}
+                      onChange={(e) => handleDeptScheduleChange(d, e.target.value ? parseInt(e.target.value) : null)}
+                    >
+                      <option value="">{t("admin.departments.deptForm.noSchedule")}</option>
+                      {scheduleTypes.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </span>
+                  <span className={styles.rowActions}>
+                    <button
+                      className={styles.btnEdit}
+                      onClick={() => handleDeptEditStart(d)}
+                      title={t("common.edit")}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className={styles.btnDelete}
+                      onClick={() => handleDeptDelete(d.id)}
+                      title={t("common.delete")}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
+              )
             )) : (
               <div className={styles.empty}>{t("admin.departments.noDepartments")}</div>
             )}
           </div>
+          {editDeptError && <div className={styles.formError}>{editDeptError}</div>}
 
           <div className={styles.seniorityAddForm}>
             <div className={styles.deptAddRow}>

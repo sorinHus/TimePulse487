@@ -5,6 +5,7 @@ export default {
     saving: 'Збереження…',
     cancel: 'Скасувати',
     delete: 'Видалити',
+    edit: 'Редагувати',
     confirm: 'Підтвердити',
     close: 'Закрити',
     day: 'день',

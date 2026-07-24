@@ -5,6 +5,7 @@ export default {
     saving: 'Se salveaza...',
     cancel: 'Anuleaza',
     delete: 'Sterge',
+    edit: 'Editeaza',
     confirm: 'Confirma',
     close: 'Inchide',
     day: 'zi',

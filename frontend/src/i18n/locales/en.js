@@ -5,6 +5,7 @@ export default {
     saving: 'Saving…',
     cancel: 'Cancel',
     delete: 'Delete',
+    edit: 'Edit',
     confirm: 'Confirm',
     close: 'Close',
     day: 'day',
