@@ -78,10 +78,12 @@ const NAV_ITEMS = [
     path: "/team",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="7.5" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M1 17c0-3.314 2.91-6 6.5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="14" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M17.5 17c0-2.761-1.567-5-4-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="6" cy="5.3" r="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M1.5 13c.3-2.6 2.2-4.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="14" cy="5.3" r="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M18.5 13c-.3-2.6-2.2-4.5-4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="10" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M3.5 17.5c0-3.59 2.91-6.5 6.5-6.5s6.5 2.91 6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
     roles: ["admin", "manager", "director"],
