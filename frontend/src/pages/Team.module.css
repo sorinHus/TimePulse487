@@ -359,6 +359,8 @@
   display: flex;
   gap: 0.4rem;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .planBtn {
@@ -429,7 +431,7 @@
 }
 
 .tableRowWithAction {
-  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 2fr) minmax(0, 0.8fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(150px, 1.2fr);
 }
 
 /* ── Modal ── */
