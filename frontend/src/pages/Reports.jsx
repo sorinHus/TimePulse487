@@ -36,7 +36,7 @@ export default function Reports() {
     api.get("/departments/")
       .then(r => setDepartments(Array.isArray(r.data) ? r.data : r.data?.results || []))
       .catch(() => {});
-    api.get("/users/")
+    api.get("/users/visible/")
       .then(r => setUsers(Array.isArray(r.data) ? r.data : r.data?.results || []))
       .catch(() => {});
   }, []);

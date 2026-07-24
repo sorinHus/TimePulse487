@@ -135,3 +135,20 @@ class ColleaguesListView(generics.ListAPIView):
             department=user.department,
             is_active=True
         ).exclude(id=user.id).select_related('department')
+
+
+class VisibleEmployeesListView(generics.ListAPIView):
+    """Lista de angajati vizibili utilizatorului curent, pentru selectoare
+    (ex. raportul de pontaj pe angajat) — domeniu identic cu PontajExportView:
+    admin/director vad toata organizatia, managerul doar propriul departament."""
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = User.objects.filter(is_active=True).select_related('department')
+        if user.effective_role in ['admin', 'director']:
+            return qs.order_by('last_name', 'first_name')
+        if user.effective_role == 'manager':
+            return qs.filter(department=user.department).order_by('last_name', 'first_name')
+        return qs.filter(id=user.id)
