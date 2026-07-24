@@ -1,6 +1,18 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Attendance, AttendanceSession, OvertimeRequest, Notification
+from .models import Attendance, AttendanceSession, OvertimeRequest, Notification, ScheduleType
+
+
+class ScheduleTypeSerializer(serializers.ModelSerializer):
+    crosses_midnight = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = ScheduleType
+        fields = [
+            'id', 'name', 'start_time', 'end_time', 'break_minutes',
+            'pontaj_hours', 'crosses_midnight', 'created_at',
+        ]
+        read_only_fields = ['id', 'crosses_midnight', 'created_at']
 
 
 class AttendanceSerializer(serializers.ModelSerializer):

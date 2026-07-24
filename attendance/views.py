@@ -4,13 +4,13 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Sum
 from decimal import Decimal
-from .models import Attendance, AttendanceSession, OvertimeRequest, Notification
+from .models import Attendance, AttendanceSession, OvertimeRequest, Notification, ScheduleType
 from .serializers import (
     AttendanceSerializer, CheckInSerializer, CheckOutSerializer,
     AttendanceSessionSerializer, DaySummarySerializer,
     ClockInSerializer, ClockOutSerializer,
     OvertimeRequestSerializer, OvertimeReviewSerializer,
-    NotificationSerializer
+    NotificationSerializer, ScheduleTypeSerializer
 )
 
 WORKDAY_HOURS = Decimal('8.50')
@@ -600,3 +600,56 @@ class BulkClockOutView(APIView):
             'clocked_out': count,
             'detail': f'{count} session(s) closed.',
         })
+
+
+class ScheduleTypeListCreateView(APIView):
+    """
+    GET /api/attendance/schedule-types/ — orice user autentificat.
+    POST — doar admin.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        schedule_types = ScheduleType.objects.all()
+        return Response(ScheduleTypeSerializer(schedule_types, many=True).data)
+
+    def post(self, request):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = ScheduleTypeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ScheduleTypeDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            schedule_type = ScheduleType.objects.get(pk=pk)
+        except ScheduleType.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ScheduleTypeSerializer(schedule_type, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            schedule_type = ScheduleType.objects.get(pk=pk)
+        except ScheduleType.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if schedule_type.departments.exists():
+            return Response(
+                {'detail': 'Cannot delete a schedule type still assigned to a department.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        schedule_type.delete()
+        return Response({'detail': 'Deleted.'})

@@ -36,6 +36,11 @@ export default function Admin() {
   const [bulkLoading, setBulkLoading] = useState("");
   const [deleteModal, setDeleteModal] = useState({ open: false, user: null });
   const [deactivateModal, setDeactivateModal] = useState({ open: false, user: null, reason: "" });
+  const [scheduleTypes, setScheduleTypes] = useState([]);
+  const [scheduleForm, setScheduleForm] = useState({ name: "", start_time: "", end_time: "", break_minutes: "60", pontaj_hours: "8" });
+  const [scheduleError, setScheduleError] = useState("");
+  const [deptForm, setDeptForm] = useState({ name: "", description: "" });
+  const [deptError, setDeptError] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -58,10 +63,18 @@ export default function Admin() {
     } catch { setSeniorityRules([]); }
   };
 
+  const fetchScheduleTypes = async () => {
+    try {
+      const res = await api.get("/attendance/schedule-types/");
+      setScheduleTypes(Array.isArray(res.data) ? res.data : []);
+    } catch { setScheduleTypes([]); }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchDepartments();
     fetchSeniorityRules();
+    fetchScheduleTypes();
   }, []);
 
   const filtered = users.filter((u) => {
@@ -151,6 +164,79 @@ export default function Admin() {
     } catch { /* silent */ }
   };
 
+  const handleScheduleAdd = async () => {
+    setScheduleError("");
+    if (!scheduleForm.name.trim() || !scheduleForm.start_time || !scheduleForm.end_time) {
+      setScheduleError(t("admin.departments.errors.scheduleFieldsRequired"));
+      return;
+    }
+    try {
+      await api.post("/attendance/schedule-types/", {
+        name: scheduleForm.name.trim(),
+        start_time: scheduleForm.start_time,
+        end_time: scheduleForm.end_time,
+        break_minutes: parseInt(scheduleForm.break_minutes) || 0,
+        pontaj_hours: scheduleForm.pontaj_hours || "8",
+      });
+      setScheduleForm({ name: "", start_time: "", end_time: "", break_minutes: "60", pontaj_hours: "8" });
+      await fetchScheduleTypes();
+    } catch (e) {
+      const data = e?.response?.data;
+      setScheduleError(
+        data?.detail ||
+        Object.entries(data || {}).map(([k, v]) => `${k}: ${[v].flat().join(", ")}`).join(" · ") ||
+        t("admin.departments.errors.addScheduleFailed")
+      );
+    }
+  };
+
+  const handleScheduleDelete = async (id) => {
+    try {
+      await api.delete(`/attendance/schedule-types/${id}/`);
+      await fetchScheduleTypes();
+    } catch (e) {
+      alert(e?.response?.data?.detail || t("admin.departments.errors.deleteFailed"));
+    }
+  };
+
+  const handleDeptAdd = async () => {
+    setDeptError("");
+    if (!deptForm.name.trim()) {
+      setDeptError(t("admin.departments.errors.deptNameRequired"));
+      return;
+    }
+    try {
+      await api.post("/departments/", deptForm);
+      setDeptForm({ name: "", description: "" });
+      await fetchDepartments();
+    } catch (e) {
+      const data = e?.response?.data;
+      setDeptError(
+        data?.detail ||
+        Object.entries(data || {}).map(([k, v]) => `${k}: ${[v].flat().join(", ")}`).join(" · ") ||
+        t("admin.departments.errors.addDeptFailed")
+      );
+    }
+  };
+
+  const handleDeptDelete = async (id) => {
+    try {
+      await api.delete(`/departments/${id}/`);
+      await fetchDepartments();
+    } catch (e) {
+      alert(e?.response?.data?.detail || t("admin.departments.errors.deleteFailed"));
+    }
+  };
+
+  const handleDeptScheduleChange = async (dept, scheduleTypeId) => {
+    try {
+      await api.patch(`/departments/${dept.id}/`, { schedule_type: scheduleTypeId });
+      await fetchDepartments();
+    } catch (e) {
+      alert(e?.response?.data?.detail || t("admin.departments.errors.updateFailed"));
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     try {
       await api.delete(`/users/${deleteModal.user.id}/`);
@@ -236,6 +322,12 @@ export default function Admin() {
           onClick={() => { setActiveTab("attendance"); setBulkMsg(""); }}
         >
           {t("admin.tabs.attendance")}
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "departments" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("departments")}
+        >
+          {t("admin.tabs.departments")}
         </button>
       </div>
 
@@ -518,6 +610,174 @@ export default function Admin() {
               {t("admin.applyToAll")}
             </button>
             {applyMsg && <span className={styles.applyMsg}>{applyMsg}</span>}
+          </div>
+
+        </div>
+      )}
+
+      {/* ── Departments & Schedules Tab ── */}
+      {activeTab === "departments" && (
+        <div className={styles.senioritySection}>
+
+          <div className={styles.seniorityInfo}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <circle cx="8" cy="8" r="7" stroke="#60a5fa" strokeWidth="1.4"/>
+              <path d="M8 7v4M8 5.5v.5" stroke="#60a5fa" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            {t("admin.departments.scheduleInfo")}
+          </div>
+
+          <div className={styles.seniorityTable}>
+            <div className={`${styles.scheduleRow} ${styles.seniorityHead}`}>
+              <span>{t("admin.departments.table.name")}</span>
+              <span>{t("admin.departments.table.start")}</span>
+              <span>{t("admin.departments.table.end")}</span>
+              <span>{t("admin.departments.table.breakMinutes")}</span>
+              <span>{t("admin.departments.table.pontajHours")}</span>
+              <span></span>
+            </div>
+            {scheduleTypes.length > 0 ? scheduleTypes.map((s) => (
+              <div key={s.id} className={styles.scheduleRow}>
+                <span className={styles.seniorityVal}>{s.name}</span>
+                <span className={styles.muted}>{s.start_time}</span>
+                <span className={styles.muted}>{s.end_time}</span>
+                <span className={styles.muted}>{s.break_minutes}</span>
+                <span className={styles.muted}>{s.pontaj_hours}</span>
+                <span>
+                  <button
+                    className={styles.btnDelete}
+                    onClick={() => handleScheduleDelete(s.id)}
+                    title={t("common.delete")}
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            )) : (
+              <div className={styles.empty}>{t("admin.departments.noScheduleTypes")}</div>
+            )}
+          </div>
+
+          <div className={styles.seniorityAddForm}>
+            <div className={styles.scheduleAddRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.scheduleForm.name")}</label>
+                <input
+                  className={styles.input}
+                  value={scheduleForm.name}
+                  onChange={(e) => setScheduleForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder={t("admin.departments.scheduleForm.namePlaceholder")}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.scheduleForm.start")}</label>
+                <input
+                  type="time"
+                  className={styles.input}
+                  value={scheduleForm.start_time}
+                  onChange={(e) => setScheduleForm((f) => ({ ...f, start_time: e.target.value }))}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.scheduleForm.end")}</label>
+                <input
+                  type="time"
+                  className={styles.input}
+                  value={scheduleForm.end_time}
+                  onChange={(e) => setScheduleForm((f) => ({ ...f, end_time: e.target.value }))}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.scheduleForm.breakMinutes")}</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={scheduleForm.break_minutes}
+                  onChange={(e) => setScheduleForm((f) => ({ ...f, break_minutes: e.target.value }))}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.scheduleForm.pontajHours")}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  className={styles.input}
+                  value={scheduleForm.pontaj_hours}
+                  onChange={(e) => setScheduleForm((f) => ({ ...f, pontaj_hours: e.target.value }))}
+                />
+              </div>
+              <button className={styles.btnSubmit} onClick={handleScheduleAdd} style={{ alignSelf: "flex-end" }}>
+                {t("admin.departments.scheduleForm.add")}
+              </button>
+            </div>
+            {scheduleError && <div className={styles.formError}>{scheduleError}</div>}
+          </div>
+
+          <div className={styles.seniorityTable}>
+            <div className={`${styles.deptRow} ${styles.seniorityHead}`}>
+              <span>{t("admin.departments.table.deptName")}</span>
+              <span>{t("admin.departments.table.description")}</span>
+              <span>{t("admin.departments.table.schedule")}</span>
+              <span></span>
+            </div>
+            {departments.length > 0 ? departments.map((d) => (
+              <div key={d.id} className={styles.deptRow}>
+                <span className={styles.seniorityVal}>{d.name}</span>
+                <span className={styles.muted}>{d.description || "—"}</span>
+                <span>
+                  <select
+                    className={styles.select}
+                    value={d.schedule_type || ""}
+                    onChange={(e) => handleDeptScheduleChange(d, e.target.value ? parseInt(e.target.value) : null)}
+                  >
+                    <option value="">{t("admin.departments.deptForm.noSchedule")}</option>
+                    {scheduleTypes.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </span>
+                <span>
+                  <button
+                    className={styles.btnDelete}
+                    onClick={() => handleDeptDelete(d.id)}
+                    title={t("common.delete")}
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            )) : (
+              <div className={styles.empty}>{t("admin.departments.noDepartments")}</div>
+            )}
+          </div>
+
+          <div className={styles.seniorityAddForm}>
+            <div className={styles.deptAddRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.deptForm.name")}</label>
+                <input
+                  className={styles.input}
+                  value={deptForm.name}
+                  onChange={(e) => setDeptForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder={t("admin.departments.deptForm.namePlaceholder")}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("admin.departments.deptForm.description")}</label>
+                <input
+                  className={styles.input}
+                  value={deptForm.description}
+                  onChange={(e) => setDeptForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder={t("admin.departments.deptForm.descriptionPlaceholder")}
+                />
+              </div>
+              <button className={styles.btnSubmit} onClick={handleDeptAdd} style={{ alignSelf: "flex-end" }}>
+                {t("admin.departments.deptForm.add")}
+              </button>
+            </div>
+            {deptError && <div className={styles.formError}>{deptError}</div>}
           </div>
 
         </div>

@@ -6,9 +6,11 @@ User = get_user_model()
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    schedule_type_name = serializers.CharField(source='schedule_type.name', read_only=True, default=None)
+
     class Meta:
         model = Department
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'description', 'schedule_type', 'schedule_type_name']
 
 
 class UserSerializer(serializers.ModelSerializer):

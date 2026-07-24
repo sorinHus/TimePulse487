@@ -8,6 +8,7 @@ from .views import (
     NotificationListView, NotificationMarkReadView,
     NotificationMarkAllReadView, UnreadNotificationCountView,
     BulkClockInView, BulkClockOutView,
+    ScheduleTypeListCreateView, ScheduleTypeDetailView,
 )
 
 urlpatterns = [
@@ -33,6 +34,10 @@ urlpatterns = [
     # Admin bulk actions
     path('attendance/admin/bulk-clock-in/', BulkClockInView.as_view(), name='bulk_clock_in'),
     path('attendance/admin/bulk-clock-out/', BulkClockOutView.as_view(), name='bulk_clock_out'),
+
+    # Schedule types (program diferențiat pe departament)
+    path('attendance/schedule-types/', ScheduleTypeListCreateView.as_view(), name='schedule_type_list'),
+    path('attendance/schedule-types/<int:pk>/', ScheduleTypeDetailView.as_view(), name='schedule_type_detail'),
 
     # Notificări
     path('notifications/', NotificationListView.as_view(), name='notifications'),

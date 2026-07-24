@@ -120,10 +120,57 @@ class ActivateUserView(APIView):
         return Response({'detail': 'User activated.'})
 
 
-class DepartmentListView(generics.ListAPIView):
-    serializer_class = DepartmentSerializer
+class DepartmentListCreateView(APIView):
+    """
+    GET /api/departments/ — orice user autentificat.
+    POST — doar admin.
+    """
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Department.objects.all()
+
+    def get(self, request):
+        departments = Department.objects.all().select_related('schedule_type')
+        return Response(DepartmentSerializer(departments, many=True).data)
+
+    def post(self, request):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = DepartmentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DepartmentDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            department = Department.objects.get(pk=pk)
+        except Department.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = DepartmentSerializer(department, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.effective_role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            department = Department.objects.get(pk=pk)
+        except Department.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if department.members.exists():
+            return Response(
+                {'detail': 'Cannot delete a department with assigned employees.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        department.delete()
+        return Response({'detail': 'Deleted.'})
 
 class ColleaguesListView(generics.ListAPIView):
     serializer_class = UserSerializer
