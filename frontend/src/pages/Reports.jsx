@@ -337,7 +337,7 @@ export default function Reports() {
                     style={{ background: "#3b82f618", color: "#3b82f6", borderColor: "#3b82f633" }}
                     onClick={() => {
                       const [year, month] = pontajMonth.split("-");
-                      navigate(`/pontaj?department_id=${selectedIndividualUser.department}&year=${year}&month=${Number(month)}`);
+                      navigate(`/pontaj?department_id=${selectedIndividualUser.department}&employee_id=${selectedIndividualUser.id}&year=${year}&month=${Number(month)}`);
                     }}
                   >
                     {t("reports.pontaj.viewEdit")}

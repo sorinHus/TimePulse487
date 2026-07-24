@@ -57,6 +57,7 @@ export default function Pontaj() {
   const [searchParams, setSearchParams] = useSearchParams();
   const departmentId = searchParams.get("department_id");
   const isSelf = searchParams.get("self") === "1";
+  const employeeId = searchParams.get("employee_id");
   const year = Number(searchParams.get("year"));
   const month = Number(searchParams.get("month"));
 
@@ -77,7 +78,7 @@ export default function Pontaj() {
   const applyServerSheet = (data) => {
     const { rows: newRows, ...m } = data;
     setMeta(m);
-    setRows(newRows);
+    setRows(employeeId ? newRows.filter((r) => String(r.user_id) === String(employeeId)) : newRows);
     setDirtyIds(new Set());
   };
 
@@ -94,7 +95,7 @@ export default function Pontaj() {
     } finally {
       setLoading(false);
     }
-  }, [isSelf, departmentId, year, month, t]);
+  }, [isSelf, departmentId, employeeId, year, month, t]);
 
   useEffect(() => {
     setLoading(true);
@@ -136,7 +137,12 @@ export default function Pontaj() {
     if (!confirmDiscard()) return;
     setSearchParams(isSelf
       ? { self: "1", year: String(newYear), month: String(newMonth) }
-      : { department_id: departmentId, year: String(newYear), month: String(newMonth) });
+      : {
+          department_id: departmentId,
+          ...(employeeId ? { employee_id: employeeId } : {}),
+          year: String(newYear),
+          month: String(newMonth),
+        });
   };
 
   const handlePrevMonth = () => {
@@ -273,6 +279,8 @@ export default function Pontaj() {
     try {
       const blob = isSelf
         ? await exportPontaj(year, month, null, user.id)
+        : employeeId
+        ? await exportPontaj(year, month, null, employeeId)
         : await exportPontaj(year, month, departmentId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -320,7 +328,9 @@ export default function Pontaj() {
           <button className={styles.btnBack} onClick={handleBack}>← {t("pontaj.backToReports")}</button>
           <div className={styles.monthNav}>
             <button className={styles.btnMonthNav} onClick={handlePrevMonth} aria-label={t("pontaj.prevMonth")} title={t("pontaj.prevMonth")}>‹</button>
-            <h1 className={styles.title}>{isSelf ? t("pontaj.myPontaj") : (meta?.department_name || "")} — {monthTitle}</h1>
+            <h1 className={styles.title}>
+              {isSelf ? t("pontaj.myPontaj") : employeeId ? (rows[0]?.full_name || "") : (meta?.department_name || "")} — {monthTitle}
+            </h1>
             <button className={styles.btnMonthNav} onClick={handleNextMonth} aria-label={t("pontaj.nextMonth")} title={t("pontaj.nextMonth")}>›</button>
             <input
               type="month"
