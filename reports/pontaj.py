@@ -34,14 +34,14 @@ LEAVE_CODE_MAP = {
 def pontaj_hours_for(user, session):
     """Ore de pontaj/tichete de masă pentru o zi lucrată.
 
-    Dacă departamentul are un ScheduleType configurat, se folosește valoarea
-    fixă a acestuia (indiferent de orele reale). Altfel, comportamentul
-    rămâne identic cu cel de dinaintea ScheduleType: orele reale, sau 8 dacă
-    lipsesc.
+    Dacă userul are un program efectiv (override individual sau, altfel, cel
+    al departamentului), se folosește valoarea fixă a acestuia (indiferent de
+    orele reale). Altfel, comportamentul rămâne identic cu cel de dinaintea
+    ScheduleType: orele reale, sau 8 dacă lipsesc.
     """
-    department = user.department
-    if department and department.schedule_type:
-        return float(department.schedule_type.pontaj_hours)
+    schedule = user.effective_schedule_type
+    if schedule:
+        return float(schedule.pontaj_hours)
     return float(session.work_hours) if session.work_hours else 8.0
 
 
@@ -97,7 +97,7 @@ def get_or_create_sheet(department, year, month):
     num_days = calendar.monthrange(year, month)[1]
     users = User.objects.filter(
         department=department, is_active=True
-    ).select_related('department__schedule_type').order_by('last_name', 'first_name')
+    ).select_related('schedule_type', 'department__schedule_type').order_by('last_name', 'first_name')
 
     entries = []
     for u in users:

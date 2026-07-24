@@ -43,6 +43,13 @@ class User(AbstractUser):
         null=True, blank=True,
         related_name='subordinates'
     )
+    schedule_type = models.ForeignKey(
+        'attendance.ScheduleType',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='individual_users',
+        help_text='Program individual — suprascrie programul departamentului doar pentru acest angajat.'
+    )
     phone = models.CharField(max_length=20, blank=True)
     position = models.CharField(max_length=100, blank=True)
     employee_number = models.CharField(
@@ -103,6 +110,15 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return self.effective_role == 'admin'
+
+    @property
+    def effective_schedule_type(self):
+        """Programul care se aplică efectiv: override-ul individual dacă există, altfel cel al departamentului."""
+        if self.schedule_type_id:
+            return self.schedule_type
+        if self.department_id and self.department.schedule_type_id:
+            return self.department.schedule_type
+        return None
 
     @property
     def is_manager(self):

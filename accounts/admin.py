@@ -22,11 +22,11 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ['username', 'get_full_name', 'role', 'position', 'employee_number', 'department', 'is_active']
-    list_filter = ['role', 'department', 'is_active']
+    list_display = ['username', 'get_full_name', 'role', 'position', 'employee_number', 'department', 'schedule_type', 'is_active']
+    list_filter = ['role', 'department', 'schedule_type', 'is_active']
     search_fields = ['username', 'first_name', 'last_name', 'email', 'employee_number']
     fieldsets = UserAdmin.fieldsets + (
         ('Info suplimentară', {
-            'fields': ('role', 'department', 'manager', 'phone', 'position', 'employee_number', 'hire_date', 'avatar')
+            'fields': ('role', 'department', 'manager', 'phone', 'position', 'employee_number', 'hire_date', 'avatar', 'schedule_type')
         }),
     )

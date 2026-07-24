@@ -646,9 +646,9 @@ class ScheduleTypeDetailView(APIView):
             schedule_type = ScheduleType.objects.get(pk=pk)
         except ScheduleType.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
-        if schedule_type.departments.exists():
+        if schedule_type.departments.exists() or schedule_type.individual_users.exists():
             return Response(
-                {'detail': 'Cannot delete a schedule type still assigned to a department.'},
+                {'detail': 'Cannot delete a schedule type still assigned to a department or an employee.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         schedule_type.delete()

@@ -19,6 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
     effective_role = serializers.SerializerMethodField()
     is_substituting = serializers.SerializerMethodField()
     substituting_for_name = serializers.SerializerMethodField()
+    schedule_type_name = serializers.CharField(source='schedule_type.name', read_only=True, default=None)
+    effective_schedule_type_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -28,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
             'phone', 'position', 'employee_number', 'hire_date', 'avatar', 'is_active', 'deactivation_reason',
             'temporary_role', 'temporary_role_start', 'temporary_role_end',
             'is_substituting', 'substituting_for', 'substituting_for_name',
+            'schedule_type', 'schedule_type_name', 'effective_schedule_type_name',
         ]
         read_only_fields = ['id', 'effective_role', 'is_substituting', 'substituting_for_name']
 
@@ -44,6 +47,10 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.substituting_for:
             return obj.substituting_for.get_full_name()
         return None
+
+    def get_effective_schedule_type_name(self, obj):
+        schedule = obj.effective_schedule_type
+        return schedule.name if schedule else None
 
 
 class RegisterSerializer(serializers.ModelSerializer):

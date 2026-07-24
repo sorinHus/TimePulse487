@@ -14,7 +14,7 @@ class Command(BaseCommand):
         now = timezone.now()
         open_sessions = AttendanceSession.objects.filter(
             status='open'
-        ).select_related('user__department__schedule_type')
+        ).select_related('user__schedule_type', 'user__department__schedule_type')
         count = 0
 
         for session in open_sessions:
@@ -29,8 +29,7 @@ class Command(BaseCommand):
     def _scheduled_cutoff(self, session):
         fallback = session.clock_in + timedelta(hours=8, minutes=30)
 
-        department = session.user.department
-        schedule = department.schedule_type if department else None
+        schedule = session.user.effective_schedule_type
         if not schedule:
             return fallback
 

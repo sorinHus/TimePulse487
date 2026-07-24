@@ -646,23 +646,23 @@ class PontajExportView(APIView):
         if user_id:
             if user.effective_role not in ['admin', 'manager', 'director']:
                 return Response({'detail': 'Permission denied.'}, status=403)
-            users = User.objects.filter(id=user_id, is_active=True).select_related('department__schedule_type')
+            users = User.objects.filter(id=user_id, is_active=True).select_related('schedule_type', 'department__schedule_type')
         elif department_id:
             if user.effective_role not in ['admin', 'manager', 'director']:
                 return Response({'detail': 'Permission denied.'}, status=403)
             scope_department = Department.objects.filter(id=department_id).first()
             users = User.objects.filter(
                 department_id=department_id, is_active=True
-            ).select_related('department__schedule_type').order_by('last_name', 'first_name')
+            ).select_related('schedule_type', 'department__schedule_type').order_by('last_name', 'first_name')
         elif user.effective_role == 'manager':
             scope_department = user.department
             users = User.objects.filter(
                 department=user.department, is_active=True
-            ).select_related('department__schedule_type').order_by('last_name', 'first_name')
+            ).select_related('schedule_type', 'department__schedule_type').order_by('last_name', 'first_name')
         elif user.effective_role in ['admin', 'director']:
-            users = User.objects.filter(is_active=True).select_related('department__schedule_type').order_by('last_name', 'first_name')
+            users = User.objects.filter(is_active=True).select_related('schedule_type', 'department__schedule_type').order_by('last_name', 'first_name')
         else:
-            users = User.objects.filter(id=user.id).select_related('department__schedule_type')
+            users = User.objects.filter(id=user.id).select_related('schedule_type', 'department__schedule_type')
 
         users_list = list(users)
         if user_id and users_list:

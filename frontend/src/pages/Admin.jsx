@@ -132,6 +132,15 @@ export default function Admin() {
     } catch { /* silent */ }
   };
 
+  const handleUserScheduleChange = async (user, scheduleTypeId) => {
+    try {
+      await api.patch(`/users/${user.id}/`, { schedule_type: scheduleTypeId });
+      await fetchUsers();
+    } catch (e) {
+      alert(e?.response?.data?.detail || t("admin.departments.errors.updateFailed"));
+    }
+  };
+
   const handleDeactivateConfirm = async () => {
     if (!deactivateModal.reason.trim()) return;
     try {
@@ -503,6 +512,7 @@ export default function Admin() {
               <span>{t("admin.table.user")}</span>
               <span>{t("admin.table.role")}</span>
               <span>{t("admin.table.department")}</span>
+              <span>{t("admin.table.schedule")}</span>
               <span>{t("admin.table.position")}</span>
               <span>{t("admin.table.employeeNumber")}</span>
               <span>{t("admin.table.email")}</span>
@@ -526,6 +536,21 @@ export default function Admin() {
                     </span>
                   </span>
                   <span className={styles.muted}>{u.department_name || "—"}</span>
+                  <span className={styles.scheduleCell}>
+                    <select
+                      className={styles.select}
+                      value={u.schedule_type || ""}
+                      onChange={(e) => handleUserScheduleChange(u, e.target.value ? parseInt(e.target.value) : null)}
+                    >
+                      <option value="">{t("admin.userSchedule.departmentDefault")}</option>
+                      {scheduleTypes.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    {!u.schedule_type && u.effective_schedule_type_name && (
+                      <span className={styles.scheduleHint}>{u.effective_schedule_type_name}</span>
+                    )}
+                  </span>
                   <span className={styles.muted}>{u.position || "—"}</span>
                   <span className={styles.muted}>{u.employee_number || "—"}</span>
                   <span className={styles.muted}>{u.email || "—"}</span>
