@@ -4,6 +4,8 @@ import api from "../api/axios";
 import { registerSickLeave, getTeamSchedule, reviewSchedule } from "../api/leaves";
 import { useAuth } from "../context/AuthContext";
 import { translateLeaveType } from "../i18n/config";
+import useSortableTable from "../hooks/useSortableTable";
+import SortableHeader from "../components/SortableHeader";
 import styles from "./Team.module.css";
 
 function getInitials(u) {
@@ -117,6 +119,16 @@ export default function Team() {
     const matchDept = !filterDept || String(m.department) === filterDept || m.department_name === filterDept;
     const matchRole = !filterRole || m.role === filterRole;
     return matchSearch && matchDept && matchRole;
+  });
+
+  const memberSort = useSortableTable(filtered, {
+    name: (m) => m.full_name || m.username,
+    role: (m) => (m.role ? t(`common.roles.${m.role}`) : ""),
+    department: (m) => m.department_name,
+    position: (m) => m.position,
+    employeeNumber: (m) => m.employee_number,
+    email: (m) => m.email,
+    status: (m) => (m.is_active === false ? t("common.status.inactive") : t("common.status.active")),
   });
 
   const activeCount = members.filter((m) => m.is_active !== false).length;
@@ -299,16 +311,16 @@ export default function Team() {
       {view === "list" && (
         <div className={styles.table}>
           <div className={`${styles.tableRow} ${styles.tableHead} ${canRegisterSick ? styles.tableRowWithAction : ""}`}>
-            <span>{t("team.table.member")}</span>
-            <span>{t("team.table.role")}</span>
-            <span>{t("team.table.department")}</span>
-            <span>{t("team.table.position")}</span>
-            <span>{t("team.table.employeeNumber")}</span>
-            <span>{t("team.table.email")}</span>
-            <span>{t("team.table.status")}</span>
+            <SortableHeader label={t("team.table.member")} sortKey="name" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
+            <SortableHeader label={t("team.table.role")} sortKey="role" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
+            <SortableHeader label={t("team.table.department")} sortKey="department" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
+            <SortableHeader label={t("team.table.position")} sortKey="position" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
+            <SortableHeader label={t("team.table.employeeNumber")} sortKey="employeeNumber" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
+            <SortableHeader label={t("team.table.email")} sortKey="email" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
+            <SortableHeader label={t("team.table.status")} sortKey="status" activeKey={memberSort.sortKey} dir={memberSort.sortDir} onSort={memberSort.toggleSort} />
             {canRegisterSick && <span></span>}
           </div>
-          {filtered.length > 0 ? filtered.map((m, i) => {
+          {filtered.length > 0 ? memberSort.sorted.map((m, i) => {
             const roleStyle = ROLE_COLORS[m.role] || ROLE_COLORS.employee;
             return (
               <div key={i} className={`${styles.tableRow} ${canRegisterSick ? styles.tableRowWithAction : ""}`}>

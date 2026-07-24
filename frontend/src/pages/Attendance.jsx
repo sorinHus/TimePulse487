@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { clockIn, getTodaySessions, getSessionHistory, requestOvertime } from "../api/attendance";
 import { dateLocale, translateLeaveType } from "../i18n/config";
+import useSortableTable from "../hooks/useSortableTable";
+import SortableHeader from "../components/SortableHeader";
 import styles from "./Attendance.module.css";
 
 
@@ -147,6 +149,14 @@ export default function Attendance() {
   const totalHours = history.reduce((sum, d) => sum + parseFloat(d.total_hours || 0), 0);
   const completeDays = history.filter((d) => d.status === "complete").length;
   const incompleteDays = history.filter((d) => d.status === "in_progress" || d.status === "incomplete").length;
+
+  const historySort = useSortableTable(history, {
+    date: (row) => row.date,
+    totalHours: (row) => parseFloat(row.total_hours || 0),
+    sessions: (row) => row.sessions?.length || 0,
+    remaining: (row) => parseFloat(row.remaining_hours || 0),
+    status: (row) => row.status,
+  });
 
   return (
     <div className={styles.page}>
@@ -305,18 +315,18 @@ export default function Attendance() {
 
         <div className={styles.table}>
           <div className={`${styles.tableRow} ${styles.tableHead}`}>
-            <span>{t("attendance.table.date")}</span>
+            <SortableHeader label={t("attendance.table.date")} sortKey="date" activeKey={historySort.sortKey} dir={historySort.sortDir} onSort={historySort.toggleSort} />
             <span>{t("attendance.table.day")}</span>
-            <span>{t("attendance.table.totalHours")}</span>
-            <span>{t("attendance.table.sessions")}</span>
-            <span>{t("attendance.table.remainingOvertime")}</span>
-            <span>{t("attendance.table.status")}</span>
+            <SortableHeader label={t("attendance.table.totalHours")} sortKey="totalHours" activeKey={historySort.sortKey} dir={historySort.sortDir} onSort={historySort.toggleSort} />
+            <SortableHeader label={t("attendance.table.sessions")} sortKey="sessions" activeKey={historySort.sortKey} dir={historySort.sortDir} onSort={historySort.toggleSort} />
+            <SortableHeader label={t("attendance.table.remainingOvertime")} sortKey="remaining" activeKey={historySort.sortKey} dir={historySort.sortDir} onSort={historySort.toggleSort} />
+            <SortableHeader label={t("attendance.table.status")} sortKey="status" activeKey={historySort.sortKey} dir={historySort.sortDir} onSort={historySort.toggleSort} />
           </div>
 
           {loadingHistory ? (
             <div className={styles.empty}>{t("common.loading")}</div>
           ) : history.length > 0 ? (
-            history.map((row, i) => {
+            historySort.sorted.map((row, i) => {
               const date = new Date(row.date + "T00:00:00");
               const isToday = row.date === new Date().toISOString().slice(0, 10);
               const expanded = expandedDates[row.date];

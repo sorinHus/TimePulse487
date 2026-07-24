@@ -16,6 +16,8 @@ import {
 import { getColleagues } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import { translateLeaveType } from "../i18n/config";
+import useSortableTable from "../hooks/useSortableTable";
+import SortableHeader from "../components/SortableHeader";
 import styles from "./Leaves.module.css";
 
 function daysBetween(start, end) {
@@ -206,6 +208,16 @@ export default function Leaves() {
   };
 
   const selectedType = leaveTypes.find((lt) => String(lt.id) === String(form.leave_type));
+
+  const requestSort = useSortableTable(requests, {
+    employee: (r) => r.full_name || r.username,
+    type: (r) => translateLeaveType(t, r.leave_type_name || r.leave_type),
+    from: (r) => r.start_date,
+    to: (r) => r.end_date,
+    days: (r) => r.total_days,
+    substitute: (r) => r.substitute_name,
+    status: (r) => r.status,
+  });
   return (
     <div className={styles.page}>
 
@@ -482,17 +494,17 @@ export default function Leaves() {
         </h2>
         <div className={styles.table}>
           <div className={`${styles.tableRow} ${styles.tableHead} ${isManager ? styles.rowManager : ""}`}>
-            {isManager && <span>{t("leaves.table.employee")}</span>}
-            <span>{t("leaves.table.type")}</span>
-            <span>{t("leaves.table.from")}</span>
-            <span>{t("leaves.table.to")}</span>
-            <span>{t("leaves.table.days")}</span>
-            <span>{t("leaves.table.substitute")}</span>
-            <span>{t("leaves.table.status")}</span>
+            {isManager && <SortableHeader label={t("leaves.table.employee")} sortKey="employee" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />}
+            <SortableHeader label={t("leaves.table.type")} sortKey="type" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />
+            <SortableHeader label={t("leaves.table.from")} sortKey="from" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />
+            <SortableHeader label={t("leaves.table.to")} sortKey="to" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />
+            <SortableHeader label={t("leaves.table.days")} sortKey="days" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />
+            <SortableHeader label={t("leaves.table.substitute")} sortKey="substitute" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />
+            <SortableHeader label={t("leaves.table.status")} sortKey="status" activeKey={requestSort.sortKey} dir={requestSort.sortDir} onSort={requestSort.toggleSort} />
             <span>{t("leaves.table.actions")}</span>
           </div>
           {requests.length > 0 ? (
-            requests.map((req, i) => (
+            requestSort.sorted.map((req, i) => (
               <div
                 key={i}
                 className={`${styles.tableRow} ${isManager ? styles.rowManager : ""}`}

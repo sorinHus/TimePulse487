@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios";
+import useSortableTable from "../hooks/useSortableTable";
+import SortableHeader from "../components/SortableHeader";
 import styles from "./Admin.module.css";
 
 const ROLES = ["employee", "manager", "admin"];
@@ -101,6 +103,35 @@ export default function Admin() {
       u.email?.toLowerCase().includes(q) ||
       u.role?.toLowerCase().includes(q)
     );
+  });
+
+  const userSort = useSortableTable(filtered, {
+    name: (u) => u.full_name || u.username,
+    role: (u) => t(`common.roles.${u.role}`),
+    department: (u) => u.department_name,
+    schedule: (u) => u.effective_schedule_type_name,
+    position: (u) => u.position,
+    employeeNumber: (u) => u.employee_number,
+    email: (u) => u.email,
+  });
+
+  const seniorityRulesSort = useSortableTable(seniorityRules, {
+    minYears: (r) => r.min_years,
+    extraDays: (r) => r.extra_days,
+  });
+
+  const scheduleTypesSort = useSortableTable(scheduleTypes, {
+    name: (s) => s.name,
+    start: (s) => s.start_time,
+    end: (s) => s.end_time,
+    breakMinutes: (s) => s.break_minutes,
+    pontajHours: (s) => s.pontaj_hours,
+  });
+
+  const departmentsSort = useSortableTable(departments, {
+    name: (d) => d.name,
+    description: (d) => d.description,
+    schedule: (d) => d.schedule_type_name,
   });
 
   const handleSubmit = async (e) => {
@@ -637,17 +668,17 @@ export default function Admin() {
           {/* Users table */}
           <div className={styles.table}>
             <div className={`${styles.tableRow} ${styles.tableHead}`}>
-              <span>{t("admin.table.user")}</span>
-              <span>{t("admin.table.role")}</span>
-              <span>{t("admin.table.department")}</span>
-              <span>{t("admin.table.schedule")}</span>
-              <span>{t("admin.table.position")}</span>
-              <span>{t("admin.table.employeeNumber")}</span>
-              <span>{t("admin.table.email")}</span>
+              <SortableHeader label={t("admin.table.user")} sortKey="name" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
+              <SortableHeader label={t("admin.table.role")} sortKey="role" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
+              <SortableHeader label={t("admin.table.department")} sortKey="department" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
+              <SortableHeader label={t("admin.table.schedule")} sortKey="schedule" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
+              <SortableHeader label={t("admin.table.position")} sortKey="position" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
+              <SortableHeader label={t("admin.table.employeeNumber")} sortKey="employeeNumber" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
+              <SortableHeader label={t("admin.table.email")} sortKey="email" activeKey={userSort.sortKey} dir={userSort.sortDir} onSort={userSort.toggleSort} />
               <span>{t("admin.table.status")}</span>
             </div>
             {filtered.length > 0 ? (
-              filtered.map((u, i) => (
+              userSort.sorted.map((u, i) => (
                 <div key={i} className={styles.tableRow}>
                   <span className={styles.userCell}>
                     <span className={`${styles.avatar} ${!u.is_active ? styles.avatarInactive : ""}`}>
@@ -791,11 +822,11 @@ export default function Admin() {
 
           <div className={styles.seniorityTable}>
             <div className={`${styles.seniorityRow} ${styles.seniorityHead}`}>
-              <span>{t("admin.seniorityTable.minYears")}</span>
-              <span>{t("admin.seniorityTable.extraDays")}</span>
+              <SortableHeader label={t("admin.seniorityTable.minYears")} sortKey="minYears" activeKey={seniorityRulesSort.sortKey} dir={seniorityRulesSort.sortDir} onSort={seniorityRulesSort.toggleSort} />
+              <SortableHeader label={t("admin.seniorityTable.extraDays")} sortKey="extraDays" activeKey={seniorityRulesSort.sortKey} dir={seniorityRulesSort.sortDir} onSort={seniorityRulesSort.toggleSort} />
               <span></span>
             </div>
-            {seniorityRules.length > 0 ? seniorityRules.map((rule) => (
+            {seniorityRules.length > 0 ? seniorityRulesSort.sorted.map((rule) => (
               <div key={rule.id} className={styles.seniorityRow}>
                 <span className={styles.seniorityVal}>{t("admin.seniorityTable.years", { count: rule.min_years })}</span>
                 <span className={styles.seniorityExtra}>{t("admin.seniorityTable.extraDaysValue", { count: rule.extra_days })}</span>
@@ -869,14 +900,14 @@ export default function Admin() {
 
           <div className={styles.seniorityTable}>
             <div className={`${styles.scheduleRow} ${styles.seniorityHead}`}>
-              <span>{t("admin.departments.table.name")}</span>
-              <span>{t("admin.departments.table.start")}</span>
-              <span>{t("admin.departments.table.end")}</span>
-              <span>{t("admin.departments.table.breakMinutes")}</span>
-              <span>{t("admin.departments.table.pontajHours")}</span>
+              <SortableHeader label={t("admin.departments.table.name")} sortKey="name" activeKey={scheduleTypesSort.sortKey} dir={scheduleTypesSort.sortDir} onSort={scheduleTypesSort.toggleSort} />
+              <SortableHeader label={t("admin.departments.table.start")} sortKey="start" activeKey={scheduleTypesSort.sortKey} dir={scheduleTypesSort.sortDir} onSort={scheduleTypesSort.toggleSort} />
+              <SortableHeader label={t("admin.departments.table.end")} sortKey="end" activeKey={scheduleTypesSort.sortKey} dir={scheduleTypesSort.sortDir} onSort={scheduleTypesSort.toggleSort} />
+              <SortableHeader label={t("admin.departments.table.breakMinutes")} sortKey="breakMinutes" activeKey={scheduleTypesSort.sortKey} dir={scheduleTypesSort.sortDir} onSort={scheduleTypesSort.toggleSort} />
+              <SortableHeader label={t("admin.departments.table.pontajHours")} sortKey="pontajHours" activeKey={scheduleTypesSort.sortKey} dir={scheduleTypesSort.sortDir} onSort={scheduleTypesSort.toggleSort} />
               <span></span>
             </div>
-            {scheduleTypes.length > 0 ? scheduleTypes.map((s) => (
+            {scheduleTypes.length > 0 ? scheduleTypesSort.sorted.map((s) => (
               editingScheduleId === s.id ? (
                 <div key={s.id} className={styles.scheduleRow}>
                   <input
@@ -1019,12 +1050,12 @@ export default function Admin() {
 
           <div className={styles.seniorityTable}>
             <div className={`${styles.deptRow} ${styles.seniorityHead}`}>
-              <span>{t("admin.departments.table.deptName")}</span>
-              <span>{t("admin.departments.table.description")}</span>
-              <span>{t("admin.departments.table.schedule")}</span>
+              <SortableHeader label={t("admin.departments.table.deptName")} sortKey="name" activeKey={departmentsSort.sortKey} dir={departmentsSort.sortDir} onSort={departmentsSort.toggleSort} />
+              <SortableHeader label={t("admin.departments.table.description")} sortKey="description" activeKey={departmentsSort.sortKey} dir={departmentsSort.sortDir} onSort={departmentsSort.toggleSort} />
+              <SortableHeader label={t("admin.departments.table.schedule")} sortKey="schedule" activeKey={departmentsSort.sortKey} dir={departmentsSort.sortDir} onSort={departmentsSort.toggleSort} />
               <span></span>
             </div>
-            {departments.length > 0 ? departments.map((d) => (
+            {departments.length > 0 ? departmentsSort.sorted.map((d) => (
               editingDeptId === d.id ? (
                 <div key={d.id} className={styles.deptRow}>
                   <input
