@@ -72,6 +72,7 @@ export default function Pontaj() {
   const [regenBusy, setRegenBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const dayAbbrevs = t("pontaj.days", { returnObjects: true });
 
   const applyServerSheet = (data) => {
     const { rows: newRows, ...m } = data;
@@ -400,7 +401,12 @@ export default function Pontaj() {
                       className={isWeekend ? styles.weekendCol : holidayName ? styles.holidayCol : ""}
                       title={holidayName || undefined}
                     >
-                      {day}
+                      <div className={styles.dayHeader}>
+                        <span>{day}</span>
+                        <span className={styles.dayDow}>
+                          {dayAbbrevs[new Date(year, month - 1, day).getDay()]}
+                        </span>
+                      </div>
                     </th>
                   );
                 })}

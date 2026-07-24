@@ -360,6 +360,7 @@ export default {
     saveFailed: 'Salvare esuata.',
     noDepartment: 'Selecteaza un departament din Rapoarte pentru a vedea foaia de pontaj.',
     myPontaj: 'Pontajul meu',
+    days: ['Du', 'Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sa'],
     employee: 'Angajat',
     position: 'Functie',
     employeeNumber: 'Nr. marca',

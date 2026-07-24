@@ -359,6 +359,7 @@ export default {
     saveFailed: 'Save failed.',
     noDepartment: 'Select a department from Reports to view the pontaj sheet.',
     myPontaj: 'My Pontaj',
+    days: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
     employee: 'Employee',
     position: 'Position',
     employeeNumber: 'Employee no.',

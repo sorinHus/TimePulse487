@@ -775,7 +775,7 @@ class PontajExportView(APIView):
         ws['D2'].border = border_all
         ws['D2'].fill = header_fill
 
-        day_names_en = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
+        day_names_ro = ['Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sa', 'Du']
         start_col = 5
 
         for day in range(1, num_days + 1):
@@ -788,7 +788,7 @@ class PontajExportView(APIView):
             cell1.alignment = center
             cell1.border = border_all
 
-            cell2 = ws.cell(row=3, column=col, value=day_names_en[d.weekday()])
+            cell2 = ws.cell(row=3, column=col, value=day_names_ro[d.weekday()])
             cell2.font = small
             cell2.alignment = center
             cell2.border = border_all
@@ -901,19 +901,29 @@ class PontajExportView(APIView):
         ws.freeze_panes = f'{get_column_letter(start_col)}4'
 
         # ── Manager ───────────────────────────────────────────────────────────
+        manager_rows_used = 0
         if manager_name:
             manager_row = data_start_row + len(users_list) + 1
-            ws.cell(row=manager_row, column=total_start_col, value='Manager:').font = bold
             ws.merge_cells(
-                start_row=manager_row, start_column=total_start_col + 1,
+                start_row=manager_row, start_column=total_start_col,
                 end_row=manager_row, end_column=total_start_col + len(total_cols) - 1,
             )
-            name_cell = ws.cell(row=manager_row, column=total_start_col + 1, value=manager_name)
+            label_cell = ws.cell(row=manager_row, column=total_start_col, value='Manager')
+            label_cell.font = bold
+            label_cell.alignment = left
+
+            name_row = manager_row + 1
+            ws.merge_cells(
+                start_row=name_row, start_column=total_start_col,
+                end_row=name_row, end_column=total_start_col + len(total_cols) - 1,
+            )
+            name_cell = ws.cell(row=name_row, column=total_start_col, value=manager_name)
             name_cell.font = normal
             name_cell.alignment = left
+            manager_rows_used = 2
 
         # ── Legendă ───────────────────────────────────────────────────────────
-        legend_row = data_start_row + len(users_list) + 2
+        legend_row = data_start_row + len(users_list) + 2 + (1 if manager_rows_used else 0)
         legend = [
             ('CO', 'Annual Leave'),
             ('CM', 'Sick Leave'),
