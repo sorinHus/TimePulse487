@@ -39,6 +39,9 @@ export default function Admin() {
   const [scheduleTypes, setScheduleTypes] = useState([]);
   const [scheduleForm, setScheduleForm] = useState({ name: "", start_time: "", end_time: "", break_minutes: "60", pontaj_hours: "8" });
   const [scheduleError, setScheduleError] = useState("");
+  const [editingScheduleId, setEditingScheduleId] = useState(null);
+  const [editScheduleForm, setEditScheduleForm] = useState({ name: "", start_time: "", end_time: "", break_minutes: "", pontaj_hours: "" });
+  const [editScheduleError, setEditScheduleError] = useState("");
   const [deptForm, setDeptForm] = useState({ name: "", description: "" });
   const [deptError, setDeptError] = useState("");
   const [editingDeptId, setEditingDeptId] = useState(null);
@@ -199,6 +202,49 @@ export default function Admin() {
       await fetchScheduleTypes();
     } catch (e) {
       alert(e?.response?.data?.detail || t("admin.departments.errors.deleteFailed"));
+    }
+  };
+
+  const handleScheduleEditStart = (s) => {
+    setEditingScheduleId(s.id);
+    setEditScheduleForm({
+      name: s.name,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      break_minutes: String(s.break_minutes),
+      pontaj_hours: String(s.pontaj_hours),
+    });
+    setEditScheduleError("");
+  };
+
+  const handleScheduleEditCancel = () => {
+    setEditingScheduleId(null);
+    setEditScheduleError("");
+  };
+
+  const handleScheduleEditSave = async (id) => {
+    setEditScheduleError("");
+    if (!editScheduleForm.name.trim() || !editScheduleForm.start_time || !editScheduleForm.end_time) {
+      setEditScheduleError(t("admin.departments.errors.scheduleFieldsRequired"));
+      return;
+    }
+    try {
+      await api.patch(`/attendance/schedule-types/${id}/`, {
+        name: editScheduleForm.name.trim(),
+        start_time: editScheduleForm.start_time,
+        end_time: editScheduleForm.end_time,
+        break_minutes: parseInt(editScheduleForm.break_minutes) || 0,
+        pontaj_hours: editScheduleForm.pontaj_hours || "8",
+      });
+      setEditingScheduleId(null);
+      await fetchScheduleTypes();
+    } catch (e) {
+      const data = e?.response?.data;
+      setEditScheduleError(
+        data?.detail ||
+        Object.entries(data || {}).map(([k, v]) => `${k}: ${[v].flat().join(", ")}`).join(" · ") ||
+        t("admin.departments.errors.updateFailed")
+      );
     }
   };
 
@@ -671,26 +717,88 @@ export default function Admin() {
               <span></span>
             </div>
             {scheduleTypes.length > 0 ? scheduleTypes.map((s) => (
-              <div key={s.id} className={styles.scheduleRow}>
-                <span className={styles.seniorityVal}>{s.name}</span>
-                <span className={styles.muted}>{s.start_time}</span>
-                <span className={styles.muted}>{s.end_time}</span>
-                <span className={styles.muted}>{s.break_minutes}</span>
-                <span className={styles.muted}>{s.pontaj_hours}</span>
-                <span>
-                  <button
-                    className={styles.btnDelete}
-                    onClick={() => handleScheduleDelete(s.id)}
-                    title={t("common.delete")}
-                  >
-                    ✕
-                  </button>
-                </span>
-              </div>
+              editingScheduleId === s.id ? (
+                <div key={s.id} className={styles.scheduleRow}>
+                  <input
+                    className={styles.input}
+                    value={editScheduleForm.name}
+                    onChange={(e) => setEditScheduleForm((f) => ({ ...f, name: e.target.value }))}
+                    autoFocus
+                  />
+                  <input
+                    type="time"
+                    className={styles.input}
+                    value={editScheduleForm.start_time}
+                    onChange={(e) => setEditScheduleForm((f) => ({ ...f, start_time: e.target.value }))}
+                  />
+                  <input
+                    type="time"
+                    className={styles.input}
+                    value={editScheduleForm.end_time}
+                    onChange={(e) => setEditScheduleForm((f) => ({ ...f, end_time: e.target.value }))}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.input}
+                    value={editScheduleForm.break_minutes}
+                    onChange={(e) => setEditScheduleForm((f) => ({ ...f, break_minutes: e.target.value }))}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    className={styles.input}
+                    value={editScheduleForm.pontaj_hours}
+                    onChange={(e) => setEditScheduleForm((f) => ({ ...f, pontaj_hours: e.target.value }))}
+                  />
+                  <span className={styles.rowActions}>
+                    <button
+                      className={styles.btnSave}
+                      onClick={() => handleScheduleEditSave(s.id)}
+                      title={t("common.save")}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      className={styles.btnDelete}
+                      onClick={handleScheduleEditCancel}
+                      title={t("common.cancel")}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
+              ) : (
+                <div key={s.id} className={styles.scheduleRow}>
+                  <span className={styles.seniorityVal}>{s.name}</span>
+                  <span className={styles.muted}>{s.start_time}</span>
+                  <span className={styles.muted}>{s.end_time}</span>
+                  <span className={styles.muted}>{s.break_minutes}</span>
+                  <span className={styles.muted}>{s.pontaj_hours}</span>
+                  <span className={styles.rowActions}>
+                    <button
+                      className={styles.btnEdit}
+                      onClick={() => handleScheduleEditStart(s)}
+                      title={t("common.edit")}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className={styles.btnDelete}
+                      onClick={() => handleScheduleDelete(s.id)}
+                      title={t("common.delete")}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
+              )
             )) : (
               <div className={styles.empty}>{t("admin.departments.noScheduleTypes")}</div>
             )}
           </div>
+          {editScheduleError && <div className={styles.formError}>{editScheduleError}</div>}
 
           <div className={styles.seniorityAddForm}>
             <div className={styles.scheduleAddRow}>
