@@ -30,6 +30,13 @@
   flex-shrink: 0;
 }
 
+.sidebar.collapsed .logo {
+  flex-direction: column;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  gap: 8px;
+}
+
 .logoMark {
   width: 32px;
   height: 32px;
